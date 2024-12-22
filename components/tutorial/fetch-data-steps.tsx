@@ -60,8 +60,8 @@ export default function FetchDataSteps() {
                         Table Editor
                     </a>{' '}
                     for your Supabase project to create a table and insert some
-                    example data. If you&apos;re stuck for creativity, you can copy
-                    and paste the following into the{' '}
+                    example data. If you&apos;re stuck for creativity, you can
+                    copy and paste the following into the{' '}
                     <a
                         href="https://supabase.com/dashboard/project/_/sql/new"
                         className="font-bold hover:underline text-foreground/80"

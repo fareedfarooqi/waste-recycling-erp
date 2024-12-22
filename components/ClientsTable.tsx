@@ -1,13 +1,13 @@
 'use client';
 
-
-
-
+import React from 'react';
 
 import { useState, useEffect } from 'react';
 import { FaTrashAlt, FaEye, FaEdit } from 'react-icons/fa';
 import { supabase } from '@/config/supabaseClient';
 import ClientViewModal from './ClientViewModal';
+
+let sameisnrbhjasd = 'a s   dsadfgsdfgs   ';
 
 type Client = {
     id: string;
