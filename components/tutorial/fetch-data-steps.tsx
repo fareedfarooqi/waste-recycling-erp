@@ -1,3 +1,4 @@
+import React from 'react';
 import { TutorialStep } from './tutorial-step';
 import { CodeBlock } from './code-block';
 
@@ -59,7 +60,7 @@ export default function FetchDataSteps() {
                         Table Editor
                     </a>{' '}
                     for your Supabase project to create a table and insert some
-                    example data. If you're stuck for creativity, you can copy
+                    example data. If you&apos;re stuck for creativity, you can copy
                     and paste the following into the{' '}
                     <a
                         href="https://supabase.com/dashboard/project/_/sql/new"
@@ -89,7 +90,7 @@ export default function FetchDataSteps() {
             </TutorialStep>
 
             <TutorialStep title="Build in a weekend and scale to millions!">
-                <p>You're ready to launch your product to the world! 🚀</p>
+                <p>You&apos;re ready to launch your product to the world! 🚀</p>
             </TutorialStep>
         </ol>
     );

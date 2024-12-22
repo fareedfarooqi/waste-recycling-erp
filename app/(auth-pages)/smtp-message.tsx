@@ -1,3 +1,4 @@
+import React from 'react';
 import { ArrowUpRight, InfoIcon } from 'lucide-react';
 import Link from 'next/link';
 

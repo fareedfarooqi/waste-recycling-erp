@@ -1,3 +1,4 @@
+import React from 'react';
 import { TutorialStep } from './tutorial-step';
 
 export default function ConnectSupabaseSteps() {
@@ -35,7 +36,7 @@ export default function ConnectSupabaseSteps() {
                         className="font-bold hover:underline text-foreground/80"
                         rel="noreferrer"
                     >
-                        your Supabase project's API Settings
+                        your Supabase project&apos;s API Settings
                     </a>
                     .
                 </p>

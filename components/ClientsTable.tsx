@@ -1,4 +1,9 @@
 'use client';
+
+
+
+
+
 import { useState, useEffect } from 'react';
 import { FaTrashAlt, FaEye, FaEdit } from 'react-icons/fa';
 import { supabase } from '@/config/supabaseClient';

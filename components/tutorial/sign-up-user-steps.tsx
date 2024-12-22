@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import { TutorialStep } from './tutorial-step';
 import { ArrowUpRight } from 'lucide-react';
@@ -12,11 +13,11 @@ export default function SignUpUserSteps() {
                     <p className="mt-4">
                         This particular deployment is
                         <span className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-xs font-medium text-secondary-foreground border">
-                            "{process.env.VERCEL_ENV}"
+                            &quot;{process.env.VERCEL_ENV}&quot;
                         </span>{' '}
                         on
                         <span className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-xs font-medium text-secondary-foreground border">
-                            https://{process.env.VERCEL_URL}
+                            &quot;https://{process.env.VERCEL_URL}&quot;
                         </span>
                         .
                     </p>
@@ -79,7 +80,7 @@ export default function SignUpUserSteps() {
                     >
                         Sign up
                     </Link>{' '}
-                    page and sign up your first user. It's okay if this is just
+                    page and sign up your first user. It&apos;s okay if this is just
                     you for now. Your awesome idea will have plenty of users
                     later!
                 </p>
