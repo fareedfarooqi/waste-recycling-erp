@@ -1,5 +1,5 @@
-import Navbar from "@/components/Navbar";
-import ClientsTable from "@/components/ClientsTable";
+import Navbar from '@/components/Navbar';
+import ClientsTable from '@/components/ClientsTable';
 
 function ClientListPage(): JSX.Element {
     return (
@@ -7,7 +7,7 @@ function ClientListPage(): JSX.Element {
             <Navbar />
             <ClientsTable />
         </>
-    )
+    );
 }
 
 export default ClientListPage;

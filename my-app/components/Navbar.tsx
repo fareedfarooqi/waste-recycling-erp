@@ -1,14 +1,16 @@
-"use client";
-import { useState } from "react";
-import { GoSearch } from "react-icons/go";
-import { RiMenuUnfold3Fill, RiMenuUnfold4Fill } from "react-icons/ri";
-import Sidebar from "./Sidebar";
+'use client';
+import { useState } from 'react';
+import { GoSearch } from 'react-icons/go';
+import { RiMenuUnfold3Fill, RiMenuUnfold4Fill } from 'react-icons/ri';
+import Sidebar from './Sidebar';
 
 const Navbar = (): JSX.Element => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     return (
-        <div className={`flex ${isSidebarOpen ? "ml-64" : ""} transition-all duration-100`}>
+        <div
+            className={`flex ${isSidebarOpen ? 'ml-64' : ''} transition-all duration-100`}
+        >
             {isSidebarOpen && (
                 <div className="fixed top-0 left-0 h-screen w-64 bg-green-700 shadow-lg z-10">
                     <Sidebar />
@@ -22,10 +24,10 @@ const Navbar = (): JSX.Element => {
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                     >
                         {isSidebarOpen ? (
-                            <RiMenuUnfold3Fill style={{ fontSize: "2rem" }} />
+                            <RiMenuUnfold3Fill style={{ fontSize: '2rem' }} />
                         ) : (
-                            <RiMenuUnfold4Fill style={{ fontSize: "2rem" }} />
-                        ) }
+                            <RiMenuUnfold4Fill style={{ fontSize: '2rem' }} />
+                        )}
                     </span>
 
                     <div className="relative">
