@@ -18,7 +18,7 @@ const Navbar = (): JSX.Element => {
             <div className="flex-1">
                 <nav className="bg-green-700 p-4 flex items-center">
                     <span
-                        className="mr-5 text-black hover:scale-110 cursor-pointer transition-all"
+                        className="mr-5 text-white hover:scale-110 cursor-pointer transition-all"
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                     >
                         {isSidebarOpen ? (
