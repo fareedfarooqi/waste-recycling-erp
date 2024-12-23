@@ -1,10 +1,8 @@
+'use client';
+
 import React from 'react';
 import './globals.css';
-
-export const metadata = {
-    title: 'ERP System',
-    description: 'Efficiently manage waste and recycling processes.',
-};
+import { SidebarProvider } from '@/context/SidebarContext';
 
 export default function RootLayout({
     children,
@@ -13,7 +11,9 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en">
-            <body>{children}</body>
+            <body>
+                <SidebarProvider>{children}</SidebarProvider>
+            </body>
         </html>
     );
 }
