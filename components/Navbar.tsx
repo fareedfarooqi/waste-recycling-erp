@@ -1,44 +1,27 @@
 'use client';
 import React from 'react';
 import { GoSearch } from 'react-icons/go';
-import { RiMenuUnfold3Fill, RiMenuUnfold4Fill } from 'react-icons/ri';
 import { useSidebar } from '@/context/SidebarContext';
-import Sidebar from './Sidebar';
 
 const Navbar = (): JSX.Element => {
-    const { isSidebarOpen, toggleSidebar } = useSidebar();
+    const { isSidebarOpen } = useSidebar();
 
     return (
         <div
-            className={`flex ${isSidebarOpen ? 'ml-64' : ''} transition-all duration-100`}
+            className={`flex ${isSidebarOpen ? 'ml-16' : 'ml-16'} transition-all duration-100`}
         >
-            {isSidebarOpen && (
-                <div className="fixed top-0 left-0 h-screen w-64 bg-green-700 shadow-lg z-10">
-                    <Sidebar />
-                </div>
-            )}
-
             <div className="flex-1">
-                <nav className="bg-green-700 p-4 flex items-center">
-                    <span
-                        className="mr-5 text-white hover:scale-110 cursor-pointer transition-all"
-                        onClick={toggleSidebar}
-                    >
-                        {isSidebarOpen ? (
-                            <RiMenuUnfold3Fill style={{ fontSize: '2rem' }} />
-                        ) : (
-                            <RiMenuUnfold4Fill style={{ fontSize: '2rem' }} />
-                        )}
-                    </span>
+                <nav className="bg-white p-4 flex items-center">
+                    <span className="mr-5 text-white hover:scale-110 cursor-pointer transition-all"></span>
 
                     <div className="relative">
-                        <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                        <span className="absolute inset-y-0 pt-4 left-3 flex items-center text-gray-400">
                             <GoSearch />
                         </span>
                         <input
                             type="text"
                             placeholder="Search for Customer"
-                            className="pl-10 pr-4 py-2 border rounded-lg w-96 focus:outline-none focus:ring focus:ring-green-500"
+                            className="pl-10 pr-4 py-2 mt-4 border rounded-lg w-96 focus:outline-none focus:ring focus:ring-green-500"
                         />
                     </div>
                 </nav>

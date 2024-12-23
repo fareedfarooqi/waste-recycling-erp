@@ -62,9 +62,9 @@ const ClientsTable = (): JSX.Element => {
 
     return (
         <div
-            className={`flex justify-center py-8 transition-all duration-100 ${isSidebarOpen ? 'ml-64' : ''}`}
+            className={`flex justify-center py-8 transition-all duration-100 ${isSidebarOpen ? '' : ''}`}
         >
-            <div className="w-4/5 overflow-x-auto border rounded-lg shadow-lg">
+            <div className="w-11/12 overflow-x-auto border rounded-lg shadow-lg">
                 <table className="min-w-full border-collapse">
                     <thead className="bg-green-600 text-white text-center">
                         <tr>
