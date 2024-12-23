@@ -1,10 +1,8 @@
-import React from 'react';
-import './globals.css';
+'use client';
 
-export const metadata = {
-    title: 'ERP System',
-    description: 'Efficiently manage waste and recycling processes.',
-};
+import './globals.css';
+import React from 'react';
+import { SidebarProvider } from '@/context/SidebarContext';
 
 export default function RootLayout({
     children,
@@ -13,7 +11,9 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en">
-            <body>{children}</body>
+            <body>
+                <SidebarProvider>{children}</SidebarProvider>
+            </body>
         </html>
     );
 }

@@ -1,12 +1,12 @@
 'use client';
 import React from 'react';
-import { useState } from 'react';
 import { GoSearch } from 'react-icons/go';
 import { RiMenuUnfold3Fill, RiMenuUnfold4Fill } from 'react-icons/ri';
+import { useSidebar } from '@/context/SidebarContext';
 import Sidebar from './Sidebar';
 
 const Navbar = (): JSX.Element => {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const { isSidebarOpen, toggleSidebar } = useSidebar();
 
     return (
         <div
@@ -22,7 +22,7 @@ const Navbar = (): JSX.Element => {
                 <nav className="bg-green-700 p-4 flex items-center">
                     <span
                         className="mr-5 text-white hover:scale-110 cursor-pointer transition-all"
-                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        onClick={toggleSidebar}
                     >
                         {isSidebarOpen ? (
                             <RiMenuUnfold3Fill style={{ fontSize: '2rem' }} />
@@ -42,10 +42,6 @@ const Navbar = (): JSX.Element => {
                         />
                     </div>
                 </nav>
-
-                <div className="p-4">
-                    <h1>Main Content Goes Here</h1>
-                </div>
             </div>
         </div>
     );
