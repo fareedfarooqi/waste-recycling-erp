@@ -127,36 +127,3 @@ export default function AddProductPage() {
         </div>
     );
 }
-
-//   {/* Sidebar (Logo and Menu) */}
-//   <div className="w-64 bg-green-700 text-white p-6 flex flex-col space-y-6">
-//     {/* Logo */}
-//     <div className="text-2xl font-bold mb-12">LOGO</div>
-
-//     {/* Main Menu */}
-//     <div className="space-y-4">
-//         <div className="font-bold text-xl">Main Menu</div>
-
-//         <div className="space-y-3 text-lg">
-//         <div className="flex items-center space-x-3 text-gray-300 hover:bg-green-600 p-2 rounded-lg cursor-pointer transform transition-all duration-200 hover:scale-105 active:scale-95">
-//             <FaUsers />
-//             <div>Customers</div>
-//         </div>
-//         <div className="flex items-center space-x-3 text-gray-300 hover:bg-green-600 p-2 rounded-lg cursor-pointer transform transition-all duration-200 hover:scale-105 active:scale-95">
-//             <FaBox />
-//             <div>Inventory</div>
-//         </div>
-//         <div className="flex items-center space-x-3 text-gray-300 hover:bg-green-600 p-2 rounded-lg cursor-pointer transform transition-all duration-200 hover:scale-105 active:scale-95">
-//             <FaCalendarAlt />
-//             <div>Schedule Pickup</div>
-//         </div>
-//         <div className="flex items-center space-x-3 text-gray-300 hover:bg-green-600 p-2 rounded-lg cursor-pointer transform transition-all duration-200 hover:scale-105 active:scale-95">
-//             <FaQuestion />
-//             <div>Requests</div>
-//         </div>
-//         <div className="flex items-center space-x-3 text-gray-300 hover:bg-green-600 p-2 rounded-lg cursor-pointer transform transition-all duration-200 hover:scale-105 active:scale-95">
-//             <FaBox />
-//             <div>Containers</div>
-//         </div>
-//         </div>
-//     </div>
