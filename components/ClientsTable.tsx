@@ -57,12 +57,8 @@ const ClientsTable = (): JSX.Element => {
     const handleSave = async (updatedClient: Partial<Client>) => {
         const payload = {
             ...updatedClient,
-            contact_details: updatedClient.contact_details
-                ? JSON.stringify(updatedClient.contact_details)
-                : null,
-            locations: updatedClient.locations
-                ? JSON.stringify(updatedClient.locations)
-                : null,
+            contact_details: updatedClient.contact_details || {},
+            locations: updatedClient.locations || [],
         };
 
         console.log('Payload being sent to Supabase:', payload);
@@ -93,13 +89,27 @@ const ClientsTable = (): JSX.Element => {
     const fetchClients = async () => {
         setLoading(true);
 
-        const { data, error } = await supabase.from('customers').select('*'); // This will need to be updated with the user's id once auth is set up.
+        const { data, error } = await supabase.from('customers').select('*');
 
         if (error) {
-            console.error('Error fetching customer: ', error.message);
+            console.error('Error fetching customers:', error.message);
             alert(error);
         } else {
-            setClients(data as Client[]);
+            setClients(
+                data.map((client) => ({
+                    ...client,
+                    contact_details: client.contact_details
+                        ? typeof client.contact_details === 'string'
+                            ? JSON.parse(client.contact_details)
+                            : client.contact_details
+                        : { email: '', phone: '', address: '' },
+                    locations: client.locations
+                        ? typeof client.locations === 'string'
+                            ? JSON.parse(client.locations)
+                            : client.locations
+                        : [],
+                }))
+            );
         }
         setLoading(false);
     };
@@ -159,10 +169,12 @@ const ClientsTable = (): JSX.Element => {
                                     {client.locations.length}
                                 </td>
                                 <td className="px-6 py-8 border-b">
-                                    {client.locations.reduce(
+                                    {(client.locations || []).reduce(
                                         (total, location) =>
                                             total +
-                                            Number(location.initial_empty_bins),
+                                            Number(
+                                                location.initial_empty_bins || 0
+                                            ),
                                         0
                                     )}
                                 </td>
