@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { FaTrashAlt, FaEye, FaEdit } from 'react-icons/fa';
 import { supabase } from '@/config/supabaseClient';
 import ClientViewModal from './ClientViewModal';
+import ClientEditModal from './ClientEditModal';
 import { useSidebar } from '@/context/SidebarContext';
 
 type Client = {
@@ -26,6 +27,10 @@ const ClientsTable = (): JSX.Element => {
         useState<boolean>(false);
     const [customerToViewClientDetails, setCustomerToViewClientDetails] =
         useState<Partial<Client>>({});
+    const [isEditingClientDetails, setIsEditingClientDetails] =
+        useState<boolean>(false);
+    const [customerToEditClientDetails, setCustomerToEditClientDetails] =
+        useState<Partial<Client>>({});
 
     const openViewModal = (clientId: string) => {
         const client = clients.find((client) => client.id === clientId);
@@ -36,6 +41,53 @@ const ClientsTable = (): JSX.Element => {
     const closeViewModal = () => {
         setIsViewingClientDetails(false);
         setCustomerToViewClientDetails({});
+    };
+
+    const openEditModal = (clientId: string) => {
+        const client = clients.find((client) => client.id === clientId);
+        setIsEditingClientDetails(true);
+        setCustomerToEditClientDetails(client as Client);
+    };
+
+    const closeEditModal = () => {
+        setIsEditingClientDetails(false);
+        setCustomerToEditClientDetails({});
+    };
+
+    const handleSave = async (updatedClient: Partial<Client>) => {
+        const payload = {
+            ...updatedClient,
+            contact_details: updatedClient.contact_details
+                ? JSON.stringify(updatedClient.contact_details)
+                : null,
+            locations: updatedClient.locations
+                ? JSON.stringify(updatedClient.locations)
+                : null,
+        };
+
+        console.log('Payload being sent to Supabase:', payload);
+
+        const { error } = await supabase
+            .from('customers')
+            .update(payload)
+            .eq('id', updatedClient.id);
+
+        if (error) {
+            console.error('Error occurred:', error);
+            alert('An error occurred whilst updating your customer');
+        } else {
+            alert('Successfully updated details of the client.');
+
+            setClients((prevClients) =>
+                prevClients.map((client) =>
+                    client.id === updatedClient.id
+                        ? { ...client, ...updatedClient }
+                        : client
+                )
+            );
+
+            closeEditModal();
+        }
     };
 
     const fetchClients = async () => {
@@ -62,25 +114,27 @@ const ClientsTable = (): JSX.Element => {
 
     return (
         <div
-            className={`flex justify-center py-8 transition-all duration-100 ${isSidebarOpen ? '' : ''}`}
+            className={`flex justify-center py-8 transition-all duration-100 ${
+                isSidebarOpen ? '' : ''
+            }`}
         >
-            <div className="w-11/12 overflow-x-auto border rounded-lg shadow-lg">
+            <div className="w-11/12 overflow-auto border rounded-lg shadow-lg max-h-[80vh]">
                 <table className="min-w-full border-collapse">
                     <thead className="bg-green-600 text-white text-center">
                         <tr>
-                            <th className="font-extrabold px-6 py-8">
+                            <th className="font-extrabold px-6 py-8 sticky top-0 bg-green-600 z-10">
                                 Company Name
                             </th>
-                            <th className="font-extrabold px-6 py-8">
+                            <th className="font-extrabold px-6 py-8 sticky top-0 bg-green-600 z-10">
                                 Company Details
                             </th>
-                            <th className="font-extrabold px-6 py-8">
+                            <th className="font-extrabold px-6 py-8 sticky top-0 bg-green-600 z-10">
                                 Locations
                             </th>
-                            <th className="font-extrabold px-6 py-8">
+                            <th className="font-extrabold px-6 py-8 sticky top-0 bg-green-600 z-10">
                                 Total Empty Bins
                             </th>
-                            <th className="font-extrabold px-6 py-8">
+                            <th className="font-extrabold px-6 py-8 sticky top-0 bg-green-600 z-10">
                                 Actions
                             </th>
                         </tr>
@@ -123,6 +177,9 @@ const ClientsTable = (): JSX.Element => {
                                         />
                                         <FaEdit
                                             className="text-gray-500 cursor-pointer hover:text-green-500"
+                                            onClick={() =>
+                                                openEditModal(client.id)
+                                            }
                                             size={18}
                                         />
                                         <FaTrashAlt
@@ -140,6 +197,12 @@ const ClientsTable = (): JSX.Element => {
                 isOpen={isViewingClientDetails}
                 client={customerToViewClientDetails}
                 onClose={closeViewModal}
+            />
+            <ClientEditModal
+                isOpen={isEditingClientDetails}
+                client={customerToEditClientDetails}
+                onClose={closeEditModal}
+                onSave={handleSave}
             />
         </div>
     );

@@ -48,7 +48,7 @@ const ClientViewModal: React.FC<ClientModalProps> = ({
                         {client.company_name || 'N/A'}
                     </p>
                     <p>
-                        <strong>Phone No: </strong>
+                        <strong>Phone Number: </strong>
                         {client.contact_details?.phone || 'N/A'}
                     </p>
                     <p>
