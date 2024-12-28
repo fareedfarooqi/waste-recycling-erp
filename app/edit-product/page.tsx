@@ -1,86 +1,111 @@
-import React from 'react';
-import {
-    FaSearch,
-    FaPencilAlt,
-    FaCog,
-    FaQuestion,
-    FaBox,
-    FaCalendarAlt,
-    FaUsers,
-} from 'react-icons/fa';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import SidebarSmall from '@/components/SidebarSmall';
+import Sidebar from '@/components/Sidebar';
+import { useSidebar } from '@/context/SidebarContext';
+import Navbar from '@/components/Navbar';
+import FormField from '@/components/FormField';
+import Button from '@/components/Button';
+import { FaPencilAlt } from 'react-icons/fa';
+import { createClient } from '@/utils/supabase/client';
 
 export default function EditProductPage() {
+    const { isSidebarOpen } = useSidebar();
+
+    const [formValues, setFormValues] = useState({
+        product_name: '',
+        quantity: '',
+        product_description: '',
+        reserved_location: '',
+    });
+
+    const [initialValues, setInitialValues] = useState({
+        product_name: '',
+        quantity: '',
+        product_description: '',
+        reserved_location: '',
+    });
+
+    const productId = '523e4567-e89b-12d3-a456-426614174004'; // Replace with dynamic product ID
+
+    // Fetch product data from Supabase by product id
+    useEffect(() => {
+        const fetchProduct = async () => {
+            const supabase = createClient();
+            const { data, error } = await supabase
+                .from('products')
+                .select('*')
+                .eq('id', productId)
+                .single(); // Fetch a single record
+
+            if (data) {
+                setFormValues({
+                    product_name: data.product_name,
+                    quantity: data.quantity,
+                    product_description: data.product_description,
+                    reserved_location: data.reserved_location,
+                });
+                setInitialValues({
+                    product_name: data.product_name,
+                    quantity: data.quantity,
+                    product_description: data.product_description,
+                    reserved_location: data.reserved_location,
+                });
+            }
+
+            if (error) {
+                console.error('Error fetching product:', error);
+            }
+        };
+
+        fetchProduct();
+    }, [productId]);
+
+    const isFormValid = () =>
+        formValues.product_name.trim() !== '' &&
+        formValues.quantity !== '' &&
+        !isNaN(Number(formValues.quantity));
+
+    const handleInputChange = (field: string, value: string) => {
+        setFormValues((prev) => ({ ...prev, [field]: value }));
+    };
+
+    const handleSave = async () => {
+        // Check if the form values have changed compared to initial values
+        if (JSON.stringify(formValues) !== JSON.stringify(initialValues)) {
+            console.log('Saving product:', formValues);
+            const supabase = createClient();
+            const { error } = await supabase
+                .from('products')
+                .update({
+                    product_name: formValues.product_name,
+                    quantity: formValues.quantity,
+                    product_description: formValues.product_description,
+                    reserved_location: formValues.reserved_location,
+                })
+                .eq('id', productId); // Update the product by ID
+
+            if (error) {
+                console.error('Error saving product:', error);
+            } else {
+                console.log('Product saved successfully');
+            }
+        } else {
+            console.log('No changes made');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-green-50 text-gray-800 flex">
-            {/* Sidebar (Logo and Menu) */}
-            <div className="w-64 bg-green-700 text-white p-6 flex flex-col space-y-6">
-                {/* Logo */}
-                <div className="text-2xl font-bold mb-12">LOGO</div>
+            {isSidebarOpen ? <Sidebar /> : <SidebarSmall />}
 
-                {/* Main Menu */}
-                <div className="space-y-4">
-                    <div className="font-bold text-xl">Main Menu</div>
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col">
+                {/* Navbar */}
+                <Navbar />
 
-                    <div className="space-y-3 text-lg">
-                        <div className="flex items-center space-x-3 text-gray-300 hover:bg-green-600 p-2 rounded-lg cursor-pointer transform transition-all duration-200 hover:scale-105 active:scale-95">
-                            <FaUsers />
-                            <div>Customers</div>
-                        </div>
-                        <div className="flex items-center space-x-3 text-gray-300 hover:bg-green-600 p-2 rounded-lg cursor-pointer transform transition-all duration-200 hover:scale-105 active:scale-95">
-                            <FaBox />
-                            <div>Inventory</div>
-                        </div>
-                        <div className="flex items-center space-x-3 text-gray-300 hover:bg-green-600 p-2 rounded-lg cursor-pointer transform transition-all duration-200 hover:scale-105 active:scale-95">
-                            <FaCalendarAlt />
-                            <div>Schedule Pickup</div>
-                        </div>
-                        <div className="flex items-center space-x-3 text-gray-300 hover:bg-green-600 p-2 rounded-lg cursor-pointer transform transition-all duration-200 hover:scale-105 active:scale-95">
-                            <FaQuestion />
-                            <div>Requests</div>
-                        </div>
-                        <div className="flex items-center space-x-3 text-gray-300 hover:bg-green-600 p-2 rounded-lg cursor-pointer transform transition-all duration-200 hover:scale-105 active:scale-95">
-                            <FaBox />
-                            <div>Containers</div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Help/Settings */}
-                <div className="space-y-3 mt-auto">
-                    <div className="font-bold text-xl">Help/Settings</div>
-                    <div className="flex items-center space-x-3 text-gray-300 hover:bg-green-600 p-2 rounded-lg cursor-pointer transform transition-all duration-200 hover:scale-105 active:scale-95">
-                        <FaCog />
-                        <div className="font-bold">Settings</div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Main Content Area (Top Right with Search and Profile, Bottom Right with Edit Product) */}
-            <div className="flex-1 p-12 flex flex-col">
-                {/* Top Bar (Search and Profile) */}
-                <div className="flex justify-between items-center mb-12">
-                    {/* Search Bar */}
-                    <div className="flex items-center bg-white border border-gray-300 rounded-lg p-4 w-1/2">
-                        <FaSearch className="text-gray-400 mr-3" />
-                        <input
-                            type="text"
-                            className="w-full bg-transparent text-gray-800 focus:outline-none"
-                            placeholder="Search anything here"
-                        />
-                    </div>
-
-                    {/* Profile Section */}
-                    <div className="flex items-center space-x-4 text-lg font-bold text-gray-800">
-                        <img
-                            src="https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y"
-                            alt="Profile"
-                            className="w-12 h-12 rounded-full border border-gray-300"
-                        />
-                        <div>NAME</div>
-                    </div>
-                </div>
-
-                {/* Edit Product Form (Bottom Right) */}
+                {/* Edit Product Form */}
                 <div className="flex-grow bg-green-50 p-12">
                     <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg border border-gray-200">
                         {/* Header */}
@@ -90,80 +115,81 @@ export default function EditProductPage() {
                                 Edit Product
                             </h1>
                             <p className="text-lg font-light text-green-600">
-                                Edit new products
+                                Edit existing products
                             </p>
                         </div>
 
                         {/* Form */}
                         <form>
-                            {/* Name Field */}
-                            <div className="mb-8">
-                                <label className="block text-lg font-medium text-gray-700">
-                                    Name <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    className="w-full p-4 mt-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
-                                    placeholder="What's currently there"
-                                    required
-                                />
-                            </div>
+                            <FormField
+                                label="Name"
+                                type="text"
+                                placeholder="Enter product name"
+                                required
+                                value={formValues.product_name}
+                                onChange={(e) =>
+                                    handleInputChange(
+                                        'product_name',
+                                        e.target.value
+                                    )
+                                }
+                            />
+                            <FormField
+                                label="Quantity"
+                                type="number"
+                                placeholder="Enter quantity"
+                                required
+                                value={formValues.quantity}
+                                onChange={(e) =>
+                                    handleInputChange(
+                                        'quantity',
+                                        e.target.value
+                                    )
+                                }
+                            />
+                            <FormField
+                                label="Description"
+                                type="textarea"
+                                placeholder="Enter product description"
+                                value={formValues.product_description || ''}
+                                onChange={(e) =>
+                                    handleInputChange(
+                                        'product_description',
+                                        e.target.value
+                                    )
+                                }
+                            />
 
-                            {/* Quantity Field */}
-                            <div className="mb-8">
-                                <label className="block text-lg font-medium text-gray-700">
-                                    Quantity{' '}
-                                    <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    className="w-full p-4 mt-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
-                                    placeholder="What's currently there"
-                                    min="1"
-                                    required
-                                />
-                            </div>
-
-                            {/* Description Field */}
-                            <div className="mb-8">
-                                <label className="block text-lg font-medium text-gray-700">
-                                    Description{' '}
-                                    <span className="text-red-500">*</span>
-                                </label>
-                                <textarea
-                                    className="w-full p-4 mt-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
-                                    rows={5}
-                                    placeholder="What's currently there"
-                                    required
-                                />
-                            </div>
-
-                            {/* Reserved Location Field */}
-                            <div className="mb-8">
-                                <label className="block text-lg font-medium text-gray-700">
-                                    Reserved Location
-                                </label>
-                                <input
-                                    type="text"
-                                    className="w-full p-4 mt-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
-                                    placeholder="What's currently there"
-                                />
-                            </div>
-
-                            {/* Buttons */}
+                            <FormField
+                                label="Reserved Location"
+                                type="text"
+                                placeholder="Enter reserved location"
+                                value={formValues.reserved_location || ''}
+                                onChange={(e) =>
+                                    handleInputChange(
+                                        'reserved_location',
+                                        e.target.value
+                                    )
+                                }
+                            />
                             <div className="flex justify-between mt-8">
-                                <button
-                                    type="button"
-                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 p-4 rounded-lg w-36 transform transition-all duration-200 hover:scale-105 active:scale-95"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-lg w-36 transform transition-all duration-200 hover:scale-105 active:scale-95"
-                                >
-                                    Save Product
-                                </button>
+                                <Button
+                                    label="Cancel"
+                                    variant="secondary"
+                                    onClick={() =>
+                                        console.log('Cancel clicked')
+                                    }
+                                />
+                                <Button
+                                    label="Save Product"
+                                    variant="primary"
+                                    onClick={handleSave}
+                                    disabled={
+                                        !isFormValid() ||
+                                        JSON.stringify(formValues) ===
+                                            JSON.stringify(initialValues)
+                                    }
+                                />
                             </div>
                         </form>
                     </div>
