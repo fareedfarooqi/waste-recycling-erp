@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { RxCross2 } from 'react-icons/rx';
 
 type Location = {
     location_name: string;
@@ -66,24 +67,26 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
 
     const handleSave = () => {
         onSave(editedClient);
-        alert('Changes Saved Successfully!');
     };
 
     return (
-        <div
-            className="fixed inset-0 bg-gray-700 bg-opacity-50 z-50 flex justify-center items-center"
-            onClick={onClose}
-        >
+        <div className="fixed inset-0 bg-gray-700 bg-opacity-50 z-50 flex justify-center items-center">
             <div
-                className="bg-white w-[90%] max-w-2xl rounded-md border-[0.35rem] border-gray-300 p-8 font-sans shadow-lg relative max-h-[95vh] overflow-y-auto"
+                className="bg-white w-[90%] max-w-2xl rounded-md border-[0.35rem] border-gray-300 font-sans shadow-lg relative max-h-[95vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex flex-col items-center">
-                    <h1 className="font-extrabold text-2xl mb-6 text-center">
+                <div className="sticky top-0 bg-white z-10 w-full p-4 border-b border-gray-300">
+                    <h1 className="font-extrabold text-2xl text-center">
                         Edit Client Details
                     </h1>
+                    <RxCross2
+                        className="absolute top-4 right-4 text-2xl font-extrabold cursor-pointer text-gray-800 hover:text-red-600 transform transition-transform duration-300 hover:scale-125"
+                        onClick={onClose}
+                    />
+                </div>
 
-                    <label className="block text-lg font-semibold text-gray-700 mb-2 w-full text-left">
+                <div className="p-6">
+                    <label className="block text-lg font-semibold text-gray-700 w-full text-left mb-2">
                         Company Name:
                     </label>
                     <input
@@ -124,12 +127,12 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                         name="contact_details.address"
                         value={editedClient.contact_details?.address || ''}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2 mb-6 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
                     />
 
                     <div className="w-full mt-6">
                         <h2 className="block text-lg font-semibold text-gray-700 mb-2 w-full text-left">
-                            Locations
+                            Locations:
                         </h2>
                         <div className="space-y-4">
                             {editedClient.locations?.map((location, index) => (
