@@ -6,6 +6,7 @@ import { FaTrashAlt, FaEye, FaEdit } from 'react-icons/fa';
 import { supabase } from '@/config/supabaseClient';
 import ClientViewModal from './ClientViewModal';
 import ClientEditModal from './ClientEditModal';
+import ClientDeleteModal from './ClientDeleteModal';
 import { useSidebar } from '@/context/SidebarContext';
 
 type Client = {
@@ -31,6 +32,11 @@ const ClientsTable = (): JSX.Element => {
         useState<boolean>(false);
     const [customerToEditClientDetails, setCustomerToEditClientDetails] =
         useState<Partial<Client>>({});
+    const [isDeletingClientDetials, setIsDeletingClientDetials] =
+        useState<boolean>(false);
+    const [customerToDelete, setCustomerToDelete] = useState<Partial<Client>>(
+        {}
+    );
 
     const openViewModal = (clientId: string) => {
         const client = clients.find((client) => client.id === clientId);
@@ -52,6 +58,17 @@ const ClientsTable = (): JSX.Element => {
     const closeEditModal = () => {
         setIsEditingClientDetails(false);
         setCustomerToEditClientDetails({});
+    };
+
+    const openDeleteModal = (clientId: string) => {
+        const client = clients.find((client) => client.id === clientId);
+        setIsDeletingClientDetials(true);
+        setCustomerToDelete(client as Client);
+    };
+
+    const closeDeleteModal = () => {
+        setIsDeletingClientDetials(false);
+        setCustomerToDelete({});
     };
 
     const handleSave = async (updatedClient: Partial<Client>) => {
@@ -84,6 +101,28 @@ const ClientsTable = (): JSX.Element => {
 
             closeEditModal();
         }
+    };
+
+    const handleDelete = async (clientToRemove: Partial<Client>) => {
+        const { data, error } = await supabase
+            .from('customers')
+            .delete()
+            .eq('id', clientToRemove.id);
+
+        if (error) {
+            console.error('An ERROR has occurred: ', error);
+            alert(
+                'An ERROR occurred whilst attempting to delete the customer.'
+            );
+        } else {
+            alert('Successfully deleted the customer.');
+        }
+
+        setClients((prevClients) =>
+            prevClients.filter((client) => client.id !== clientToRemove.id)
+        );
+
+        closeDeleteModal();
     };
 
     const fetchClients = async () => {
@@ -196,6 +235,9 @@ const ClientsTable = (): JSX.Element => {
                                         />
                                         <FaTrashAlt
                                             className="text-gray-500 cursor-pointer hover:text-red-500"
+                                            onClick={() =>
+                                                openDeleteModal(client.id)
+                                            }
                                             size={18}
                                         />
                                     </div>
@@ -215,6 +257,12 @@ const ClientsTable = (): JSX.Element => {
                 client={customerToEditClientDetails}
                 onClose={closeEditModal}
                 onSave={handleSave}
+            />
+            <ClientDeleteModal
+                isOpen={isDeletingClientDetials}
+                client={customerToDelete}
+                onClose={closeDeleteModal}
+                onDelete={handleDelete}
             />
         </div>
     );
