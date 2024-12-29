@@ -1,10 +1,21 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import { GoSearch } from 'react-icons/go';
 import { useSidebar } from '@/context/SidebarContext';
 
-const Navbar = (): JSX.Element => {
+type NavbarProps = {
+    fetchClients: (searchQuery: string) => void;
+};
+
+const Navbar: React.FC<NavbarProps> = ({ fetchClients }): JSX.Element => {
     const { isSidebarOpen } = useSidebar();
+    const [searchQuery, setSearchQuery] = useState<string>('');
+
+    const searchHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const query = e.target.value.trim();
+        setSearchQuery(query);
+        fetchClients(query);
+    };
 
     return (
         <div
@@ -19,9 +30,11 @@ const Navbar = (): JSX.Element => {
                             <GoSearch />
                         </span>
                         <input
-                            type="text"
+                            type="search"
+                            name="search"
                             placeholder="Search for Customer"
                             className="pl-10 pr-4 py-2 mt-4 border rounded-lg w-96 focus:outline-none focus:ring focus:ring-green-500"
+                            onChange={searchHandler}
                         />
                     </div>
                 </nav>

@@ -1,29 +1,47 @@
 'use client';
 
-import React from 'react';
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FaTrashAlt, FaEye, FaEdit } from 'react-icons/fa';
-import { supabase } from '@/config/supabaseClient';
 import ClientViewModal from './ClientViewModal';
 import ClientEditModal from './ClientEditModal';
 import ClientDeleteModal from './ClientDeleteModal';
 import { useSidebar } from '@/context/SidebarContext';
 
+type Location = {
+    location_name: string;
+    address: string;
+    initial_empty_bins: string;
+};
+
+type ContactDetails = {
+    email: string;
+    phone: string;
+    address: string;
+};
+
 type Client = {
     id: string;
     company_name: string;
-    contact_details: { email: string; phone: string; address: string };
-    locations: {
-        location_name: string;
-        address: string;
-        initial_empty_bins: string;
-    }[];
+    contact_details: ContactDetails;
+    locations: Location[];
 };
 
-const ClientsTable = (): JSX.Element => {
+type ClientsTableProps = {
+    clients: Client[];
+    loading: boolean;
+    fetchClients: (searchQuery: string) => Promise<void>;
+    handleDelete: (clientToRemove: Partial<Client>) => Promise<void>;
+    handleSave: (updatedClient: Partial<Client>) => Promise<void>;
+};
+
+const ClientsTable: React.FC<ClientsTableProps> = ({
+    clients = [],
+    loading,
+    fetchClients,
+    handleDelete,
+    handleSave,
+}): JSX.Element => {
     const { isSidebarOpen } = useSidebar();
-    const [clients, setClients] = useState<Client[]>([]);
-    const [loading, setLoading] = useState<boolean>(false);
     const [isViewingClientDetails, setIsViewingClientDetails] =
         useState<boolean>(false);
     const [customerToViewClientDetails, setCustomerToViewClientDetails] =
@@ -32,7 +50,7 @@ const ClientsTable = (): JSX.Element => {
         useState<boolean>(false);
     const [customerToEditClientDetails, setCustomerToEditClientDetails] =
         useState<Partial<Client>>({});
-    const [isDeletingClientDetials, setIsDeletingClientDetials] =
+    const [isDeletingClientDetails, setIsDeletingClientDetails] =
         useState<boolean>(false);
     const [customerToDelete, setCustomerToDelete] = useState<Partial<Client>>(
         {}
@@ -40,8 +58,10 @@ const ClientsTable = (): JSX.Element => {
 
     const openViewModal = (clientId: string) => {
         const client = clients.find((client) => client.id === clientId);
-        setIsViewingClientDetails(true);
-        setCustomerToViewClientDetails(client as Client);
+        if (client) {
+            setIsViewingClientDetails(true);
+            setCustomerToViewClientDetails(client);
+        }
     };
 
     const closeViewModal = () => {
@@ -51,8 +71,10 @@ const ClientsTable = (): JSX.Element => {
 
     const openEditModal = (clientId: string) => {
         const client = clients.find((client) => client.id === clientId);
-        setIsEditingClientDetails(true);
-        setCustomerToEditClientDetails(client as Client);
+        if (client) {
+            setIsEditingClientDetails(true);
+            setCustomerToEditClientDetails(client);
+        }
     };
 
     const closeEditModal = () => {
@@ -62,104 +84,34 @@ const ClientsTable = (): JSX.Element => {
 
     const openDeleteModal = (clientId: string) => {
         const client = clients.find((client) => client.id === clientId);
-        setIsDeletingClientDetials(true);
-        setCustomerToDelete(client as Client);
+        if (client) {
+            setIsDeletingClientDetails(true);
+            setCustomerToDelete(client);
+        }
     };
 
     const closeDeleteModal = () => {
-        setIsDeletingClientDetials(false);
+        setIsDeletingClientDetails(false);
         setCustomerToDelete({});
     };
 
-    const handleSave = async (updatedClient: Partial<Client>) => {
-        const payload = {
-            ...updatedClient,
-            contact_details: updatedClient.contact_details || {},
-            locations: updatedClient.locations || [],
-        };
-
-        console.log('Payload being sent to Supabase:', payload);
-
-        const { error } = await supabase
-            .from('customers')
-            .update(payload)
-            .eq('id', updatedClient.id);
-
-        if (error) {
-            console.error('Error occurred:', error);
-            alert('An error occurred whilst updating your customer');
-        } else {
-            alert('Successfully updated details of the client.');
-
-            setClients((prevClients) =>
-                prevClients.map((client) =>
-                    client.id === updatedClient.id
-                        ? { ...client, ...updatedClient }
-                        : client
-                )
-            );
-
+    const handleSaveClient = async (updatedClient: Partial<Client>) => {
+        try {
+            await handleSave(updatedClient);
             closeEditModal();
+        } catch (error) {
+            console.error('Save operation failed:', error);
         }
     };
 
-    const handleDelete = async (clientToRemove: Partial<Client>) => {
-        const { data, error } = await supabase
-            .from('customers')
-            .delete()
-            .eq('id', clientToRemove.id);
-
-        if (error) {
-            console.error('An ERROR has occurred: ', error);
-            alert(
-                'An ERROR occurred whilst attempting to delete the customer.'
-            );
-        } else {
-            alert('Successfully deleted the customer.');
+    const handleDeleteClient = async (clientToRemove: Partial<Client>) => {
+        try {
+            await handleDelete(clientToRemove);
+            closeDeleteModal();
+        } catch (error) {
+            console.error('Delete operation failed:', error);
         }
-
-        setClients((prevClients) =>
-            prevClients.filter((client) => client.id !== clientToRemove.id)
-        );
-
-        closeDeleteModal();
     };
-
-    const fetchClients = async () => {
-        setLoading(true);
-
-        const { data, error } = await supabase.from('customers').select('*');
-
-        if (error) {
-            console.error('Error fetching customers:', error.message);
-            alert(error);
-        } else {
-            setClients(
-                data.map((client) => ({
-                    ...client,
-                    contact_details: client.contact_details
-                        ? typeof client.contact_details === 'string'
-                            ? JSON.parse(client.contact_details)
-                            : client.contact_details
-                        : { email: '', phone: '', address: '' },
-                    locations: client.locations
-                        ? typeof client.locations === 'string'
-                            ? JSON.parse(client.locations)
-                            : client.locations
-                        : [],
-                }))
-            );
-        }
-        setLoading(false);
-    };
-
-    useEffect(() => {
-        fetchClients();
-    }, []);
-
-    if (loading) {
-        <div className="text-center py-8">Loading...</div>;
-    }
 
     return (
         <div
@@ -256,13 +208,13 @@ const ClientsTable = (): JSX.Element => {
                 isOpen={isEditingClientDetails}
                 client={customerToEditClientDetails}
                 onClose={closeEditModal}
-                onSave={handleSave}
+                onSave={handleSaveClient}
             />
             <ClientDeleteModal
-                isOpen={isDeletingClientDetials}
+                isOpen={isDeletingClientDetails}
                 client={customerToDelete}
                 onClose={closeDeleteModal}
-                onDelete={handleDelete}
+                onDelete={handleDeleteClient}
             />
         </div>
     );

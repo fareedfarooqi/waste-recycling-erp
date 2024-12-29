@@ -1,8 +1,7 @@
 'use client';
 
 import React from 'react';
-import Navbar from '@/components/Navbar';
-import ClientsTable from '@/components/ClientsTable';
+import ClientManagement from '@/components/ClientManagement'; // Ensure correct import path
 import SidebarSmall from '@/components/SidebarSmall';
 import Sidebar from '@/components/Sidebar';
 import { useSidebar } from '@/context/SidebarContext';
@@ -15,8 +14,7 @@ function ClientListPage(): JSX.Element {
             {isSidebarOpen ? <Sidebar /> : <SidebarSmall />}
 
             <div className="flex-1">
-                <Navbar />
-                <ClientsTable />
+                <ClientManagement />
             </div>
         </div>
     );
