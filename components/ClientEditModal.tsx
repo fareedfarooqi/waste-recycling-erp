@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { RxCross2 } from 'react-icons/rx';
+import { AiOutlineMinusCircle } from 'react-icons/ai';
 
 type ProductType = {
     product_name: string;
@@ -152,7 +153,7 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                 </div>
 
                 <div className="p-6">
-                    <label className="block text-lg font-semibold text-gray-700 w-full text-left mb-2">
+                    <label className="block text-lg font-semibold text-gray-700 w-full text-left">
                         Company Name:
                     </label>
                     <input
@@ -163,7 +164,7 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                         className="w-full px-4 py-2 mb-6 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
                     />
 
-                    <label className="block text-lg font-semibold text-gray-700 mb-2 w-full text-left">
+                    <label className="block text-lg font-semibold text-gray-700 w-full text-left">
                         Phone Number:
                     </label>
                     <input
@@ -174,7 +175,7 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                         className="w-full px-4 py-2 mb-6 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
                     />
 
-                    <label className="block text-lg font-semibold text-gray-700 mb-2 w-full text-left">
+                    <label className="block text-lg font-semibold text-gray-700 w-full text-left">
                         Email:
                     </label>
                     <input
@@ -185,7 +186,7 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
                     />
 
-                    <label className="block text-lg font-semibold text-gray-700 mb-2 w-full text-left">
+                    <label className="block text-lg font-semibold text-gray-700 w-full text-left mt-5">
                         Address:
                     </label>
                     <input
@@ -253,6 +254,55 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                                             />
                                         </div>
                                         <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                                Address:
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={location.address}
+                                                onChange={(e) => {
+                                                    const newLocations = [
+                                                        ...(editedClient.locations ||
+                                                            []),
+                                                    ];
+                                                    newLocations[
+                                                        index
+                                                    ].address = e.target.value;
+                                                    setEditedClient((prev) => ({
+                                                        ...prev,
+                                                        locations: newLocations,
+                                                    }));
+                                                }}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                                Initial Empty Bins:
+                                            </label>
+                                            <input
+                                                type="number"
+                                                value={
+                                                    location.initial_empty_bins
+                                                }
+                                                onChange={(e) => {
+                                                    const newLocations = [
+                                                        ...(editedClient.locations ||
+                                                            []),
+                                                    ];
+                                                    newLocations[
+                                                        index
+                                                    ].initial_empty_bins =
+                                                        e.target.value;
+                                                    setEditedClient((prev) => ({
+                                                        ...prev,
+                                                        locations: newLocations,
+                                                    }));
+                                                }}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                                            />
+                                        </div>
+                                        <div>
                                             <h4 className="block text-sm font-semibold text-gray-700 mb-1">
                                                 Default Product Types:
                                             </h4>
@@ -260,7 +310,7 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                                                 (product, pIndex) => (
                                                     <div
                                                         key={pIndex}
-                                                        className="flex gap-4 mb-2"
+                                                        className="flex gap-4 mb-2 items-center"
                                                     >
                                                         <input
                                                             type="text"
@@ -277,7 +327,7 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                                                                         .value
                                                                 )
                                                             }
-                                                            className="flex-1 px-2 py-1 border border-gray-300 rounded-lg"
+                                                            className="flex-1 px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
                                                         />
                                                         <input
                                                             type="text"
@@ -294,20 +344,18 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                                                                         .value
                                                                 )
                                                             }
-                                                            className="flex-2 px-2 py-1 border border-gray-300 rounded-lg"
+                                                            className="flex-1 px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
                                                         />
-                                                        <button
-                                                            type="button"
-                                                            className="text-red-500 hover:text-red-700"
+                                                        <AiOutlineMinusCircle
+                                                            className="text-red-500 cursor-pointer hover:text-red-700 transition-transform duration-200"
+                                                            size={24}
                                                             onClick={() =>
                                                                 removeProductType(
                                                                     index,
                                                                     pIndex
                                                                 )
                                                             }
-                                                        >
-                                                            Remove
-                                                        </button>
+                                                        />
                                                     </div>
                                                 )
                                             )}
