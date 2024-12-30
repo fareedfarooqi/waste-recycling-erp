@@ -140,7 +140,7 @@ const CustomerForm: React.FC = () => {
                                 type="text"
                                 value={companyName}
                                 onChange={(e) => setCompanyName(e.target.value)}
-                                className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
                                 placeholder="Enter company name"
                                 required
                             />
@@ -166,7 +166,7 @@ const CustomerForm: React.FC = () => {
                                             email: e.target.value,
                                         }))
                                     }
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
                                     placeholder="Enter email"
                                     required
                                 />
@@ -185,7 +185,7 @@ const CustomerForm: React.FC = () => {
                                             phone: e.target.value,
                                         }))
                                     }
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
                                     placeholder="Enter phone number"
                                     required
                                 />
@@ -203,7 +203,7 @@ const CustomerForm: React.FC = () => {
                                             address: e.target.value,
                                         }))
                                     }
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-3"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
                                     rows={3}
                                     placeholder="Enter address"
                                     required
@@ -244,7 +244,7 @@ const CustomerForm: React.FC = () => {
                                                     )
                                                 )
                                             }
-                                            className="border border-gray-300 rounded-lg px-4 py-3"
+                                            className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
                                             required
                                         />
                                         <input
@@ -265,7 +265,7 @@ const CustomerForm: React.FC = () => {
                                                     )
                                                 )
                                             }
-                                            className="border border-gray-300 rounded-lg px-4 py-3"
+                                            className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
                                             required
                                         />
                                         <input
@@ -286,7 +286,7 @@ const CustomerForm: React.FC = () => {
                                                     )
                                                 )
                                             }
-                                            className="border border-gray-300 rounded-lg px-4 py-3"
+                                            className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
                                             required
                                         />
                                         {locations.length > 1 && (
@@ -351,7 +351,7 @@ const CustomerForm: React.FC = () => {
                                                                     )
                                                             )
                                                         }
-                                                        className="border border-gray-300 rounded-lg px-4 py-3 w-1/3"
+                                                        className="border border-gray-300 rounded-lg px-4 py-3 w-1/3 focus:outline-none focus:ring-2 focus:ring-green-400"
                                                         required
                                                     />
                                                     <textarea
@@ -393,7 +393,7 @@ const CustomerForm: React.FC = () => {
                                                                     )
                                                             )
                                                         }
-                                                        className="border border-gray-300 rounded-lg px-4 py-3 w-full"
+                                                        className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-green-400"
                                                         rows={1}
                                                         required
                                                     />
