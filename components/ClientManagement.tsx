@@ -5,10 +5,16 @@ import Navbar from './Navbar';
 import ClientsTable from './ClientsTable';
 import { supabase } from '@/config/supabaseClient';
 
+type ProductType = {
+    product_name: string;
+    description: string;
+};
+
 type Location = {
     location_name: string;
     address: string;
     initial_empty_bins: string;
+    default_product_types: ProductType[];
 };
 
 type ContactDetails = {

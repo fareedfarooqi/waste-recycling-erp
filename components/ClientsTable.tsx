@@ -7,10 +7,16 @@ import ClientEditModal from './ClientEditModal';
 import ClientDeleteModal from './ClientDeleteModal';
 import { useSidebar } from '@/context/SidebarContext';
 
+type ProductType = {
+    product_name: string;
+    description: string;
+};
+
 type Location = {
     location_name: string;
     address: string;
     initial_empty_bins: string;
+    default_product_types: ProductType[];
 };
 
 type ContactDetails = {
@@ -160,7 +166,7 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                                     {client.locations.length}
                                 </td>
                                 <td className="px-6 py-8 border-b">
-                                    {(client.locations || []).reduce(
+                                    {client.locations.reduce(
                                         (total, location) =>
                                             total +
                                             Number(

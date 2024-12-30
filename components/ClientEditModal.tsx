@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { RxCross2 } from 'react-icons/rx';
+
+type ProductType = {
+    product_name: string;
+    description: string;
+};
 
 type Location = {
     location_name: string;
     address: string;
     initial_empty_bins: string;
+    default_product_types: ProductType[];
 };
 
 type ContactDetails = {
@@ -35,15 +43,19 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
 }) => {
     if (!isOpen) return null;
 
-    const [editedClient, setEditedClient] = useState<Partial<Client>>({
-        ...client,
-        contact_details: {
-            email: client.contact_details?.email || '',
-            phone: client.contact_details?.phone || '',
-            address: client.contact_details?.address || '',
-        },
-        locations: client.locations || [],
-    });
+    const [editedClient, setEditedClient] = useState<Partial<Client>>({});
+
+    useEffect(() => {
+        if (client) {
+            setEditedClient({
+                ...client,
+                locations: client.locations?.map((location) => ({
+                    ...location,
+                    default_product_types: location.default_product_types || [],
+                })),
+            });
+        }
+    }, [client]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -69,6 +81,60 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
         onSave(editedClient);
     };
 
+    const addNewLocation = () => {
+        setEditedClient((prev) => ({
+            ...prev,
+            locations: [
+                ...(prev.locations || []),
+                {
+                    location_name: '',
+                    address: '',
+                    initial_empty_bins: '0',
+                    default_product_types: [],
+                },
+            ],
+        }));
+    };
+
+    const addProductType = (index: number) => {
+        setEditedClient((prev) => {
+            const newLocations = [...(prev.locations || [])];
+            newLocations[index] = {
+                ...newLocations[index],
+                default_product_types: [
+                    ...(newLocations[index].default_product_types || []),
+                    { product_name: '', description: '' },
+                ],
+            };
+            return { ...prev, locations: newLocations };
+        });
+    };
+
+    const removeProductType = (locationIndex: number, productIndex: number) => {
+        setEditedClient((prev) => {
+            const newLocations = [...(prev.locations || [])];
+            newLocations[locationIndex].default_product_types = newLocations[
+                locationIndex
+            ].default_product_types.filter((_, i) => i !== productIndex);
+            return { ...prev, locations: newLocations };
+        });
+    };
+
+    const updateProductType = (
+        locationIndex: number,
+        productIndex: number,
+        field: keyof ProductType,
+        value: string
+    ) => {
+        setEditedClient((prev) => {
+            const newLocations = [...(prev.locations || [])];
+            newLocations[locationIndex].default_product_types[productIndex][
+                field
+            ] = value;
+            return { ...prev, locations: newLocations };
+        });
+    };
+
     return (
         <div className="fixed inset-0 bg-gray-700 bg-opacity-50 z-50 flex justify-center items-center">
             <div
@@ -92,7 +158,7 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                     <input
                         type="text"
                         name="company_name"
-                        value={editedClient.company_name || ''}
+                        value={editedClient?.company_name || ''}
                         onChange={handleInputChange}
                         className="w-full px-4 py-2 mb-6 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
                     />
@@ -103,7 +169,7 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                     <input
                         type="text"
                         name="contact_details.phone"
-                        value={editedClient.contact_details?.phone || ''}
+                        value={editedClient?.contact_details?.phone || ''}
                         onChange={handleInputChange}
                         className="w-full px-4 py-2 mb-6 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
                     />
@@ -114,9 +180,9 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                     <input
                         type="text"
                         name="contact_details.email"
-                        value={editedClient.contact_details?.email || ''}
+                        value={editedClient?.contact_details?.email || ''}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-2 mb-6 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
                     />
 
                     <label className="block text-lg font-semibold text-gray-700 mb-2 w-full text-left">
@@ -125,7 +191,7 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                     <input
                         type="text"
                         name="contact_details.address"
-                        value={editedClient.contact_details?.address || ''}
+                        value={editedClient?.contact_details?.address || ''}
                         onChange={handleInputChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
                     />
@@ -135,7 +201,7 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                             Locations:
                         </h2>
                         <div className="space-y-4">
-                            {editedClient.locations?.map((location, index) => (
+                            {editedClient?.locations?.map((location, index) => (
                                 <div
                                     key={index}
                                     className="p-4 border border-gray-300 rounded-lg shadow-sm bg-gray-50 relative"
@@ -168,7 +234,6 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                                             </label>
                                             <input
                                                 type="text"
-                                                name={`locations.${index}.location_name`}
                                                 value={location.location_name}
                                                 onChange={(e) => {
                                                     const newLocations = [
@@ -188,73 +253,81 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-1">
-                                                Address:
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={location.address}
-                                                onChange={(e) => {
-                                                    const newLocations = [
-                                                        ...(editedClient.locations ||
-                                                            []),
-                                                    ];
-                                                    newLocations[
-                                                        index
-                                                    ].address = e.target.value;
-                                                    setEditedClient((prev) => ({
-                                                        ...prev,
-                                                        locations: newLocations,
-                                                    }));
-                                                }}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-1">
-                                                Initial Empty Bins:
-                                            </label>
-                                            <input
-                                                type="number"
-                                                value={
-                                                    location.initial_empty_bins
+                                            <h4 className="block text-sm font-semibold text-gray-700 mb-1">
+                                                Default Product Types:
+                                            </h4>
+                                            {location.default_product_types.map(
+                                                (product, pIndex) => (
+                                                    <div
+                                                        key={pIndex}
+                                                        className="flex gap-4 mb-2"
+                                                    >
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Product Name"
+                                                            value={
+                                                                product.product_name
+                                                            }
+                                                            onChange={(e) =>
+                                                                updateProductType(
+                                                                    index,
+                                                                    pIndex,
+                                                                    'product_name',
+                                                                    e.target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            className="flex-1 px-2 py-1 border border-gray-300 rounded-lg"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Description"
+                                                            value={
+                                                                product.description
+                                                            }
+                                                            onChange={(e) =>
+                                                                updateProductType(
+                                                                    index,
+                                                                    pIndex,
+                                                                    'description',
+                                                                    e.target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            className="flex-2 px-2 py-1 border border-gray-300 rounded-lg"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            className="text-red-500 hover:text-red-700"
+                                                            onClick={() =>
+                                                                removeProductType(
+                                                                    index,
+                                                                    pIndex
+                                                                )
+                                                            }
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    </div>
+                                                )
+                                            )}
+                                            <button
+                                                type="button"
+                                                className="mt-2 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                                                onClick={() =>
+                                                    addProductType(index)
                                                 }
-                                                onChange={(e) => {
-                                                    const newLocations = [
-                                                        ...(editedClient.locations ||
-                                                            []),
-                                                    ];
-                                                    newLocations[
-                                                        index
-                                                    ].initial_empty_bins =
-                                                        e.target.value;
-                                                    setEditedClient((prev) => ({
-                                                        ...prev,
-                                                        locations: newLocations,
-                                                    }));
-                                                }}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
-                                            />
+                                            >
+                                                Add Product Type
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
                             ))}
                             <button
                                 type="button"
-                                className="mt-4 text-white font-bold bg-blue-500 px-4 py-2 rounded-lg hover:bg-blue-600"
-                                onClick={() =>
-                                    setEditedClient((prev) => ({
-                                        ...prev,
-                                        locations: [
-                                            ...(prev.locations || []),
-                                            {
-                                                location_name: '',
-                                                address: '',
-                                                initial_empty_bins: '0',
-                                            },
-                                        ],
-                                    }))
-                                }
+                                className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                onClick={addNewLocation}
                             >
                                 Add New Location
                             </button>
@@ -263,13 +336,13 @@ const ClientEditModal: React.FC<ClientModalProps> = ({
 
                     <div className="flex justify-between w-full mt-6">
                         <button
-                            className="text-white font-bold bg-red-500 px-6 py-2 rounded-lg hover:bg-red-600"
+                            className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600"
                             onClick={onClose}
                         >
                             Cancel
                         </button>
                         <button
-                            className="text-white font-bold bg-green-400 px-6 py-2 rounded-lg hover:bg-green-500"
+                            className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
                             onClick={handleSave}
                         >
                             Submit

@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
+
+type ProductType = {
+    product_name: string;
+    description: string;
+};
 
 type Location = {
     location_name: string;
     address: string;
     initial_empty_bins: string;
+    default_product_types: ProductType[];
 };
 
 type ContactDetails = {
@@ -23,7 +29,7 @@ type ClientModalProps = {
     isOpen: boolean;
     client: Partial<Client>;
     onClose: () => void;
-    onDelete: (clientToRemove: Partial<Client>) => void;
+    onDelete: (clientToRemove: Partial<Client>) => Promise<void>;
 };
 
 const ClientDeleteModal: React.FC<ClientModalProps> = ({
@@ -33,6 +39,15 @@ const ClientDeleteModal: React.FC<ClientModalProps> = ({
     onDelete,
 }) => {
     if (!isOpen) return null;
+
+    const handleDelete = async () => {
+        try {
+            await onDelete(client);
+            onClose();
+        } catch (error) {
+            console.error('Delete operation failed:', error);
+        }
+    };
 
     return (
         <div
@@ -59,7 +74,7 @@ const ClientDeleteModal: React.FC<ClientModalProps> = ({
                     </button>
                     <button
                         className="bg-red-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-600"
-                        onClick={() => onDelete(client)}
+                        onClick={handleDelete}
                     >
                         Delete
                     </button>
