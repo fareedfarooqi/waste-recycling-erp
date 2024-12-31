@@ -129,13 +129,15 @@ const ProcessingRequestsTable = (): JSX.Element => {
     };
 
     const handleSearch = (searchTerm: string) => {
-        const lowercasedSearchTerm = searchTerm.toLowerCase();
+        const normalizedSearchTerm = searchTerm
+            .toLowerCase()
+            .replace(/\s+/g, '_'); // Replace spaces with underscores
         const filteredData = processingRequests.filter(
             (item) =>
                 item.product_name
                     .toLowerCase()
-                    .includes(lowercasedSearchTerm) ||
-                item.status.toLowerCase().includes(lowercasedSearchTerm)
+                    .includes(normalizedSearchTerm) ||
+                item.status.toLowerCase().includes(normalizedSearchTerm)
         );
         setFilteredProcessingRequests(filteredData);
     };

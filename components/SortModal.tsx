@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Button from './Button';
+import { IoMdClose } from 'react-icons/io';
 
 type SortModalProps = {
     isOpen: boolean;
@@ -33,9 +34,16 @@ const SortModal: React.FC<SortModalProps> = ({
             onClick={onClose}
         >
             <div
-                className="bg-white w-[90%] max-w-xl rounded-md border-[0.35rem] border-gray-300 p-6 font-sans shadow-lg relative"
+                className="bg-white w-[90%] max-w-xl rounded-md border-[0.35rem] border-gray-300 p-6 pb-8 font-sans shadow-lg relative"
                 onClick={(e) => e.stopPropagation()}
             >
+                <button
+                    onClick={onClose}
+                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                    aria-label="Close"
+                >
+                    <IoMdClose size={24} />
+                </button>
                 <h3 className="font-bold text-lg mb-4">Sort Inventory</h3>
                 <div className="space-y-4">
                     <div>
@@ -53,7 +61,7 @@ const SortModal: React.FC<SortModalProps> = ({
                     </div>
                     <div>
                         <label className="font-medium">Direction:</label>
-                        <div className="flex space-x-4 mt-2">
+                        <div className="flex justify-center space-x-4 mt-2">
                             <Button
                                 label="Ascending"
                                 variant={
@@ -75,9 +83,9 @@ const SortModal: React.FC<SortModalProps> = ({
                         </div>
                     </div>
                 </div>
-                <div className="mt-6 flex justify-between">
+                <div className="mt-6 flex justify-center">
                     <Button
-                        label="Close"
+                        label="Done"
                         variant="secondary"
                         onClick={onClose}
                     />

@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/config/supabaseClient';
 import Button from './Button';
+import { IoMdClose } from 'react-icons/io';
 
 type ProcessingRequestItem = {
     id: string;
@@ -43,7 +46,6 @@ const EditProcessingRequestModal = ({
     const [loading, setLoading] = useState<boolean>(false);
     const [products, setProducts] = useState<ProductItem[]>([]);
 
-    // Fetch products from the `products` table
     useEffect(() => {
         const fetchProducts = async () => {
             const { data, error } = await supabase
@@ -65,7 +67,7 @@ const EditProcessingRequestModal = ({
         const { error } = await supabase
             .from('processing_requests')
             .update({
-                product_id: productId, // Update the product_id
+                product_id: productId,
                 quantity,
                 status,
             })
@@ -80,10 +82,32 @@ const EditProcessingRequestModal = ({
         setLoading(false);
     };
 
+    const handleOverlayClick = useCallback(
+        (e: React.MouseEvent<HTMLDivElement>) => {
+            if (e.target === e.currentTarget) {
+                onClose();
+            }
+        },
+        [onClose]
+    );
+
     return (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-                <h2 className="text-xl font-bold mb-4">
+        <div
+            className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50"
+            onClick={handleOverlayClick}
+        >
+            <div
+                className="bg-white p-6 pb-4 rounded-lg shadow-lg w-96 relative"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <button
+                    onClick={onClose}
+                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                    aria-label="Close"
+                >
+                    <IoMdClose size={24} />
+                </button>
+                <h2 className="text-xl font-bold mb-4 pr-8">
                     Edit Processing Request
                 </h2>
                 <div className="mb-4">
@@ -134,7 +158,7 @@ const EditProcessingRequestModal = ({
                         <option value="completed">Completed</option>
                     </select>
                 </div>
-                <div className="flex justify-end space-x-4">
+                <div className="flex justify-center space-x-4 mt-6">
                     <Button
                         label="Cancel"
                         onClick={onClose}
