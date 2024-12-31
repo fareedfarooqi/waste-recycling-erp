@@ -14,6 +14,7 @@ import ProcessingRequestsViewModal from './ProcessingRequestsViewModal';
 import SortModal from './SortModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import AddProcessingRequest from './AddProcessingRequest';
+import EditProcessingRequestModal from './EditProcessingRequestModal';
 
 type ProcessingRequestItem = {
     id: string;
@@ -200,6 +201,24 @@ const ProcessingRequestsTable = (): JSX.Element => {
     useEffect(() => {
         fetchProcessingRequests();
     }, []);
+    const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+    const [itemToEdit, setItemToEdit] = useState<ProcessingRequestItem | null>(
+        null
+    );
+
+    const openEditModal = (item: ProcessingRequestItem) => {
+        setItemToEdit(item);
+        setIsEditModalOpen(true);
+    };
+
+    const closeEditModal = () => {
+        setIsEditModalOpen(false);
+        setItemToEdit(null);
+    };
+
+    const handleRequestUpdated = () => {
+        setRefresh((prev) => !prev); // Trigger data refresh
+    };
 
     return (
         <div className="py-8">
@@ -267,6 +286,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                         <FaEdit
                                             className="text-gray-500 cursor-pointer hover:text-green-500"
                                             size={18}
+                                            onClick={() => openEditModal(item)}
                                         />
                                         <FaCheckSquare
                                             className={`cursor-pointer ${
@@ -294,7 +314,14 @@ const ProcessingRequestsTable = (): JSX.Element => {
                     </tbody>
                 </table>
             </div>
-
+            {isEditModalOpen && itemToEdit && (
+                <EditProcessingRequestModal
+                    isOpen={isEditModalOpen}
+                    onClose={closeEditModal}
+                    processingRequest={itemToEdit}
+                    onRequestUpdated={handleRequestUpdated}
+                />
+            )}
             {isAddModalOpen && (
                 <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
                     <div

@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/config/supabaseClient';
 import Button from './Button';
-import { v4 as uuidv4 } from 'uuid';
 
 const AddProcessingRequest = ({
     isOpen,
@@ -73,13 +72,10 @@ const AddProcessingRequest = ({
             .from('processing_requests')
             .insert([
                 {
-                    id: uuidv4(),
                     product_name: productName,
                     product_id: productId, // Add product_id field
                     quantity: Number(quantity),
                     status,
-                    created_at: getFormattedDate(), // Add created_at field
-                    updated_at: getFormattedDate(),
                 },
             ]);
 
