@@ -55,8 +55,36 @@ const ProcessingRequestsTable = (): JSX.Element => {
         if (error) {
             console.error('Error fetching inventory: ', error.message);
         } else {
-            setProcessingRequests(data as ProcessingRequestItem[]);
-            setFilteredProcessingRequests(data as ProcessingRequestItem[]);
+            const productIds = data.map((item) => item.product_id);
+            const { data: productsData, error: productsError } = await supabase
+                .from('products')
+                .select('id, product_name')
+                .in('id', productIds);
+
+            if (productsError) {
+                console.error(
+                    'Error fetching products: ',
+                    productsError.message
+                );
+            } else {
+                const productsMap = productsData.reduce<Record<string, string>>(
+                    (acc, product) => {
+                        acc[product.id] = product.product_name;
+                        return acc;
+                    },
+                    {}
+                );
+
+                const enrichedData = data.map((item) => ({
+                    ...item,
+                    product_name: productsMap[item.product_id] || 'Unknown',
+                }));
+
+                setProcessingRequests(enrichedData as ProcessingRequestItem[]);
+                setFilteredProcessingRequests(
+                    enrichedData as ProcessingRequestItem[]
+                );
+            }
         }
         setLoading(false);
     };
@@ -162,7 +190,6 @@ const ProcessingRequestsTable = (): JSX.Element => {
     useEffect(() => {
         fetchProcessingRequests();
     }, [refresh]);
-
     const markRequestAsCompleted = async (item: ProcessingRequestItem) => {
         if (item.status === 'completed') {
             return; // Do nothing if the status is already 'completed'

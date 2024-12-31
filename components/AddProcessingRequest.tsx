@@ -13,13 +13,12 @@ const AddProcessingRequest = ({
     onClose: () => void;
     onRequestAdded: () => void;
 }) => {
-    const [productName, setProductName] = useState('');
     const [productId, setProductId] = useState<string | null>(null); // Store selected product ID
-    const [quantity, setQuantity] = useState<number | ''>('');
+    const [quantity, setQuantity] = useState<number | ''>(''); // Quantity input
     const [status, setStatus] = useState<'new' | 'in_progress' | 'completed'>(
         'new'
-    );
-    const [loading, setLoading] = useState(false);
+    ); // Status input
+    const [loading, setLoading] = useState(false); // Loading state
     const [products, setProducts] = useState<
         { id: string; product_name: string }[]
     >([]); // List of products
@@ -43,25 +42,11 @@ const AddProcessingRequest = ({
         fetchProducts();
     }, []);
 
-    // Format current date for "created_at"
-    const getFormattedDate = () => {
-        const date = new Date();
-        return date.toISOString().replace('T', ' ').slice(0, 26); // Format to "YYYY-MM-DD HH:mm:ss.ssssss"
-    };
-
-    const handleProductChange = (selectedProductName: string) => {
-        setProductName(selectedProductName);
-        const selectedProduct = products.find(
-            (product) => product.product_name === selectedProductName
-        );
-        setProductId(selectedProduct ? selectedProduct.id : null); // Update product ID based on selection
-    };
-
     // Do not render anything if modal is not open
     if (!isOpen) return null;
 
     const handleAddRequest = async () => {
-        if (!productName || !quantity || !productId) {
+        if (!productId || !quantity) {
             alert('Please fill out all fields.');
             return;
         }
@@ -72,8 +57,7 @@ const AddProcessingRequest = ({
             .from('processing_requests')
             .insert([
                 {
-                    product_name: productName,
-                    product_id: productId, // Add product_id field
+                    product_id: productId, // Only insert product_id
                     quantity: Number(quantity),
                     status,
                 },
@@ -86,7 +70,6 @@ const AddProcessingRequest = ({
             alert('Failed to add processing request.');
         } else {
             alert('Processing request added successfully!');
-            setProductName('');
             setProductId(null);
             setQuantity('');
             setStatus('new');
@@ -101,21 +84,18 @@ const AddProcessingRequest = ({
                 Add New Processing Request
             </h2>
             <div className="mb-4">
-                <label className="block mb-1">Product Name</label>
+                <label className="block mb-1">Product</label>
                 {productLoading ? (
                     <p>Loading products...</p>
                 ) : (
                     <select
-                        value={productName}
-                        onChange={(e) => handleProductChange(e.target.value)}
+                        value={productId || ''}
+                        onChange={(e) => setProductId(e.target.value || null)}
                         className="p-2 border rounded-md w-full"
                     >
                         <option value="">Select a product</option>
                         {products.map((product) => (
-                            <option
-                                key={product.id}
-                                value={product.product_name}
-                            >
+                            <option key={product.id} value={product.id}>
                                 {product.product_name}
                             </option>
                         ))}

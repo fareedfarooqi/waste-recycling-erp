@@ -9,7 +9,6 @@ type ProcessingRequestItem = {
     status: 'new' | 'in_progress' | 'completed';
     created_at: string;
     updated_at: string;
-    product_name: string;
 };
 
 type ProductItem = {
@@ -32,8 +31,8 @@ const EditProcessingRequestModal = ({
 }: EditProcessingRequestModalProps): JSX.Element | null => {
     if (!isOpen) return null;
 
-    const [productName, setProductName] = useState<string>(
-        processingRequest.product_name
+    const [productId, setProductId] = useState<string>(
+        processingRequest.product_id
     );
     const [quantity, setQuantity] = useState<number>(
         processingRequest.quantity
@@ -63,22 +62,10 @@ const EditProcessingRequestModal = ({
     const handleSaveChanges = async () => {
         setLoading(true);
 
-        // Find the corresponding product_id for the selected product_name
-        const selectedProduct = products.find(
-            (product) => product.product_name === productName
-        );
-
-        if (!selectedProduct) {
-            console.error('Selected product not found in the products list.');
-            setLoading(false);
-            return;
-        }
-
         const { error } = await supabase
             .from('processing_requests')
             .update({
-                product_name: selectedProduct.product_name,
-                product_id: selectedProduct.id, // Update the product_id
+                product_id: productId, // Update the product_id
                 quantity,
                 status,
             })
@@ -101,18 +88,15 @@ const EditProcessingRequestModal = ({
                 </h2>
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-2">
-                        Product Name
+                        Product
                     </label>
                     <select
-                        value={productName}
-                        onChange={(e) => setProductName(e.target.value)}
+                        value={productId}
+                        onChange={(e) => setProductId(e.target.value)}
                         className="w-full p-2 border rounded-md"
                     >
                         {products.map((product) => (
-                            <option
-                                key={product.id}
-                                value={product.product_name}
-                            >
+                            <option key={product.id} value={product.id}>
                                 {product.product_name}
                             </option>
                         ))}
