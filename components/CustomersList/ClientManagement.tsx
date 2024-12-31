@@ -26,6 +26,7 @@ type ContactDetails = {
 type Client = {
     id: string;
     company_name: string;
+    slug: string;
     contact_details: ContactDetails;
     locations: Location[];
 };
@@ -70,7 +71,7 @@ const ClientManagement = () => {
     const handleDelete = async (
         clientToRemove: Partial<Client>
     ): Promise<void> => {
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from('customers')
             .delete()
             .eq('id', clientToRemove.id);

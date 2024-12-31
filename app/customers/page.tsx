@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import ClientManagement from '@/components/ClientManagement'; // Ensure correct import path
-import SidebarSmall from '@/components/SidebarSmall';
-import Sidebar from '@/components/Sidebar';
-import { useSidebar } from '@/context/SidebarContext';
+import ClientManagement from '@/components/CustomersList/ClientManagement';
+import SidebarSmall from '@/components/Sidebar/SidebarSmall';
+import Sidebar from '@/components/Sidebar/Sidebar';
+import { useSidebar } from '@/components/Sidebar/SidebarContext';
 
 function ClientListPage(): JSX.Element {
     const { isSidebarOpen } = useSidebar();

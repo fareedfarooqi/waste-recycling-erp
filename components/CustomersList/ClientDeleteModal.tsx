@@ -21,6 +21,7 @@ type ContactDetails = {
 type Client = {
     id: string;
     company_name: string;
+    slug: string;
     contact_details: ContactDetails;
     locations: Location[];
 };

@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { FaTrashAlt, FaEye, FaEdit } from 'react-icons/fa';
-import ClientViewModal from './ClientViewModal';
 import ClientEditModal from './ClientEditModal';
 import ClientDeleteModal from './ClientDeleteModal';
-import { useSidebar } from '@/context/SidebarContext';
+import { useSidebar } from '@/components/Sidebar/SidebarContext';
 
 type ProductType = {
     product_name: string;
@@ -28,6 +28,7 @@ type ContactDetails = {
 type Client = {
     id: string;
     company_name: string;
+    slug: string;
     contact_details: ContactDetails;
     locations: Location[];
 };
@@ -47,6 +48,7 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     handleDelete,
     handleSave,
 }): JSX.Element => {
+    const router = useRouter();
     const { isSidebarOpen } = useSidebar();
     const [isViewingClientDetails, setIsViewingClientDetails] =
         useState<boolean>(false);
@@ -61,6 +63,10 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     const [customerToDelete, setCustomerToDelete] = useState<Partial<Client>>(
         {}
     );
+
+    const handleCustomerViewButtonClick = (customer: Partial<Client>) => {
+        router.push(`/customers/${customer.slug}`);
+    };
 
     const openViewModal = (clientId: string) => {
         const client = clients.find((client) => client.id === clientId);
@@ -180,7 +186,10 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                                         <FaEye
                                             className="text-gray-500 cursor-pointer hover:text-green-500"
                                             onClick={() =>
-                                                openViewModal(client.id)
+                                                //openViewModal(client.id)
+                                                handleCustomerViewButtonClick(
+                                                    client
+                                                )
                                             }
                                             size={18}
                                         />
@@ -205,11 +214,6 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                     </tbody>
                 </table>
             </div>
-            <ClientViewModal
-                isOpen={isViewingClientDetails}
-                client={customerToViewClientDetails}
-                onClose={closeViewModal}
-            />
             <ClientEditModal
                 isOpen={isEditingClientDetails}
                 client={customerToEditClientDetails}
