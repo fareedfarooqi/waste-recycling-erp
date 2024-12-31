@@ -46,10 +46,11 @@ const ClientManagement = () => {
 
         console.log('Payload being sent to Supabase:', payload);
 
-        const { error } = await supabase
+        const { data: updatedRows, error } = await supabase
             .from('customers')
             .update(payload)
-            .eq('id', updatedClient.id);
+            .eq('id', updatedClient.id)
+            .select();
 
         if (error) {
             console.error('Error occurred:', error);
@@ -58,13 +59,32 @@ const ClientManagement = () => {
         } else {
             alert('Successfully updated details of the client.');
 
-            setClients((prevClients) =>
-                prevClients.map((client) =>
-                    client.id === updatedClient.id
-                        ? { ...client, ...updatedClient }
-                        : client
-                )
-            );
+            if (updatedRows && updatedRows.length > 0) {
+                const newRow = updatedRows[0];
+
+                const fixedContactDetails =
+                    typeof newRow.contact_details === 'string'
+                        ? JSON.parse(newRow.contact_details)
+                        : newRow.contact_details;
+
+                const fixedLocations =
+                    typeof newRow.locations === 'string'
+                        ? JSON.parse(newRow.locations)
+                        : newRow.locations;
+
+                setClients((prevClients) =>
+                    prevClients.map((client) =>
+                        client.id === newRow.id
+                            ? {
+                                  ...client,
+                                  ...newRow,
+                                  contact_details: fixedContactDetails,
+                                  locations: fixedLocations,
+                              }
+                            : client
+                    )
+                );
+            }
         }
     };
 
@@ -94,7 +114,7 @@ const ClientManagement = () => {
     const fetchClients = async (searchQuery: string = ''): Promise<void> => {
         setLoading(true);
 
-        let { data, error } = await supabase.rpc('search_customers', {
+        const { data, error } = await supabase.rpc('search_customers', {
             search_term: searchQuery,
         });
 
