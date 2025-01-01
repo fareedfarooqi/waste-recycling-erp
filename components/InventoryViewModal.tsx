@@ -1,17 +1,17 @@
 import React from 'react';
 
+// Type definition for inventory item
 type Inventory = {
     id: string;
     product_name: string;
     quantity: number;
-    status: 'inbound' | 'outbound' | 'processed';
     created_at: string;
     updated_at: string;
 };
 
 type InventoryModalProps = {
     isOpen: boolean;
-    inventory: Partial<Inventory>;
+    inventory: Inventory;  // Removed Partial to ensure all fields are required for the modal
     onClose: () => void;
 };
 
@@ -21,6 +21,12 @@ const InventoryViewModal: React.FC<InventoryModalProps> = ({
     onClose,
 }) => {
     if (!isOpen) return null;
+
+    // Function to format date (improve readability)
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    };
 
     return (
         <div
@@ -35,28 +41,25 @@ const InventoryViewModal: React.FC<InventoryModalProps> = ({
                 <div>
                     <p>
                         <strong>Product Name: </strong>
-                        {inventory.product_name || 'N/A'}
+                        {inventory.product_name}
                     </p>
                     <p>
                         <strong>Quantity: </strong>
-                        {inventory.quantity || 'N/A'} kg
-                    </p>
-                    <p>
-                        <strong>Status: </strong>
-                        {inventory.status || 'N/A'}
+                        {inventory.quantity} kg
                     </p>
                     <p>
                         <strong>Created At: </strong>
-                        {inventory.created_at || 'N/A'}
+                        {formatDate(inventory.created_at)}
                     </p>
                     <p>
                         <strong>Updated At: </strong>
-                        {inventory.updated_at || 'N/A'}
+                        {formatDate(inventory.updated_at)}
                     </p>
                 </div>
                 <button
                     className="mt-6 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                     onClick={onClose}
+                    aria-label="Close inventory details modal"
                 >
                     Close
                 </button>

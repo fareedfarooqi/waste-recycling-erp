@@ -26,8 +26,6 @@ const LoggingForm: React.FC = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [providers, setProviders] = useState<Provider[]>([]);
 
-    // const [products, setProducts] = useState<any[]>([]);
-    // const [providers, setProviders] = useState<any[]>([]);
     const [isClient, setIsClient] = useState(false); // Add this state to track client-side rendering
 
     const supabase = createClient(); // Create Supabase client instance
@@ -75,10 +73,34 @@ const LoggingForm: React.FC = () => {
         formValues.quantity.trim() !== '' &&
         formValues.arrivalDate.trim() !== '';
 
-    const handleSubmit = () => {
-        // Submit form to Supabase
-        console.log('Form Submitted:', formValues);
-    };
+        const handleSubmit = async () => {
+            if (!isFormValid()) return;
+        
+            const { product, provider, quantity, arrivalDate, invoiceRequired } = formValues;
+
+            const { data, error } = await supabase
+                .from('inbound_product_logging')
+                .insert([
+                    {
+                        product_id: product, // Foreign key to the product
+                        provider_id: provider, // Foreign key to the provider (customer)
+                        quantity_received: parseFloat(quantity), // Convert quantity to numeric value
+                        invoice_required: invoiceRequired,
+                        // status: 'logged', // Default status is 'logged'
+                        created_at: arrivalDate, // Set the created_at timestamp to the arrival date
+                        pickup_id: null,
+                    },
+                ]);
+
+            if (error) {
+                console.error('Error inserting log:', error.message);  // Log the error message
+                console.error('Error details:', error.details);  // Log additional details, if available
+                console.error('Error code:', error.code);  // Log error code for better diagnostics
+            } else {
+                alert('Log saved successfully!');
+                console.log('Log saved successfully:', data);
+            }
+        };
 
     // Function to handle setting today's date
     const handleSetTodayDate = () => {
@@ -105,10 +127,7 @@ const LoggingForm: React.FC = () => {
                         label: product.product_name,
                     }))}
                     onChange={(selectedOption) =>
-                        handleInputChange(
-                            'product',
-                            selectedOption?.value || ''
-                        )
+                        handleInputChange('product', selectedOption?.value || '')
                     }
                     placeholder="Search for a product"
                     isSearchable
@@ -129,10 +148,7 @@ const LoggingForm: React.FC = () => {
                         label: provider.company_name,
                     }))}
                     onChange={(selectedOption) =>
-                        handleInputChange(
-                            'provider',
-                            selectedOption?.value || ''
-                        )
+                        handleInputChange('provider', selectedOption?.value || '')
                     }
                     placeholder="Search for a provider"
                     isSearchable
@@ -178,13 +194,9 @@ const LoggingForm: React.FC = () => {
                     </label>
                     <input
                         type="checkbox"
-                        // className="mt-2"
                         checked={formValues.invoiceRequired}
                         onChange={(e) =>
-                            handleInputChange(
-                                'invoiceRequired',
-                                e.target.checked
-                            )
+                            handleInputChange('invoiceRequired', e.target.checked)
                         }
                     />
                 </div>

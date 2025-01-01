@@ -27,7 +27,7 @@ export default function EditProductPage() {
         reserved_location: '',
     });
 
-    const productId = '523e4567-e89b-12d3-a456-426614174004'; // Replace with dynamic product ID
+    const productId = 'bb8349c0-7b17-4ed1-83bc-015bb75da0cd'; // Replace with dynamic product ID
 
     // Fetch product data from Supabase by product id
     useEffect(() => {
@@ -89,6 +89,7 @@ export default function EditProductPage() {
             if (error) {
                 console.error('Error saving product:', error);
             } else {
+                alert("Produced edited successfully");
                 console.log('Product saved successfully');
             }
         } else {

@@ -1,243 +1,239 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
-import { FaTrashAlt, FaEye, FaEdit, FaSort } from 'react-icons/fa';
+import { FaTrashAlt, FaEye, FaEdit, FaPlus, FaSearch, FaCalendarAlt, FaFilter } from 'react-icons/fa';
 import { supabase } from '@/config/supabaseClient';
 import Button from './Button';
 import InventoryViewModal from './InventoryViewModal';
 import SortModal from './SortModal';
-import DeleteConfirmationModal from './DeleteConfirmationModal'; // Import updated DeleteConfirmationModal
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 
+// Define the InventoryItem type
 type InventoryItem = {
-    id: string;
-    product_name: string;
-    product_id: string;
-    quantity: number;
-    status: 'inbound' | 'outbound' | 'processed';
-    created_at: string;
-    updated_at: string;
+  id: string;
+  product_name: string;
+  quantity: number;
+  created_at: string;
+  updated_at: string;
 };
 
 const InventoryTable = (): JSX.Element => {
-    const [inventory, setInventory] = useState<InventoryItem[]>([]);
-    const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>(
-        []
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>([]);
+  const [, setLoading] = useState<boolean>(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState<boolean>(false);
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState<InventoryItem | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [dateFilter, setDateFilter] = useState<string>('');
+  const [isSortModalOpen, setIsSortModalOpen] = useState<boolean>(false);  // State to control SortModal visibility
+
+  const fetchInventory = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, product_name, quantity, created_at, updated_at');
+
+    if (error) {
+      console.error('Error fetching products: ', error.message);
+    } else {
+      const formattedData = data.map((item) => ({
+        id: item.id,
+        product_name: item.product_name,
+        quantity: item.quantity,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+      }));
+      setInventory(formattedData);
+      setFilteredInventory(formattedData);
+    }
+    setLoading(false);
+  };
+
+  const handleSearch = (searchTerm: string) => {
+    setSearchTerm(searchTerm);
+    const lowercasedSearchTerm = searchTerm.toLowerCase();
+    const filteredData = inventory.filter((item) =>
+      item.product_name.toLowerCase().includes(lowercasedSearchTerm)
     );
-    const [loading, setLoading] = useState<boolean>(false);
-    const [isSortModalOpen, setIsSortModalOpen] = useState<boolean>(false);
-    const [sortField, setSortField] = useState<string>('product_name');
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-    const [isViewModalOpen, setIsViewModalOpen] = useState<boolean>(false);
-    const [selectedInventoryItem, setSelectedInventoryItem] =
-        useState<InventoryItem | null>(null);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false); // State for delete confirmation modal
-    const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(
-        null
-    ); // Item selected for deletion
+    setFilteredInventory(filteredData);
+  };
 
-    const fetchInventory = async () => {
-        setLoading(true);
-        const { data, error } = await supabase.from('inventory').select('*');
-        if (error) {
-            console.error('Error fetching inventory: ', error.message);
-        } else {
-            setInventory(data as InventoryItem[]);
-            setFilteredInventory(data as InventoryItem[]);
-        }
-        setLoading(false);
-    };
+  const handleDateFilter = (date: string) => {
+    setDateFilter(date);
+    const filteredData = inventory.filter((item) =>
+      new Date(item.created_at).toISOString().slice(0, 10) === date
+    );
+    setFilteredInventory(filteredData);
+  };
 
-    const handleSortChange = (field: string, direction: 'asc' | 'desc') => {
-        setSortField(field);
-        setSortDirection(direction);
+  const handleFilter = () => {
+    setIsSortModalOpen(true);
+  };
 
-        // Cast field to keyof InventoryItem so TypeScript understands it
-        const sortedData = [...filteredInventory].sort((a, b) => {
-            if (
-                a[field as keyof InventoryItem] <
-                b[field as keyof InventoryItem]
-            )
-                return direction === 'asc' ? -1 : 1;
-            if (
-                a[field as keyof InventoryItem] >
-                b[field as keyof InventoryItem]
-            )
-                return direction === 'asc' ? 1 : -1;
-            return 0;
-        });
-        setFilteredInventory(sortedData);
-    };
+  const openViewModal = (item: InventoryItem) => {
+    setSelectedInventoryItem(item);
+    setIsViewModalOpen(true);
+  };
 
-    const openSortModal = () => {
-        setIsSortModalOpen(true);
-    };
+  const closeViewModal = () => {
+    setIsViewModalOpen(false);
+    setSelectedInventoryItem(null);
+  };
 
-    const closeSortModal = () => {
-        setIsSortModalOpen(false);
-    };
+  const handleDeleteItem = async () => {
+    if (itemToDelete) {
+      const { error } = await supabase.from('products').delete().eq('id', itemToDelete.id);
+      if (error) {
+        console.error('Error deleting item: ', error.message);
+      } else {
+        setInventory((prev) => prev.filter((item) => item.id !== itemToDelete.id));
+        setFilteredInventory((prev) => prev.filter((item) => item.id !== itemToDelete.id));
+      }
+    }
+    setIsDeleteModalOpen(false);
+  };
 
-    const openViewModal = (item: InventoryItem) => {
-        setSelectedInventoryItem(item);
-        setIsViewModalOpen(true);
-    };
+//   const handleSortChange = (sortBy: string, direction: 'asc' | 'desc') => {
+//     const sortedData = [...filteredInventory].sort((a, b) => {
+//       if (a[sortBy] < b[sortBy]) return direction === 'asc' ? -1 : 1;
+//       if (a[sortBy] > b[sortBy]) return direction === 'asc' ? 1 : -1;
+//       return 0;
+//     });
+//     setFilteredInventory(sortedData);
+//   };
 
-    const closeViewModal = () => {
-        setIsViewModalOpen(false);
-        setSelectedInventoryItem(null);
-    };
 
-    const handleSearch = (searchTerm: string) => {
-        const lowercasedSearchTerm = searchTerm.toLowerCase();
-        const filteredData = inventory.filter(
-            (item) =>
-                item.product_name
-                    .toLowerCase()
-                    .includes(lowercasedSearchTerm) ||
-                item.status.toLowerCase().includes(lowercasedSearchTerm)
-        );
-        setFilteredInventory(filteredData);
-    };
+const handleSortChange = (sortBy: string, direction: 'asc' | 'desc') => {
+    const sortedData = [...filteredInventory].sort((a, b) => {
+      const key = sortBy as keyof InventoryItem; // Cast to a valid key of InventoryItem
+      if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+      if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+    setFilteredInventory(sortedData);
+  };
 
-    const handleDeleteItem = async () => {
-        if (itemToDelete) {
-            const { error } = await supabase
-                .from('inventory')
-                .delete()
-                .eq('id', itemToDelete.id);
-            if (error) {
-                console.error('Error deleting item: ', error.message);
-            } else {
-                setInventory((prev) =>
-                    prev.filter((item) => item.id !== itemToDelete.id)
-                );
-                setFilteredInventory((prev) =>
-                    prev.filter((item) => item.id !== itemToDelete.id)
-                );
-            }
-        }
-        setIsDeleteModalOpen(false);
-    };
+  useEffect(() => {
+    fetchInventory();
+  }, []);
 
-    useEffect(() => {
-        fetchInventory();
-    }, []);
-
-    return (
-        <div className="flex justify-center py-8">
-            <div className="w-11/12 overflow-x-auto border rounded-lg shadow-lg">
-                <div className="flex justify-between items-center p-4">
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                        className="p-2 border rounded-md w-1/3"
-                        onChange={(e) => handleSearch(e.target.value)}
-                    />
-                    <FaSort
-                        className="text-gray-500 cursor-pointer hover:text-green-500"
-                        size={24}
-                        onClick={openSortModal}
-                    />
-                </div>
-
-                <table className="min-w-full border-collapse mt-6">
-                    <thead className="bg-green-600 text-white text-center">
-                        <tr>
-                            <th className="font-extrabold px-6 py-8">
-                                Product Name
-                            </th>
-                            <th className="font-extrabold px-6 py-8">
-                                Quantity
-                            </th>
-                            <th className="font-extrabold px-6 py-8">Status</th>
-                            <th className="font-extrabold px-6 py-8">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredInventory.map((item) => (
-                            <tr
-                                key={item.id}
-                                className="hover:bg-gray-100 even:bg-gray-50 odd:bg-white text-center"
-                            >
-                                <td className="px-6 py-8 border-b">
-                                    {item.product_name}
-                                </td>
-                                <td className="px-6 py-8 border-b">
-                                    {item.quantity} kg
-                                </td>
-                                <td className="px-6 py-8 border-b">
-                                    {item.status}
-                                </td>
-                                <td className="px-6 py-8 border-b">
-                                    <div className="flex justify-center space-x-4">
-                                        <FaEye
-                                            className="text-gray-500 cursor-pointer hover:text-green-500"
-                                            size={18}
-                                            onClick={() => openViewModal(item)}
-                                        />
-                                        <FaEdit
-                                            className="text-gray-500 cursor-pointer hover:text-green-500"
-                                            size={18}
-                                        />
-                                        <FaTrashAlt
-                                            className="text-gray-500 cursor-pointer hover:text-red-500"
-                                            size={18}
-                                            onClick={() => {
-                                                setItemToDelete(item);
-                                                setIsDeleteModalOpen(true);
-                                            }}
-                                        />
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+  return (
+    <div className="flex justify-center py-8">
+      <div className="w-11/12 overflow-x-auto border rounded-lg shadow-lg">
+        <div className="flex justify-between items-center p-4 space-x-4">
+          {/* Search and Date Filter Section */}
+          <div className="flex space-x-4">
+            <div className="flex items-center">
+              <FaSearch className="mr-2 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Search by name..."
+                className="p-2 border rounded-md"
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
             </div>
 
-            {/* Sort Modal */}
-            <SortModal
-                isOpen={isSortModalOpen}
-                onClose={closeSortModal}
-                onSortChange={handleSortChange}
-            />
+            <div className="flex items-center space-x-2">
+              <FaCalendarAlt className="text-gray-500" />
+              <input
+                type="date"
+                className="p-2 border rounded-md"
+                placeholder="YYYY-MM-DD"
+                value={dateFilter}
+                onChange={(e) => handleDateFilter(e.target.value)}
+              />
+              <span className="text-sm text-gray-600 italic">Search by Date</span>
+            </div>
 
-            {/* View Inventory Item Modal */}
-            {isViewModalOpen && selectedInventoryItem && (
-                <InventoryViewModal
-                    isOpen={isViewModalOpen}
-                    inventory={selectedInventoryItem}
-                    onClose={closeViewModal}
-                />
-            )}
-
-            {/* Delete Confirmation Modal */}
-            <DeleteConfirmationModal
-                isOpen={isDeleteModalOpen}
-                onClose={() => setIsDeleteModalOpen(false)}
-                title="Delete Product"
-                content={
-                    <p>
-                        Are you sure you want to delete{' '}
-                        <strong>{itemToDelete?.product_name}</strong>?
-                    </p>
-                }
-                buttons={[
-                    {
-                        label: 'Cancel',
-                        onClick: () => setIsDeleteModalOpen(false),
-                        variant: 'secondary',
-                    },
-                    {
-                        label: 'Delete',
-                        onClick: handleDeleteItem,
-                        variant: 'primary',
-                    },
-                ]}
+            <Button
+              label="Filter"
+              variant="secondary"
+              icon={<FaFilter />}
+              onClick={handleFilter}
+              className="flex items-center px-4 py-2 text-sm"
             />
+          </div>
+
+          {/* Add New Product Button */}
+          <Button
+            label="Add New Product"
+            variant="primary"
+            onClick={() => console.log('Navigate to AddProductPage')}
+            icon={<FaPlus />}
+            className="flex items-center px-4 py-2 text-sm"
+          />
         </div>
-    );
+
+        <table className="min-w-full border-collapse mt-6">
+          <thead className="bg-green-600 text-white text-center">
+            <tr>
+              <th className="px-6 py-3 text-center">Product Name</th>
+              <th className="px-6 py-3 text-center">Quantity (kg)</th>
+              <th className="px-6 py-3 text-center">Last Updated Date</th>
+              <th className="px-6 py-3 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredInventory.map((item) => (
+              <tr key={item.id} className="even:bg-gray-50 odd:bg-white text-center">
+                <td className="px-6 py-4">{item.product_name}</td>
+                <td className="px-6 py-4">{item.quantity}</td>
+                <td className="px-6 py-4">{new Date(item.updated_at).toLocaleDateString()}</td>
+                <td className="px-6 py-4">
+                  <div className="flex justify-center space-x-4">
+                    <FaEye
+                      className="text-gray-500 hover:text-green-500 cursor-pointer"
+                      onClick={() => openViewModal(item)}
+                    />
+                    <FaEdit className="text-gray-500 hover:text-green-500 cursor-pointer" />
+                    <FaTrashAlt
+                      className="text-gray-500 hover:text-red-500 cursor-pointer"
+                      onClick={() => {
+                        setItemToDelete(item);
+                        setIsDeleteModalOpen(true);
+                      }}
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {isViewModalOpen && selectedInventoryItem && (
+        <InventoryViewModal
+          isOpen={isViewModalOpen}
+          onClose={closeViewModal}
+          inventory={selectedInventoryItem}
+        />
+      )}
+
+      {/* Add SortModal */}
+      <SortModal
+        isOpen={isSortModalOpen}
+        onClose={() => setIsSortModalOpen(false)}
+        onSortChange={handleSortChange}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Delete Product"
+        content={
+          <p>
+            Are you sure you want to delete <strong>{itemToDelete?.product_name}</strong>?
+          </p>
+        }
+        buttons={[
+          { label: 'Cancel', onClick: () => setIsDeleteModalOpen(false), variant: 'secondary' },
+          { label: 'Delete', onClick: handleDeleteItem, variant: 'primary' },
+        ]}
+      />
+    </div>
+  );
 };
 
 export default InventoryTable;
