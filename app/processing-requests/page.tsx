@@ -12,12 +12,19 @@ function ProcessingRequestsPage(): JSX.Element {
     const { isSidebarOpen } = useSidebar();
 
     return (
-        <div className="flex">
+        <div className="flex h-screen">
+            {/* Sidebar */}
             {isSidebarOpen ? <Sidebar /> : <SidebarSmall />}
 
-            <div className="flex-1">
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col">
+                {/* Navbar */}
                 <Navbar />
-                <ProcessingRequestsTable />
+
+                {/* Main Table Content */}
+                <div className="flex-1 overflow-auto">
+                    <ProcessingRequestsTable />
+                </div>
             </div>
         </div>
     );

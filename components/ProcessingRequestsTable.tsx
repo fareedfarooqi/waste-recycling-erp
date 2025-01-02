@@ -9,12 +9,14 @@ import {
     FaCheckSquare,
 } from 'react-icons/fa';
 import { supabase } from '@/config/supabaseClient';
-import Button from './Button';
 import ProcessingRequestsViewModal from './ProcessingRequestsViewModal';
 import SortModal from './SortModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import AddProcessingRequest from './AddProcessingRequest';
 import EditProcessingRequestModal from './EditProcessingRequestModal';
+import ImportCSVModal from './ImportCSVModal';
+import { cn } from '@/lib/utils';
+import Button from '@/components/Button'; // Assuming Button component is imported from here
 
 type ProcessingRequestItem = {
     id: string;
@@ -26,6 +28,21 @@ type ProcessingRequestItem = {
     product_name: string;
 };
 
+const formatDate = (date: Date, timeZoneOffset: number = 0) => {
+    // Adjust the date for the specified time zone offset (in hours)
+    date.setHours(date.getHours() + timeZoneOffset);
+
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    const milliseconds = date.getMilliseconds().toString().padStart(3, '0');
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+};
+
 const ProcessingRequestsTable = (): JSX.Element => {
     const [processingRequests, setProcessingRequests] = useState<
         ProcessingRequestItem[]
@@ -33,19 +50,25 @@ const ProcessingRequestsTable = (): JSX.Element => {
     const [filteredProcessingRequests, setFilteredProcessingRequests] =
         useState<ProcessingRequestItem[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
-    const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false); // State for the Add Request modal
-    const modalRef = useRef<HTMLDivElement | null>(null); // Create a ref for the modal container
+    const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
     const [isSortModalOpen, setIsSortModalOpen] = useState<boolean>(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState<boolean>(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
     const [sortField, setSortField] = useState<string>('product_name');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-    const [isViewModalOpen, setIsViewModalOpen] = useState<boolean>(false);
     const [selectedProcessingRequestItem, setSelectedProcessingRequestItem] =
         useState<ProcessingRequestItem | null>(null);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false); // State for delete confirmation modal
     const [itemToDelete, setItemToDelete] =
-        useState<ProcessingRequestItem | null>(null); // Item selected for deletion
-    const [itemToMarkComplete, setitemToMarkComplete] =
-        useState<ProcessingRequestItem | null>(null); // Item selected to Mark Complete if it is not already completed
+        useState<ProcessingRequestItem | null>(null);
+    const [itemToEdit, setItemToEdit] = useState<ProcessingRequestItem | null>(
+        null
+    );
+    const [refresh, setRefresh] = useState<boolean>(false);
+    const modalRef = useRef<HTMLDivElement | null>(null);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [itemsPerPage] = useState<number>(10);
 
     const fetchProcessingRequests = async () => {
         setLoading(true);
@@ -93,7 +116,6 @@ const ProcessingRequestsTable = (): JSX.Element => {
         setSortField(field);
         setSortDirection(direction);
 
-        // Cast field to keyof InventoryItem so TypeScript understands it
         const sortedData = [...filteredProcessingRequests].sort((a, b) => {
             if (
                 a[field as keyof ProcessingRequestItem] <
@@ -108,38 +130,29 @@ const ProcessingRequestsTable = (): JSX.Element => {
             return 0;
         });
         setFilteredProcessingRequests(sortedData);
-    };
-
-    const openSortModal = () => {
-        setIsSortModalOpen(true);
-    };
-
-    const closeSortModal = () => {
-        setIsSortModalOpen(false);
-    };
-
-    const openViewModal = (item: ProcessingRequestItem) => {
-        setSelectedProcessingRequestItem(item);
-        setIsViewModalOpen(true);
-    };
-
-    const closeViewModal = () => {
-        setIsViewModalOpen(false);
-        setSelectedProcessingRequestItem(null);
+        setCurrentPage(1); // Reset to first page when sorting
     };
 
     const handleSearch = (searchTerm: string) => {
-        const normalizedSearchTerm = searchTerm
-            .toLowerCase()
-            .replace(/\s+/g, '_'); // Replace spaces with underscores
+        const normalizedSearchTerm = searchTerm.toLowerCase().trim();
+
         const filteredData = processingRequests.filter(
             (item) =>
                 item.product_name
                     .toLowerCase()
                     .includes(normalizedSearchTerm) ||
-                item.status.toLowerCase().includes(normalizedSearchTerm)
+                item.status
+                    .replace(/_/g, ' ')
+                    .toLowerCase()
+                    .includes(normalizedSearchTerm) ||
+                item.quantity
+                    .toString()
+                    .toLowerCase()
+                    .includes(normalizedSearchTerm)
         );
+
         setFilteredProcessingRequests(filteredData);
+        setCurrentPage(1); // Reset to first page when searching
     };
 
     const handleDeleteItem = async () => {
@@ -162,14 +175,98 @@ const ProcessingRequestsTable = (): JSX.Element => {
         setIsDeleteModalOpen(false);
     };
 
-    const [refresh, setRefresh] = useState(false);
-
     const handleRequestAdded = () => {
-        setRefresh((prev) => !prev); // Trigger a refresh of the data
-        setIsAddModalOpen(false); // Close the Add Request modal after adding
+        setRefresh((prev) => !prev);
+        setIsAddModalOpen(false);
     };
 
-    // Close the modal if clicked outside
+    const markRequestAsCompleted = async (item: ProcessingRequestItem) => {
+        if (item.status === 'completed') {
+            return;
+        }
+
+        try {
+            const { error } = await supabase
+                .from('processing_requests')
+                .update({ status: 'completed' })
+                .eq('id', item.id);
+
+            if (error) {
+                console.error('Error updating status: ', error.message);
+            } else {
+                const updatedDate = formatDate(new Date(), 1); // Adjust for UTC+1
+
+                const updatedItem: ProcessingRequestItem = {
+                    ...item,
+                    status: 'completed',
+                    updated_at: updatedDate,
+                };
+
+                setProcessingRequests((prev) =>
+                    prev.map((request) =>
+                        request.id === item.id ? updatedItem : request
+                    )
+                );
+                setFilteredProcessingRequests((prev) =>
+                    prev.map((request) =>
+                        request.id === item.id ? updatedItem : request
+                    )
+                );
+            }
+        } catch (err) {
+            console.error('Unexpected error:', err);
+        }
+    };
+
+    const handleRequestUpdated = () => {
+        setRefresh((prev) => !prev);
+    };
+
+    const prepareCSVData = () => {
+        const headers = [
+            'ID',
+            'Product ID',
+            'Product Name',
+            'Quantity',
+            'Status',
+            'Created At',
+            'Updated At',
+        ];
+        const data = filteredProcessingRequests.map((item) => [
+            item.id,
+            item.product_id,
+            item.product_name,
+            item.quantity.toString(),
+            item.status === 'in_progress'
+                ? 'In Progress'
+                : item.status.charAt(0).toUpperCase() + item.status.slice(1),
+            item.created_at,
+            item.updated_at,
+        ]);
+        return [headers, ...data];
+    };
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredProcessingRequests.slice(
+        indexOfFirstItem,
+        indexOfLastItem
+    );
+
+    const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+    const nextPage = () =>
+        setCurrentPage((prev) =>
+            Math.min(
+                prev + 1,
+                Math.ceil(filteredProcessingRequests.length / itemsPerPage)
+            )
+        );
+    const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
+
+    useEffect(() => {
+        fetchProcessingRequests();
+    }, [refresh]);
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
@@ -189,66 +286,6 @@ const ProcessingRequestsTable = (): JSX.Element => {
         };
     }, [isAddModalOpen]);
 
-    useEffect(() => {
-        fetchProcessingRequests();
-    }, [refresh]);
-    const markRequestAsCompleted = async (item: ProcessingRequestItem) => {
-        if (item.status === 'completed') {
-            return; // Do nothing if the status is already 'completed'
-        }
-
-        try {
-            const { error } = await supabase
-                .from('processing_requests')
-                .update({ status: 'completed' })
-                .eq('id', item.id);
-
-            if (error) {
-                console.error('Error updating status: ', error.message);
-            } else {
-                // Update local state to reflect the change
-                setProcessingRequests((prev) =>
-                    prev.map((request) =>
-                        request.id === item.id
-                            ? { ...request, status: 'completed' }
-                            : request
-                    )
-                );
-                setFilteredProcessingRequests((prev) =>
-                    prev.map((request) =>
-                        request.id === item.id
-                            ? { ...request, status: 'completed' }
-                            : request
-                    )
-                );
-            }
-        } catch (err) {
-            console.error('Unexpected error:', err);
-        }
-    };
-
-    useEffect(() => {
-        fetchProcessingRequests();
-    }, []);
-    const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
-    const [itemToEdit, setItemToEdit] = useState<ProcessingRequestItem | null>(
-        null
-    );
-
-    const openEditModal = (item: ProcessingRequestItem) => {
-        setItemToEdit(item);
-        setIsEditModalOpen(true);
-    };
-
-    const closeEditModal = () => {
-        setIsEditModalOpen(false);
-        setItemToEdit(null);
-    };
-
-    const handleRequestUpdated = () => {
-        setRefresh((prev) => !prev); // Trigger data refresh
-    };
-
     return (
         <div className="py-8">
             <div className="w-11/12 mx-auto overflow-x-auto border rounded-lg shadow-lg">
@@ -256,20 +293,45 @@ const ProcessingRequestsTable = (): JSX.Element => {
                     <div className="flex-1 flex items-center space-x-4">
                         <input
                             type="text"
-                            placeholder="Search for product name or status..."
+                            placeholder="Search for product name, quantity or status..."
                             className="p-2 border rounded-md flex-1"
                             onChange={(e) => handleSearch(e.target.value)}
                         />
                         <Button
-                            label="Add New Request"
+                            label="New Request"
                             onClick={() => setIsAddModalOpen(true)}
+                            variant="primary"
+                        />
+                        <Button
+                            label="Export CSV"
+                            onClick={() => {
+                                const csvContent = prepareCSVData()
+                                    .map((row) => row.join(','))
+                                    .join('\n');
+                                const csvLink = document.createElement('a');
+                                csvLink.href = URL.createObjectURL(
+                                    new Blob([csvContent], { type: 'text/csv' })
+                                );
+                                csvLink.setAttribute(
+                                    'download',
+                                    'processing-requests.csv'
+                                );
+                                document.body.appendChild(csvLink);
+                                csvLink.click();
+                                document.body.removeChild(csvLink);
+                            }}
+                            variant="primary"
+                        />
+                        <Button
+                            label="Import CSV"
+                            onClick={() => setIsImportModalOpen(true)}
                             variant="primary"
                         />
                     </div>
                     <FaSort
                         className="text-gray-500 cursor-pointer hover:text-green-500 ml-4"
                         size={24}
-                        onClick={openSortModal}
+                        onClick={() => setIsSortModalOpen(true)}
                     />
                 </div>
 
@@ -289,7 +351,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredProcessingRequests.map((item) => (
+                        {currentItems.map((item) => (
                             <tr
                                 key={item.id}
                                 className="hover:bg-gray-100 even:bg-gray-50 odd:bg-white text-center"
@@ -298,24 +360,37 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                     {item.product_name}
                                 </td>
                                 <td className="px-6 py-8 border-b">
-                                    {item.quantity} kg
+                                    {item.quantity}
                                 </td>
                                 <td className="px-6 py-8 border-b">
-                                    {item.status === 'in_progress'
-                                        ? 'in progress'
-                                        : item.status}
+                                    {item.status
+                                        ? item.status === 'in_progress'
+                                            ? 'In Progress'
+                                            : item.status
+                                                  .charAt(0)
+                                                  .toUpperCase() +
+                                              item.status.slice(1)
+                                        : 'N/A'}
                                 </td>
                                 <td className="px-6 py-8 border-b">
                                     <div className="flex justify-center space-x-4">
                                         <FaEye
                                             className="text-gray-500 cursor-pointer hover:text-green-500"
                                             size={18}
-                                            onClick={() => openViewModal(item)}
+                                            onClick={() => {
+                                                setSelectedProcessingRequestItem(
+                                                    item
+                                                );
+                                                setIsViewModalOpen(true);
+                                            }}
                                         />
                                         <FaEdit
                                             className="text-gray-500 cursor-pointer hover:text-green-500"
                                             size={18}
-                                            onClick={() => openEditModal(item)}
+                                            onClick={() => {
+                                                setItemToEdit(item);
+                                                setIsEditModalOpen(true);
+                                            }}
                                         />
                                         <FaCheckSquare
                                             className={`cursor-pointer ${
@@ -342,11 +417,36 @@ const ProcessingRequestsTable = (): JSX.Element => {
                         ))}
                     </tbody>
                 </table>
+                <div className="flex justify-between items-center mt-4 px-6 pb-4">
+                    <Button
+                        onClick={prevPage}
+                        disabled={currentPage === 1}
+                        variant="primary"
+                        label="Previous"
+                    />
+                    <span>
+                        Page {currentPage} of{' '}
+                        {Math.ceil(
+                            filteredProcessingRequests.length / itemsPerPage
+                        )}
+                    </span>
+                    <Button
+                        onClick={nextPage}
+                        disabled={
+                            currentPage ===
+                            Math.ceil(
+                                filteredProcessingRequests.length / itemsPerPage
+                            )
+                        }
+                        variant="primary"
+                        label="Next"
+                    />
+                </div>
             </div>
             {isEditModalOpen && itemToEdit && (
                 <EditProcessingRequestModal
                     isOpen={isEditModalOpen}
-                    onClose={closeEditModal}
+                    onClose={() => setIsEditModalOpen(false)}
                     processingRequest={itemToEdit}
                     onRequestUpdated={handleRequestUpdated}
                 />
@@ -365,21 +465,18 @@ const ProcessingRequestsTable = (): JSX.Element => {
                     </div>
                 </div>
             )}
-
             <SortModal
                 isOpen={isSortModalOpen}
-                onClose={closeSortModal}
+                onClose={() => setIsSortModalOpen(false)}
                 onSortChange={handleSortChange}
             />
-
             {isViewModalOpen && selectedProcessingRequestItem && (
                 <ProcessingRequestsViewModal
                     isOpen={isViewModalOpen}
                     processingRequest={selectedProcessingRequestItem}
-                    onClose={closeViewModal}
+                    onClose={() => setIsViewModalOpen(false)}
                 />
             )}
-
             <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
@@ -402,6 +499,14 @@ const ProcessingRequestsTable = (): JSX.Element => {
                         variant: 'primary',
                     },
                 ]}
+            />
+            <ImportCSVModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                onImportSuccess={() => {
+                    setRefresh((prev) => !prev);
+                    setIsImportModalOpen(false);
+                }}
             />
         </div>
     );
