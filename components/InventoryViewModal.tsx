@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+// import { createClient } from '../utils/supabase/client';  // Adjust the path to match your folder structure
+import { createClient } from '@/utils/supabase/client';
 
 // Type definition for inventory item
 type Inventory = {
     id: string;
     product_name: string;
+    product_description?: string; // Optional field
+    reserved_location?: string; // Optional field
     quantity: number;
     created_at: string;
     updated_at: string;
@@ -11,22 +15,59 @@ type Inventory = {
 
 type InventoryModalProps = {
     isOpen: boolean;
-    inventory: Inventory;  // Removed Partial to ensure all fields are required for the modal
+    inventoryId: string; // Only pass the inventory ID to fetch the data
     onClose: () => void;
 };
 
 const InventoryViewModal: React.FC<InventoryModalProps> = ({
     isOpen,
-    inventory,
+    inventoryId,
     onClose,
 }) => {
-    if (!isOpen) return null;
+    const [inventory, setInventory] = useState<Inventory | null>(null);
 
     // Function to format date (improve readability)
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        return date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
     };
+
+    // Fetch inventory data when the modal is open and inventoryId changes
+    useEffect(() => {
+        const fetchInventory = async () => {
+            const supabase = createClient(); // Create a Supabase client
+
+            if (inventoryId) {
+                const { data, error } = await supabase
+                    .from('products') // Assuming the table is named 'products'
+                    .select('*')
+                    .eq('id', inventoryId)
+                    .single(); // Fetch a single item
+
+                if (error) {
+                    console.error('Error fetching inventory:', error);
+                    return;
+                }
+
+                if (data) {
+                    setInventory(data);
+                }
+            }
+        };
+
+        if (isOpen) {
+            fetchInventory();
+        } else {
+            setInventory(null); // Clear data when modal is closed
+        }
+    }, [isOpen, inventoryId]);
+
+    if (!isOpen || !inventory) return null;
 
     return (
         <div
@@ -46,6 +87,14 @@ const InventoryViewModal: React.FC<InventoryModalProps> = ({
                     <p>
                         <strong>Quantity: </strong>
                         {inventory.quantity} kg
+                    </p>
+                    <p>
+                        <strong>Product Description: </strong>
+                        {inventory.product_description || 'N/A'}
+                    </p>
+                    <p>
+                        <strong>Reserved Location: </strong>
+                        {inventory.reserved_location || 'N/A'}
                     </p>
                     <p>
                         <strong>Created At: </strong>
