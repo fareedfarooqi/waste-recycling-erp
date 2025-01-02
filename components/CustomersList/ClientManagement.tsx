@@ -125,14 +125,6 @@ const ClientManagement = () => {
             setClients(
                 data.map((client: Client) => ({
                     ...client,
-                    contact_details:
-                        typeof client.contact_details === 'string'
-                            ? JSON.parse(client.contact_details)
-                            : client.contact_details,
-                    locations:
-                        typeof client.locations === 'string'
-                            ? JSON.parse(client.locations)
-                            : client.locations,
                 }))
             );
         }
