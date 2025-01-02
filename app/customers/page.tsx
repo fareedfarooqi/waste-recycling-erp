@@ -10,7 +10,7 @@ function ClientListPage(): JSX.Element {
     const { isSidebarOpen } = useSidebar();
 
     return (
-        <div className="flex">
+        <div className="flex bg-green-50">
             {isSidebarOpen ? <Sidebar /> : <SidebarSmall />}
 
             <div className="flex-1">

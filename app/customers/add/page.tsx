@@ -17,17 +17,7 @@ const AddCustomerPage = () => {
   `;
 
     return (
-        <div
-            className="flex min-h-screen"
-            style={{
-                background:
-                    'linear-gradient(to bottom, #edfff1 0%, #ffffff 300px, #ffffff 100%)',
-                backgroundImage: `url("${topWave}"), url("${bottomWave}")`,
-                backgroundRepeat: 'no-repeat, no-repeat',
-                backgroundPosition: 'top, bottom',
-                backgroundSize: 'cover, cover',
-            }}
-        >
+        <div className="flex bg-green-50 min-h-screen">
             <div>{isSidebarOpen ? <Sidebar /> : <SidebarSmall />}</div>
 
             <div className="flex-1 p-10">
