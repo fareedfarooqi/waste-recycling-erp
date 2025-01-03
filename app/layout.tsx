@@ -2,7 +2,7 @@
 
 import React from 'react';
 import './globals.css';
-import { SidebarProvider } from '@/context/SidebarContext';
+import { SidebarProvider } from '@/components/Sidebar/SidebarContext';
 
 export default function RootLayout({
     children,
