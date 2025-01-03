@@ -137,7 +137,6 @@ const ClientManagement = () => {
 
     return (
         <div>
-            <Navbar fetchClients={fetchClients} />
             <ClientsTable
                 clients={clients}
                 loading={loading}
