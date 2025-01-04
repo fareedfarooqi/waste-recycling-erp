@@ -40,7 +40,7 @@ const Sidebar = (): JSX.Element => {
 
     return (
         <div
-            className="w-64 h-screen bg-green-700 text-white p-6 flex flex-col transition-all duration-500 overflow-y-auto"
+            className="w-64 min-h-screen bg-green-700 text-white p-6 flex flex-col transition-all duration-500 overflow-y-auto"
             onMouseLeave={() => setSidebarOpen(false)}
         >
             <div className="mb-2 flex items-center justify-center h-20">

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Navbar from './Navbar';
 import ClientsTable from './ClientsTable';
 import { supabase } from '@/config/supabaseClient';
 
@@ -29,6 +28,8 @@ type Client = {
     slug: string;
     contact_details: ContactDetails;
     locations: Location[];
+    updated_at: string;
+    created_at: string;
 };
 
 const ClientManagement = () => {

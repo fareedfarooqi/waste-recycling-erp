@@ -48,7 +48,6 @@ const SidebarSmall = (): JSX.Element => {
         },
     ];
 
-    // Start hover timer
     const handleMouseEnter = () => {
         const timeout = setTimeout(() => {
             setSidebarOpen(true);
@@ -56,13 +55,11 @@ const SidebarSmall = (): JSX.Element => {
         setHoverTimeout(timeout);
     };
 
-    // Clear hover timer and close sidebar on mouse leave
     const handleMouseLeave = () => {
         if (hoverTimeout) clearTimeout(hoverTimeout);
         setSidebarOpen(false);
     };
 
-    // On click, navigate + CLEAR any existing timeout
     const handleMenuClick = (route: string) => {
         if (hoverTimeout) {
             clearTimeout(hoverTimeout);
@@ -73,17 +70,15 @@ const SidebarSmall = (): JSX.Element => {
 
     return (
         <div
-            className="w-20 h-screen bg-green-700 text-white flex flex-col justify-between transition-all duration-600 relative"
+            className="w-20 min-h-screen bg-green-700 text-white flex flex-col justify-between transition-all duration-600 relative"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
         >
             <div className="space-y-6 mt-4">
-                {/* Top Profile Icon */}
                 <div className="relative flex items-center justify-center h-20 group">
                     <CgProfile
                         className="text-5xl cursor-pointer text-white hover:bg-green-600 p-1 rounded-full"
                         onClick={() => {
-                            // Also clear any timeouts here
                             if (hoverTimeout) clearTimeout(hoverTimeout);
                             setSidebarOpen(false);
                             router.push('/profile');
@@ -94,13 +89,12 @@ const SidebarSmall = (): JSX.Element => {
                     </span>
                 </div>
 
-                {/* Main Menu */}
                 <div className="space-y-6">
                     {menuItems.map((item, index) => (
                         <div
                             key={index}
                             className="flex items-center justify-center relative group"
-                            onClick={() => handleMenuClick(item.route)} // <-- updated
+                            onClick={() => handleMenuClick(item.route)}
                         >
                             <div className="p-2 hover:bg-green-600 rounded-full cursor-pointer flex items-center justify-center">
                                 {item.icon}
@@ -113,7 +107,6 @@ const SidebarSmall = (): JSX.Element => {
                 </div>
             </div>
 
-            {/* Exit at bottom */}
             <div
                 className="flex items-center justify-center mb-8 relative group"
                 onClick={() => {
