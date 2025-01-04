@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     FaTrashAlt,
@@ -15,6 +15,7 @@ import { GoSearch } from 'react-icons/go';
 import ClientEditModal from './ClientEditModal';
 import ClientDeleteModal from './ClientDeleteModal';
 import ImportCSVModal from './ImportCSVModal';
+import SortDropdown from './SortDropdown';
 import { FaPlus } from 'react-icons/fa';
 import { CiImport, CiExport } from 'react-icons/ci';
 import Papa from 'papaparse';
@@ -72,6 +73,9 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
         {}
     );
     const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
+    const [sortField, setSortField] = useState<string>('Company Name');
+    const [sortOrder, setSortOrder] = useState<string>('Ascending');
+    const [sortedClients, setSortedClients] = useState<Client[]>(clients);
 
     const router = useRouter();
     const [currentPage, setCurrentPage] = useState(1);
@@ -79,7 +83,10 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     const totalPages = Math.ceil(clients.length / itemsPerPage);
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentClients = clients.slice(indexOfFirstItem, indexOfLastItem);
+    const currentClients = sortedClients.slice(
+        indexOfFirstItem,
+        indexOfLastItem
+    );
 
     const toFirstPage = () => setCurrentPage(1);
     const toLastPage = () => setCurrentPage(totalPages);
@@ -175,6 +182,71 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
         document.body.removeChild(link);
     };
 
+    useEffect(() => {
+        const sortClients = () => {
+            const sorted = [...clients].sort((a, b) => {
+                const compare = (
+                    val1: string | number,
+                    val2: string | number
+                ): number => {
+                    if (typeof val1 === 'string' && typeof val2 === 'string') {
+                        return sortOrder === 'Ascending'
+                            ? val1.localeCompare(val2)
+                            : val2.localeCompare(val1);
+                    } else if (
+                        typeof val1 === 'number' &&
+                        typeof val2 === 'number'
+                    ) {
+                        return sortOrder === 'Ascending'
+                            ? val1 - val2
+                            : val2 - val1;
+                    } else {
+                        return 0;
+                    }
+                };
+
+                switch (sortField) {
+                    case 'Company Name':
+                        return compare(
+                            a.company_name.toLowerCase(),
+                            b.company_name.toLowerCase()
+                        );
+                    case 'Number of Locations':
+                        return compare(a.locations.length, b.locations.length);
+                    case 'Total Empty Bins': {
+                        const totalBinsA = a.locations.reduce(
+                            (sum, loc) =>
+                                sum + Number(loc.initial_empty_bins || 0),
+                            0
+                        );
+                        const totalBinsB = b.locations.reduce(
+                            (sum, loc) =>
+                                sum + Number(loc.initial_empty_bins || 0),
+                            0
+                        );
+                        return compare(totalBinsA, totalBinsB);
+                    }
+                    case 'Recently Updated':
+                        return compare(
+                            Date.parse(a.updated_at),
+                            Date.parse(b.updated_at)
+                        );
+                    case 'Recently Added':
+                        return compare(
+                            Date.parse(a.created_at),
+                            Date.parse(b.created_at)
+                        );
+                    default:
+                        return 0;
+                }
+            });
+
+            setSortedClients(sorted);
+        };
+
+        sortClients();
+    }, [sortField, sortOrder, clients]);
+
     return (
         <div className={`flex justify-center py-8 transition-all duration-100`}>
             <div className="w-11/12 border border-gray-300 rounded-lg shadow-lg mt-5">
@@ -232,6 +304,12 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                         </span>
                         Export CSV
                     </button>
+                    <SortDropdown
+                        sortField={sortField}
+                        sortOrder={sortOrder}
+                        setSortField={setSortField}
+                        setSortOrder={setSortOrder}
+                    />
                 </div>
 
                 <table className="min-w-full border-collapse">
