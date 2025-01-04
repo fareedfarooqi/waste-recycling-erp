@@ -185,7 +185,6 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     Import CSV
                 </h2>
 
-                {/* Notice */}
                 <div className="bg-blue-100 border border-blue-300 text-blue-700 px-4 py-3 rounded mb-6">
                     <p className="text-sm">
                         <strong>CSV Import Guidelines:</strong>
@@ -239,7 +238,6 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     </p>
                 </div>
 
-                {/* Sample Downloads */}
                 <div className="mb-6 text-center">
                     <p className="text-sm text-gray-700 mb-2">
                         Download sample CSV files:
@@ -261,7 +259,6 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     </a>
                 </div>
 
-                {/* File Upload */}
                 <div className="mb-6 relative">
                     <label
                         htmlFor="file-upload"
