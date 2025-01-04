@@ -83,13 +83,6 @@ const SortModal: React.FC<SortModalProps> = ({
                         </div>
                     </div>
                 </div>
-                <div className="mt-6 flex justify-center">
-                    <Button
-                        label="Done"
-                        variant="secondary"
-                        onClick={onClose}
-                    />
-                </div>
             </div>
         </div>
     );

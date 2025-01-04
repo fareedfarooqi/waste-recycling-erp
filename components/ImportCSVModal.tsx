@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/config/supabaseClient';
 import Button from './Button';
 import { IoMdClose } from 'react-icons/io';
@@ -14,21 +14,74 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
     onClose,
     onImportSuccess,
 }) => {
-    const [file, setFile] = useState<File | null>(null);
+    const [files, setFiles] = useState<File[]>([]);
     const [importing, setImporting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
 
     const modalRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            setFile(e.target.files[0]);
+            setFiles((prevFiles) => [
+                ...prevFiles,
+                ...Array.from(e.target.files || []),
+            ]);
+            setError(null);
+        }
+    };
+
+    const handleDragEnter = useCallback(
+        (e: React.DragEvent<HTMLDivElement>) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragging(true);
+        },
+        []
+    );
+
+    const handleDragLeave = useCallback(
+        (e: React.DragEvent<HTMLDivElement>) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragging(false);
+        },
+        []
+    );
+
+    const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+        if (e.dataTransfer.files) {
+            setFiles((prevFiles) => [
+                ...prevFiles,
+                ...Array.from(e.dataTransfer.files),
+            ]);
+            setError(null);
+        }
+    }, []);
+
+    const handleRemoveFile = (index: number) => {
+        setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
+    };
+
+    const handleRemoveAllFiles = () => {
+        setFiles([]);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''; // Reset the file input
         }
     };
 
     const handleImport = async () => {
-        if (!file) {
-            setError('Please select a file to import.');
+        if (files.length === 0) {
+            setError('Please select at least one file to import.');
             return;
         }
 
@@ -36,29 +89,32 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
         setError(null);
 
         try {
-            const text = await file.text();
-            const rows = text.split('\n').map((row) => row.split(','));
-            const headers = rows[0];
-            const data = rows.slice(1);
+            for (const file of files) {
+                const text = await file.text();
+                const rows = text.split('\n').map((row) => row.split(','));
+                const headers = rows[0];
+                const data = rows.slice(1);
 
-            for (const row of data) {
-                if (row.length === headers.length) {
-                    const item = {
-                        product_id: row[1],
-                        quantity: parseInt(row[3]),
-                        status: row[4].toLowerCase().replace(' ', '_'),
-                        created_at: row[5],
-                        updated_at: row[6],
-                    };
+                for (const row of data) {
+                    if (row.length === headers.length) {
+                        const item = {
+                            product_id: row[1],
+                            quantity: parseInt(row[3]),
+                            status: row[4].toLowerCase().replace(' ', '_'),
+                            created_at: row[5],
+                            updated_at: row[6],
+                        };
 
-                    const { error } = await supabase
-                        .from('processing_requests')
-                        .insert(item);
-                    if (error) throw error;
+                        const { error } = await supabase
+                            .from('processing_requests')
+                            .insert(item);
+                        if (error) throw error;
+                    }
                 }
             }
 
             onImportSuccess();
+            onClose();
         } catch (err) {
             setError('Error importing CSV: ' + (err as Error).message);
         } finally {
@@ -78,6 +134,9 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
 
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
+        } else {
+            setError(null);
+            setFiles([]);
         }
 
         return () => {
@@ -88,26 +147,95 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50">
             <div
                 ref={modalRef}
-                className="bg-white p-6 pb-6 rounded-lg shadow-lg w-96 relative"
+                className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full relative border border-gray-300"
             >
                 <button
                     onClick={onClose}
-                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
                     aria-label="Close"
                 >
                     <IoMdClose size={24} />
                 </button>
-                <h2 className="text-xl font-bold mb-4 pr-8">Import CSV</h2>
-                <input
-                    type="file"
-                    accept=".csv"
-                    onChange={handleFileChange}
-                    className="mb-4"
-                />
-                {error && <p className="text-red-500 mb-4">{error}</p>}
+                <h2 className="text-2xl font-bold mb-6">Import CSV Files</h2>
+                <div
+                    className={`mb-4 border-2 border-dashed p-4 rounded-lg ${
+                        isDragging
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-300'
+                    }`}
+                    onDragEnter={handleDragEnter}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                >
+                    <input
+                        type="file"
+                        accept=".csv"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        ref={fileInputRef}
+                        multiple
+                    />
+                    <div className="text-center">
+                        <p className="mb-2">Drag and drop CSV files here, or</p>
+                        <div className="flex justify-center">
+                            <Button
+                                label="Choose Files"
+                                onClick={() => fileInputRef.current?.click()}
+                                variant="secondary"
+                            />
+                        </div>
+                    </div>
+                    {files.length > 0 && (
+                        <div className="mt-4">
+                            <div className="flex justify-between items-center mb-2">
+                                <p className="font-semibold">Selected files:</p>
+                                <button
+                                    onClick={handleRemoveAllFiles}
+                                    className="text-red-500 hover:text-red-700 text-sm"
+                                >
+                                    Remove All
+                                </button>
+                            </div>
+                            <ul className="list-disc pl-5">
+                                {files.map((file, index) => (
+                                    <li
+                                        key={index}
+                                        className="flex justify-between items-center mb-1"
+                                    >
+                                        <span className="text-sm text-gray-600">
+                                            {file.name}
+                                        </span>
+                                        <button
+                                            onClick={() =>
+                                                handleRemoveFile(index)
+                                            }
+                                            className="text-red-500 hover:text-red-700 text-sm"
+                                        >
+                                            Remove
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+                {error && (
+                    <div className="mb-4 p-2 bg-red-100 border border-red-400 rounded">
+                        <p className="text-red-700 text-sm">
+                            {error}
+                            <button
+                                onClick={() => setError(null)}
+                                className="ml-2 text-blue-500 hover:text-blue-700"
+                            >
+                                Dismiss
+                            </button>
+                        </p>
+                    </div>
+                )}
                 <div className="flex justify-center space-x-4 mt-6">
                     <Button
                         label="Cancel"
@@ -115,10 +243,14 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                         variant="secondary"
                     />
                     <Button
-                        label={importing ? 'Importing...' : 'Import'}
+                        label={
+                            importing
+                                ? 'Importing...'
+                                : `Import ${files.length} ${files.length === 1 ? 'File' : 'Files'}`
+                        }
                         onClick={handleImport}
                         variant="primary"
-                        disabled={importing || !file}
+                        disabled={importing || files.length === 0}
                     />
                 </div>
             </div>

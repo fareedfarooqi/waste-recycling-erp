@@ -45,6 +45,7 @@ const EditProcessingRequestModal = ({
     );
     const [loading, setLoading] = useState<boolean>(false);
     const [products, setProducts] = useState<ProductItem[]>([]);
+    const [hasChanges, setHasChanges] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -60,6 +61,15 @@ const EditProcessingRequestModal = ({
 
         fetchProducts();
     }, []);
+
+    useEffect(() => {
+        // Check if any of the fields have changed
+        setHasChanges(
+            productId !== processingRequest.product_id ||
+                quantity !== processingRequest.quantity ||
+                status !== processingRequest.status
+        );
+    }, [productId, quantity, status, processingRequest]);
 
     const handleSaveChanges = async () => {
         setLoading(true);
@@ -168,7 +178,7 @@ const EditProcessingRequestModal = ({
                         label={loading ? 'Saving...' : 'Save Changes'}
                         onClick={handleSaveChanges}
                         variant="primary"
-                        disabled={loading}
+                        disabled={loading || !hasChanges} // Disable button if loading or no changes
                     />
                 </div>
             </div>

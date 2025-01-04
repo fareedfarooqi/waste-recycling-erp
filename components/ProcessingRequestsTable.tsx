@@ -7,7 +7,16 @@ import {
     FaEdit,
     FaSort,
     FaCheckSquare,
+    FaPlus,
+    FaDownload,
+    FaUpload,
 } from 'react-icons/fa';
+import {
+    ChevronLeft,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight,
+} from 'lucide-react';
 import { supabase } from '@/config/supabaseClient';
 import ProcessingRequestsViewModal from './ProcessingRequestsViewModal';
 import SortModal from './SortModal';
@@ -16,7 +25,7 @@ import AddProcessingRequest from './AddProcessingRequest';
 import EditProcessingRequestModal from './EditProcessingRequestModal';
 import ImportCSVModal from './ImportCSVModal';
 import { cn } from '@/lib/utils';
-import Button from '@/components/Button'; // Assuming Button component is imported from here
+import Button from '@/components/Button';
 
 type ProcessingRequestItem = {
     id: string;
@@ -29,9 +38,7 @@ type ProcessingRequestItem = {
 };
 
 const formatDate = (date: Date, timeZoneOffset: number = 0) => {
-    // Adjust the date for the specified time zone offset (in hours)
     date.setHours(date.getHours() + timeZoneOffset);
-
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
@@ -39,7 +46,6 @@ const formatDate = (date: Date, timeZoneOffset: number = 0) => {
     const minutes = date.getMinutes().toString().padStart(2, '0');
     const seconds = date.getSeconds().toString().padStart(2, '0');
     const milliseconds = date.getMilliseconds().toString().padStart(3, '0');
-
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
 };
 
@@ -130,7 +136,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
             return 0;
         });
         setFilteredProcessingRequests(sortedData);
-        setCurrentPage(1); // Reset to first page when sorting
+        setCurrentPage(1);
     };
 
     const handleSearch = (searchTerm: string) => {
@@ -152,7 +158,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
         );
 
         setFilteredProcessingRequests(filteredData);
-        setCurrentPage(1); // Reset to first page when searching
+        setCurrentPage(1);
     };
 
     const handleDeleteItem = async () => {
@@ -194,7 +200,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
             if (error) {
                 console.error('Error updating status: ', error.message);
             } else {
-                const updatedDate = formatDate(new Date(), 1); // Adjust for UTC+1
+                const updatedDate = formatDate(new Date(), 1);
 
                 const updatedItem: ProcessingRequestItem = {
                     ...item,
@@ -253,7 +259,11 @@ const ProcessingRequestsTable = (): JSX.Element => {
         indexOfLastItem
     );
 
-    const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+    const goToFirstPage = () => setCurrentPage(1);
+    const goToLastPage = () =>
+        setCurrentPage(
+            Math.ceil(filteredProcessingRequests.length / itemsPerPage)
+        );
     const nextPage = () =>
         setCurrentPage((prev) =>
             Math.min(
@@ -299,11 +309,13 @@ const ProcessingRequestsTable = (): JSX.Element => {
                         />
                         <Button
                             label="New Request"
+                            icon={<FaPlus />}
                             onClick={() => setIsAddModalOpen(true)}
                             variant="primary"
                         />
                         <Button
                             label="Export CSV"
+                            icon={<FaDownload />}
                             onClick={() => {
                                 const csvContent = prepareCSVData()
                                     .map((row) => row.join(','))
@@ -324,6 +336,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
                         />
                         <Button
                             label="Import CSV"
+                            icon={<FaUpload />}
                             onClick={() => setIsImportModalOpen(true)}
                             variant="primary"
                         />
@@ -363,14 +376,26 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                     {item.quantity}
                                 </td>
                                 <td className="px-6 py-8 border-b">
-                                    {item.status
-                                        ? item.status === 'in_progress'
-                                            ? 'In Progress'
-                                            : item.status
-                                                  .charAt(0)
-                                                  .toUpperCase() +
-                                              item.status.slice(1)
-                                        : 'N/A'}
+                                    <span
+                                        className={`inline-block ${
+                                            item.status === 'completed'
+                                                ? 'bg-[#c6efcd]'
+                                                : item.status === 'in_progress'
+                                                  ? 'bg-[#feeb9c]'
+                                                  : item.status === 'new'
+                                                    ? 'bg-[#ffc8ce]'
+                                                    : ''
+                                        } px-2 py-1 rounded-full w-[120px] text-center`}
+                                    >
+                                        {item.status
+                                            ? item.status === 'in_progress'
+                                                ? 'In Progress'
+                                                : item.status
+                                                      .charAt(0)
+                                                      .toUpperCase() +
+                                                  item.status.slice(1)
+                                            : 'N/A'}
+                                    </span>
                                 </td>
                                 <td className="px-6 py-8 border-b">
                                     <div className="flex justify-center space-x-4">
@@ -417,20 +442,40 @@ const ProcessingRequestsTable = (): JSX.Element => {
                         ))}
                     </tbody>
                 </table>
-                <div className="flex justify-between items-center mt-4 px-6 pb-4">
-                    <Button
+                <div className="flex items-center justify-between px-2 py-4 border-t">
+                    <button
+                        onClick={goToFirstPage}
+                        disabled={currentPage === 1}
+                        className={cn(
+                            'flex h-8 w-8 items-center justify-center rounded-full border mr-2',
+                            currentPage === 1
+                                ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                                : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
+                        )}
+                        aria-label="Go to first page"
+                    >
+                        <ChevronsLeft className="h-4 w-4" />
+                    </button>
+                    <button
                         onClick={prevPage}
                         disabled={currentPage === 1}
-                        variant="primary"
-                        label="Previous"
-                    />
-                    <span>
+                        className={cn(
+                            'flex h-8 w-8 items-center justify-center rounded-full border',
+                            currentPage === 1
+                                ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                                : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
+                        )}
+                        aria-label="Go to previous page"
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <div className="text-sm text-gray-500">
                         Page {currentPage} of{' '}
                         {Math.ceil(
                             filteredProcessingRequests.length / itemsPerPage
                         )}
-                    </span>
-                    <Button
+                    </div>
+                    <button
                         onClick={nextPage}
                         disabled={
                             currentPage ===
@@ -438,9 +483,42 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                 filteredProcessingRequests.length / itemsPerPage
                             )
                         }
-                        variant="primary"
-                        label="Next"
-                    />
+                        className={cn(
+                            'flex h-8 w-8 items-center justify-center rounded-full border',
+                            currentPage ===
+                                Math.ceil(
+                                    filteredProcessingRequests.length /
+                                        itemsPerPage
+                                )
+                                ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                                : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
+                        )}
+                        aria-label="Go to next page"
+                    >
+                        <ChevronRight className="h-4 w-4" />
+                    </button>
+                    <button
+                        onClick={goToLastPage}
+                        disabled={
+                            currentPage ===
+                            Math.ceil(
+                                filteredProcessingRequests.length / itemsPerPage
+                            )
+                        }
+                        className={cn(
+                            'flex h-8 w-8 items-center justify-center rounded-full border ml-2',
+                            currentPage ===
+                                Math.ceil(
+                                    filteredProcessingRequests.length /
+                                        itemsPerPage
+                                )
+                                ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                                : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
+                        )}
+                        aria-label="Go to last page"
+                    >
+                        <ChevronsRight className="h-4 w-4" />
+                    </button>
                 </div>
             </div>
             {isEditModalOpen && itemToEdit && (
