@@ -11,7 +11,7 @@ const Navbar = (): JSX.Element => {
             className={`flex ${isSidebarOpen ? 'ml-16' : 'ml-16'} transition-all duration-100`}
         >
             <div className="flex-1">
-                <nav className="bg-white p-4 flex items-center">
+                <nav className="bg-green-50 p-4 flex items-center">
                     <span className="mr-5 text-white hover:scale-110 cursor-pointer transition-all"></span>
                 </nav>
             </div>

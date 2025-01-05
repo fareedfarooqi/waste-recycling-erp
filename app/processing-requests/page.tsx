@@ -17,12 +17,9 @@ function ProcessingRequestsPage(): JSX.Element {
             {isSidebarOpen ? <Sidebar /> : <SidebarSmall />}
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col">
-                {/* Navbar */}
-                <Navbar />
-
+            <div className="flex-1 flex flex-col bg-green-50">
                 {/* Main Table Content */}
-                <div className="flex-1 overflow-auto">
+                <div className="flex-1 overflow-auto bg-green-50">
                     <ProcessingRequestsTable />
                 </div>
             </div>

@@ -8,8 +8,6 @@ import {
     FaSort,
     FaCheckSquare,
     FaPlus,
-    FaDownload,
-    FaUpload,
 } from 'react-icons/fa';
 import {
     ChevronLeft,
@@ -26,6 +24,7 @@ import EditProcessingRequestModal from './EditProcessingRequestModal';
 import ImportCSVModal from './ImportCSVModal';
 import { cn } from '@/lib/utils';
 import Button from '@/components/Button';
+import { CiImport, CiExport } from 'react-icons/ci';
 
 type ProcessingRequestItem = {
     id: string;
@@ -297,7 +296,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
     }, [isAddModalOpen]);
 
     return (
-        <div className="py-8">
+        <div className="py-8 bg-green-50 -mt-5">
             <div className="w-11/12 mx-auto overflow-x-auto border rounded-lg shadow-lg">
                 <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-4 border-b">
                     <div className="flex-1 flex items-center space-x-4">
@@ -315,7 +314,12 @@ const ProcessingRequestsTable = (): JSX.Element => {
                         />
                         <Button
                             label="Export CSV"
-                            icon={<FaDownload />}
+                            icon={
+                                <CiImport
+                                    style={{ strokeWidth: 2 }}
+                                    size={20}
+                                />
+                            }
                             onClick={() => {
                                 const csvContent = prepareCSVData()
                                     .map((row) => row.join(','))
@@ -336,7 +340,12 @@ const ProcessingRequestsTable = (): JSX.Element => {
                         />
                         <Button
                             label="Import CSV"
-                            icon={<FaUpload />}
+                            icon={
+                                <CiExport
+                                    style={{ strokeWidth: 2 }}
+                                    size={20}
+                                />
+                            }
                             onClick={() => setIsImportModalOpen(true)}
                             variant="primary"
                         />
@@ -442,7 +451,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
                         ))}
                     </tbody>
                 </table>
-                <div className="flex items-center justify-between px-2 py-4 border-t">
+                <div className="flex items-center justify-between px-2 py-4 border-t bg-white">
                     <button
                         onClick={goToFirstPage}
                         disabled={currentPage === 1}
