@@ -435,7 +435,13 @@ const CustomerForm: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="flex justify-between">
+                        <button
+                            className="bg-red-500 text-white px-6 py-3 rounded-lg transition hover:bg-red-700"
+                            onClick={() => router.push('/customers')}
+                        >
+                            Cancel
+                        </button>
                         <button
                             type="submit"
                             className="bg-green-500 text-white px-6 py-3 rounded-lg transition hover:bg-green-700"
