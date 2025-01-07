@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/config/supabaseClient';
 import Button from './Button';
 import { IoMdClose } from 'react-icons/io';
+import SuccessAnimation from './SuccessAnimation';
 
 interface ImportCSVModalProps {
     isOpen: boolean;
@@ -18,6 +19,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
     const [importing, setImporting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const modalRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,9 +114,12 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     }
                 }
             }
-
-            onImportSuccess();
-            onClose();
+            setShowSuccess(true);
+            setTimeout(() => {
+                setShowSuccess(false);
+                onImportSuccess();
+                onClose();
+            }, 700);
         } catch (err) {
             setError(
                 'Error importing CSV: Please ensure that you have selected the correct CSV file/s and try again.'
@@ -150,6 +155,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50">
+            {showSuccess && <SuccessAnimation />}
             <div
                 ref={modalRef}
                 className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full relative border border-gray-300"

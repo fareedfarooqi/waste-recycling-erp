@@ -10,6 +10,10 @@ import {
     FaSort,
     FaCheckSquare,
     FaPlus,
+    FaAngleDoubleLeft,
+    FaAngleLeft,
+    FaAngleRight,
+    FaAngleDoubleRight,
 } from 'react-icons/fa';
 import {
     ChevronLeft,
@@ -27,6 +31,7 @@ import ImportCSVModal from './ImportCSVModal';
 import { cn } from '@/lib/utils';
 import Button from '@/components/Button';
 import { CiImport, CiExport } from 'react-icons/ci';
+import { updateSession } from '@/utils/supabase/middleware';
 
 type ProcessingRequestItem = {
     id: string;
@@ -64,6 +69,16 @@ const ProcessingRequestsTable = (): JSX.Element => {
     const modalRef = useRef<HTMLDivElement | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [itemsPerPage] = useState<number>(10);
+    const totalPages = Math.ceil(
+        filteredProcessingRequests.length / itemsPerPage
+    );
+
+    const toFirstPage = () => setCurrentPage(1);
+    const toLastPage = () => {
+        if (totalPages !== 0) {
+            setCurrentPage(totalPages);
+        }
+    };
 
     const fetchProcessingRequests = async () => {
         setLoading(true);
@@ -112,18 +127,27 @@ const ProcessingRequestsTable = (): JSX.Element => {
         setSortDirection(direction);
 
         const sortedData = [...filteredProcessingRequests].sort((a, b) => {
-            if (
-                a[field as keyof ProcessingRequestItem] <
-                b[field as keyof ProcessingRequestItem]
-            )
-                return direction === 'asc' ? -1 : 1;
-            if (
-                a[field as keyof ProcessingRequestItem] >
-                b[field as keyof ProcessingRequestItem]
-            )
-                return direction === 'asc' ? 1 : -1;
+            // Check if the field is a string or a number
+            const aValue = a[field as keyof ProcessingRequestItem];
+            const bValue = b[field as keyof ProcessingRequestItem];
+
+            if (typeof aValue === 'string' && typeof bValue === 'string') {
+                // String comparison (case-insensitive)
+                const comparison = aValue.localeCompare(bValue, undefined, {
+                    sensitivity: 'base', // Ignores case sensitivity
+                });
+                return direction === 'asc' ? comparison : -comparison;
+            }
+
+            if (typeof aValue === 'number' && typeof bValue === 'number') {
+                // Numeric comparison
+                return direction === 'asc' ? aValue - bValue : bValue - aValue;
+            }
+
+            // If the field is neither string nor number, fallback to default comparison
             return 0;
         });
+
         setFilteredProcessingRequests(sortedData);
         setCurrentPage(1);
     };
@@ -194,6 +218,8 @@ const ProcessingRequestsTable = (): JSX.Element => {
                     'yyyy-MM-dd HH:mm:ss'
                 );
 
+                console.log(updatedDate);
+
                 const updatedItem: ProcessingRequestItem = {
                     ...item,
                     status: 'completed',
@@ -251,19 +277,9 @@ const ProcessingRequestsTable = (): JSX.Element => {
         indexOfLastItem
     );
 
-    const goToFirstPage = () => setCurrentPage(1);
-    const goToLastPage = () =>
-        setCurrentPage(
-            Math.ceil(filteredProcessingRequests.length / itemsPerPage)
-        );
+    const prevPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
     const nextPage = () =>
-        setCurrentPage((prev) =>
-            Math.min(
-                prev + 1,
-                Math.ceil(filteredProcessingRequests.length / itemsPerPage)
-            )
-        );
-    const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
+        currentPage < totalPages && setCurrentPage(currentPage + 1);
 
     useEffect(() => {
         fetchProcessingRequests();
@@ -444,83 +460,46 @@ const ProcessingRequestsTable = (): JSX.Element => {
                         ))}
                     </tbody>
                 </table>
-                <div className="flex items-center justify-between px-2 py-4 border-t bg-white">
-                    <button
-                        onClick={goToFirstPage}
-                        disabled={currentPage === 1}
-                        className={cn(
-                            'flex h-8 w-8 items-center justify-center rounded-full border mr-2',
+                <div className="flex justify-center items-center p-4 border-t bg-white rounded-b-lg space-x-4">
+                    <FaAngleDoubleLeft
+                        className={`cursor-pointer ${
                             currentPage === 1
-                                ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-                                : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
-                        )}
-                        aria-label="Go to first page"
-                    >
-                        <ChevronsLeft className="h-4 w-4" />
-                    </button>
-                    <button
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'hover:text-green-500'
+                        }`}
+                        onClick={toFirstPage}
+                        size={20}
+                    />
+                    <FaAngleLeft
+                        className={`cursor-pointer ${
+                            currentPage === 1
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'hover:text-green-500'
+                        }`}
                         onClick={prevPage}
-                        disabled={currentPage === 1}
-                        className={cn(
-                            'flex h-8 w-8 items-center justify-center rounded-full border',
-                            currentPage === 1
-                                ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-                                : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
-                        )}
-                        aria-label="Go to previous page"
-                    >
-                        <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <div className="text-sm text-gray-500">
-                        Page {currentPage} of{' '}
-                        {Math.ceil(
-                            filteredProcessingRequests.length / itemsPerPage
-                        )}
-                    </div>
-                    <button
+                        size={20}
+                    />
+                    <span className="text-gray-600">
+                        Page {currentPage} of {totalPages || 1}
+                    </span>
+                    <FaAngleRight
+                        className={`cursor-pointer ${
+                            currentPage === totalPages || totalPages === 0
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'hover:text-green-500'
+                        }`}
                         onClick={nextPage}
-                        disabled={
-                            currentPage ===
-                            Math.ceil(
-                                filteredProcessingRequests.length / itemsPerPage
-                            )
-                        }
-                        className={cn(
-                            'flex h-8 w-8 items-center justify-center rounded-full border',
-                            currentPage ===
-                                Math.ceil(
-                                    filteredProcessingRequests.length /
-                                        itemsPerPage
-                                )
-                                ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-                                : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
-                        )}
-                        aria-label="Go to next page"
-                    >
-                        <ChevronRight className="h-4 w-4" />
-                    </button>
-                    <button
-                        onClick={goToLastPage}
-                        disabled={
-                            currentPage ===
-                            Math.ceil(
-                                filteredProcessingRequests.length / itemsPerPage
-                            )
-                        }
-                        className={cn(
-                            'flex h-8 w-8 items-center justify-center rounded-full border ml-2',
-                            currentPage ===
-                                Math.ceil(
-                                    filteredProcessingRequests.length /
-                                        itemsPerPage
-                                )
-                                ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-                                : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'
-                        )}
-                        aria-label="Go to last page"
-                    >
-                        <ChevronsRight className="h-4 w-4" />
-                    </button>
+                        size={20}
+                    />
+                    <FaAngleDoubleRight
+                        className={`cursor-pointer ${
+                            currentPage === totalPages || totalPages === 0
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'hover:text-green-500'
+                        }`}
+                        onClick={toLastPage}
+                        size={20}
+                    />
                 </div>
             </div>
             {isEditModalOpen && itemToEdit && (

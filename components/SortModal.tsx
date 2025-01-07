@@ -44,7 +44,7 @@ const SortModal: React.FC<SortModalProps> = ({
                 >
                     <IoMdClose size={24} />
                 </button>
-                <h3 className="font-bold text-lg mb-4">Sort Inventory</h3>
+                <h3 className="font-bold text-lg mb-4">Sort Requests</h3>
                 <div className="space-y-4">
                     <div>
                         <label className="font-medium">Sort by:</label>
@@ -55,7 +55,9 @@ const SortModal: React.FC<SortModalProps> = ({
                         >
                             <option value="product_name">Product Name</option>
                             <option value="created_at">Created Date</option>
-                            <option value="updated_at">Updated Date</option>
+                            <option value="updated_at">
+                                Last Updated Date
+                            </option>
                             <option value="quantity">Quantity</option>
                         </select>
                     </div>
