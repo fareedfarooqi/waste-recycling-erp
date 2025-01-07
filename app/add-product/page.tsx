@@ -126,7 +126,7 @@ export default function AddProductPage() {
                                     handleInputChange('name', e.target.value)
                                 }
                             />
-                            <FormField
+                            {/* <FormField
                                 label="Quantity (kg)"
                                 type="number"
                                 placeholder="Enter quantity"
@@ -138,6 +138,20 @@ export default function AddProductPage() {
                                         e.target.value
                                     )
                                 }
+                            /> */}
+                            <FormField
+                                label="Quantity (kg)"
+                                type="number"
+                                placeholder="Enter quantity"
+                                required
+                                value={formValues.quantity}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    // Allow only positive numbers
+                                    if (!value || parseFloat(value) > 0) {
+                                        handleInputChange('quantity', value);
+                                    }
+                                }}
                             />
                             <FormField
                                 label="Description"

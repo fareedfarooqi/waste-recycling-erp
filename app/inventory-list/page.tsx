@@ -15,7 +15,6 @@ function InventoryListPage(): JSX.Element {
             {isSidebarOpen ? <Sidebar /> : <SidebarSmall />}
 
             <div className="flex-1">
-                <Navbar />
                 <InventoryTable />
             </div>
         </div>
