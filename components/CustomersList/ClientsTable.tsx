@@ -80,7 +80,7 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     const router = useRouter();
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 7;
-    const totalPages = Math.ceil(clients.length / itemsPerPage);
+    const totalPages = Math.max(1, Math.ceil(clients.length / itemsPerPage));
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentClients = sortedClients.slice(
@@ -89,7 +89,8 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     );
 
     const toFirstPage = () => setCurrentPage(1);
-    const toLastPage = () => setCurrentPage(totalPages);
+    const toLastPage = () =>
+        currentPage < totalPages && setCurrentPage(totalPages);
     const prevPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
     const nextPage = () =>
         currentPage < totalPages && setCurrentPage(currentPage + 1);
