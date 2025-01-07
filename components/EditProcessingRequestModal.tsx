@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/config/supabaseClient';
 import Button from './Button';
 import { IoMdClose } from 'react-icons/io';
+import SuccessAnimation from './SuccessAnimation';
 
 type ProcessingRequestItem = {
     id: string;
@@ -37,12 +38,14 @@ const EditProcessingRequestModal = ({
     const [productId, setProductId] = useState<string>(
         processingRequest.product_id
     );
-    const [quantity, setQuantity] = useState<number>(
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [quantity, setQuantity] = useState<number | null>(
         processingRequest.quantity
     );
     const [status, setStatus] = useState<'new' | 'in_progress' | 'completed'>(
         processingRequest.status
     );
+    const [error, setError] = useState<string>(''); // Initialize error state
     const [loading, setLoading] = useState<boolean>(false);
     const [products, setProducts] = useState<ProductItem[]>([]);
     const [hasChanges, setHasChanges] = useState<boolean>(false);
@@ -72,7 +75,13 @@ const EditProcessingRequestModal = ({
     }, [productId, quantity, status, processingRequest]);
 
     const handleSaveChanges = async () => {
+        if (quantity === null) {
+            setError('Quantity cannot be empty.'); // Set an error message
+            return; // Stop execution
+        }
+
         setLoading(true);
+        setError(''); // Clear any previous errors
 
         const { error } = await supabase
             .from('processing_requests')
@@ -86,8 +95,12 @@ const EditProcessingRequestModal = ({
         if (error) {
             console.error('Error updating request:', error.message);
         } else {
-            onRequestUpdated();
-            onClose();
+            setShowSuccess(true);
+            setTimeout(() => {
+                setShowSuccess(false);
+                onRequestUpdated();
+                onClose();
+            }, 700);
         }
         setLoading(false);
     };
@@ -106,6 +119,7 @@ const EditProcessingRequestModal = ({
             className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50"
             onClick={handleOverlayClick}
         >
+            {showSuccess && <SuccessAnimation />}
             <div
                 className="bg-white p-6 pb-4 rounded-lg shadow-lg w-96 relative"
                 onClick={(e) => e.stopPropagation()}
@@ -141,11 +155,26 @@ const EditProcessingRequestModal = ({
                         Quantity (kg)
                     </label>
                     <input
-                        type="number"
-                        value={quantity}
-                        onChange={(e) => setQuantity(Number(e.target.value))}
+                        type="text" // Change to text to handle the input validation manually
+                        value={quantity === null ? '' : quantity}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            // Use a regular expression to block unwanted characters
+                            if (/[^0-9]/.test(value)) {
+                                // If the value contains anything other than digits, don't update the state
+                                return;
+                            }
+                            if (value === '') {
+                                setQuantity(null); // Temporarily set to null for empty input
+                            } else {
+                                const numericValue = Math.max(0, Number(value));
+                                setQuantity(numericValue);
+                            }
+                        }}
                         className="w-full p-2 border rounded-md"
+                        min="0"
                     />
+                    {error && <p className="text-red-500">{error}</p>}
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-2">

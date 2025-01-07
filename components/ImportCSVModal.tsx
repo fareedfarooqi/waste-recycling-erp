@@ -116,7 +116,9 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
             onImportSuccess();
             onClose();
         } catch (err) {
-            setError('Error importing CSV: ' + (err as Error).message);
+            setError(
+                'Error importing CSV: Please ensure that you have selected the correct CSV file/s and try again.'
+            );
         } finally {
             setImporting(false);
         }

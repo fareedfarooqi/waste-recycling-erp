@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/config/supabaseClient';
 import Button from './Button';
 import { IoMdClose } from 'react-icons/io';
+import SuccessAnimation from './SuccessAnimation';
 
 const AddProcessingRequest = ({
     isOpen,
@@ -24,6 +25,7 @@ const AddProcessingRequest = ({
         { id: string; product_name: string }[]
     >([]);
     const [productLoading, setProductLoading] = useState(true);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -68,17 +70,21 @@ const AddProcessingRequest = ({
             console.error('Error adding processing request:', error.message);
             alert('Failed to add processing request.');
         } else {
-            alert('Processing request added successfully!');
-            setProductId(null);
-            setQuantity('');
-            setStatus('new');
-            onRequestAdded();
-            onClose();
+            setShowSuccess(true);
+            setTimeout(() => {
+                setShowSuccess(false);
+                setProductId(null);
+                setQuantity('');
+                setStatus('new');
+                onRequestAdded();
+                onClose();
+            }, 700);
         }
     };
 
     return (
         <div className="border p-4 rounded-md shadow-md relative min-h-[400px] flex flex-col">
+            {showSuccess && <SuccessAnimation />}
             <button
                 onClick={onClose}
                 className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
@@ -116,13 +122,18 @@ const AddProcessingRequest = ({
                     <input
                         type="number"
                         value={quantity}
-                        onChange={(e) =>
-                            setQuantity(
-                                e.target.value ? Number(e.target.value) : ''
-                            )
-                        }
+                        onChange={(e) => {
+                            const value = Number(e.target.value);
+                            setQuantity(value > 0 ? value : '');
+                        }}
+                        onKeyDown={(e) => {
+                            if (['-', 'e', '+', '.'].includes(e.key)) {
+                                e.preventDefault();
+                            }
+                        }}
                         className="p-2 border rounded-md w-full"
                         placeholder="Enter quantity"
+                        min="1"
                     />
                 </div>
                 <div className="mb-4">

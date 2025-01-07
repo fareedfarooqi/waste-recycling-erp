@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { format } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 import {
     FaTrashAlt,
     FaEye,
@@ -34,18 +36,6 @@ type ProcessingRequestItem = {
     created_at: string;
     updated_at: string;
     product_name: string;
-};
-
-const formatDate = (date: Date, timeZoneOffset: number = 0) => {
-    date.setHours(date.getHours() + timeZoneOffset);
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    const seconds = date.getSeconds().toString().padStart(2, '0');
-    const milliseconds = date.getMilliseconds().toString().padStart(3, '0');
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
 };
 
 const ProcessingRequestsTable = (): JSX.Element => {
@@ -199,7 +189,10 @@ const ProcessingRequestsTable = (): JSX.Element => {
             if (error) {
                 console.error('Error updating status: ', error.message);
             } else {
-                const updatedDate = formatDate(new Date(), 1);
+                const updatedDate = format(
+                    toZonedTime(new Date(), 'GMT'),
+                    'yyyy-MM-dd HH:mm:ss'
+                );
 
                 const updatedItem: ProcessingRequestItem = {
                     ...item,
@@ -388,11 +381,11 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                     <span
                                         className={`inline-block ${
                                             item.status === 'completed'
-                                                ? 'bg-[#c6efcd]'
+                                                ? 'bg-[#c6efcd] border border-[#4caf50]'
                                                 : item.status === 'in_progress'
-                                                  ? 'bg-[#feeb9c]'
+                                                  ? 'bg-[#feeb9c] border border-[#ff9800]'
                                                   : item.status === 'new'
-                                                    ? 'bg-[#ffc8ce]'
+                                                    ? 'bg-[#ffc8ce] border border-[#f44336]'
                                                     : ''
                                         } px-2 py-1 rounded-full w-[120px] text-center`}
                                     >
