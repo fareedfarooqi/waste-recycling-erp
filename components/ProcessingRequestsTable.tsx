@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import SuccessAnimation from './SuccessAnimation';
 import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import {
@@ -72,6 +73,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
     const totalPages = Math.ceil(
         filteredProcessingRequests.length / itemsPerPage
     );
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const toFirstPage = () => setCurrentPage(1);
     const toLastPage = () => {
@@ -189,6 +191,11 @@ const ProcessingRequestsTable = (): JSX.Element => {
                 setFilteredProcessingRequests((prev) =>
                     prev.filter((item) => item.id !== itemToDelete.id)
                 );
+
+                setShowSuccess(true);
+                setTimeout(() => {
+                    setShowSuccess(false);
+                }, 700);
             }
         }
         setIsDeleteModalOpen(false);
@@ -218,8 +225,6 @@ const ProcessingRequestsTable = (): JSX.Element => {
                     'yyyy-MM-dd HH:mm:ss'
                 );
 
-                console.log(updatedDate);
-
                 const updatedItem: ProcessingRequestItem = {
                     ...item,
                     status: 'completed',
@@ -236,6 +241,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
                         request.id === item.id ? updatedItem : request
                     )
                 );
+                setRefresh((prev) => !prev);
             }
         } catch (err) {
             console.error('Unexpected error:', err);
@@ -304,8 +310,14 @@ const ProcessingRequestsTable = (): JSX.Element => {
         };
     }, [isAddModalOpen]);
 
+    useEffect(() => {
+        // Ensure currentPage is within valid bounds
+        setCurrentPage((prevPage) => Math.min(prevPage, totalPages || 1));
+    }, [totalPages]);
+
     return (
         <div className="py-8 bg-green-50 -mt-5">
+            {showSuccess && <SuccessAnimation />}
             <div className="w-11/12 mx-auto overflow-x-auto border rounded-lg shadow-lg">
                 <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-4 border-b">
                     <div className="flex-1 flex items-center space-x-4">
@@ -467,7 +479,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                 ? 'text-gray-300 cursor-not-allowed'
                                 : 'hover:text-green-500'
                         }`}
-                        onClick={toFirstPage}
+                        onClick={currentPage > 1 ? toFirstPage : undefined}
                         size={20}
                     />
                     <FaAngleLeft
@@ -476,7 +488,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                 ? 'text-gray-300 cursor-not-allowed'
                                 : 'hover:text-green-500'
                         }`}
-                        onClick={prevPage}
+                        onClick={currentPage > 1 ? prevPage : undefined}
                         size={20}
                     />
                     <span className="text-gray-600">
@@ -488,7 +500,9 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                 ? 'text-gray-300 cursor-not-allowed'
                                 : 'hover:text-green-500'
                         }`}
-                        onClick={nextPage}
+                        onClick={
+                            currentPage < totalPages ? nextPage : undefined
+                        }
                         size={20}
                     />
                     <FaAngleDoubleRight
@@ -497,7 +511,9 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                 ? 'text-gray-300 cursor-not-allowed'
                                 : 'hover:text-green-500'
                         }`}
-                        onClick={toLastPage}
+                        onClick={
+                            currentPage < totalPages ? toLastPage : undefined
+                        }
                         size={20}
                     />
                 </div>
