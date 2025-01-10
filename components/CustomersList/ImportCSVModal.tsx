@@ -44,25 +44,51 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
     onClose,
     onImportSuccess,
 }) => {
-    const [file, setFile] = useState<File | null>(null);
+    const [files, setFiles] = useState<File[]>([]);
     const [importing, setImporting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
+    const [showGuidelines, setShowGuidelines] = useState(false);
     const modalRef = useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            setFile(e.target.files[0]);
-        }
+    const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
     };
 
-    const handleRemoveFile = () => {
-        setFile(null);
+    const handleDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const droppedFiles = Array.from(e.dataTransfer.files);
+        setFiles((prev) => [...prev, ...droppedFiles]);
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files) return;
+        const selectedFiles = Array.from(e.target.files);
+        setFiles((prev) => [...prev, ...selectedFiles]);
+    };
+
+    const handleRemoveFile = (index: number) => {
+        setFiles((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    const handleRemoveAllFiles = () => {
+        setFiles([]);
     };
 
     const handleImport = async () => {
-        if (!file) {
-            setError('Please select a file to import.');
+        if (files.length === 0) {
+            setError('Please select at least one CSV file to import.');
             return;
         }
 
@@ -70,72 +96,82 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
         setError(null);
 
         try {
-            const text = await file.text();
+            const allGroupedData: GroupedData[] = [];
 
-            const parsedData = Papa.parse<CustomerRow>(text, {
-                header: true,
-                skipEmptyLines: true,
-            });
+            for (const file of files) {
+                const text = await file.text();
+                const parsedData = Papa.parse<CustomerRow>(text, {
+                    header: true,
+                    skipEmptyLines: true,
+                });
 
-            if (parsedData.errors.length > 0) {
-                console.error('Parsing Errors:', parsedData.errors);
-                throw new Error('Error parsing CSV. Check file format.');
+                if (parsedData.errors.length > 0) {
+                    console.error('Parsing Errors:', parsedData.errors);
+                    throw new Error(
+                        `Error parsing CSV (${file.name}). Check file format.`
+                    );
+                }
+
+                const groupedData: GroupedData = {};
+
+                parsedData.data.forEach((row) => {
+                    if (!row['Company Name']) {
+                        console.warn('Skipping invalid row:', row);
+                        return;
+                    }
+
+                    const companyName = row['Company Name'];
+                    if (!groupedData[companyName]) {
+                        groupedData[companyName] = {
+                            company_name: companyName,
+                            contact_details: {
+                                email: row.Email,
+                                phone: row.Phone,
+                                address: row.Address,
+                            },
+                            locations: [],
+                        };
+                    }
+
+                    if (row['Location Name']) {
+                        groupedData[companyName].locations.push({
+                            location_name: row['Location Name'],
+                            address: row.Address,
+                            initial_empty_bins:
+                                row['Initial Empty Bins'] || '0',
+                            default_product_types: row['Default Product Types']
+                                ? row['Default Product Types']
+                                      .split(',')
+                                      .map((productName: string) => ({
+                                          product_name: productName.trim(),
+                                          description: '',
+                                      }))
+                                : [],
+                        });
+                    }
+                });
+
+                allGroupedData.push(groupedData);
             }
 
-            const groupedData: GroupedData = {};
+            for (const groupedData of allGroupedData) {
+                for (const companyName in groupedData) {
+                    const client = groupedData[companyName];
+                    const { error: supabaseError } = await supabase
+                        .from('customers')
+                        .insert(client);
 
-            parsedData.data.forEach((row: CustomerRow) => {
-                if (!row['Company Name']) {
-                    console.warn('Invalid row:', row);
-                    return;
-                }
-
-                const companyName = row['Company Name'];
-
-                if (!groupedData[companyName]) {
-                    groupedData[companyName] = {
-                        company_name: companyName,
-                        contact_details: {
-                            email: row.Email,
-                            phone: row.Phone,
-                            address: row.Address,
-                        },
-                        locations: [],
-                    };
-                }
-
-                if (row['Location Name']) {
-                    groupedData[companyName].locations.push({
-                        location_name: row['Location Name'],
-                        address: row.Address,
-                        initial_empty_bins: row['Initial Empty Bins'] || '0',
-                        default_product_types: row['Default Product Types']
-                            ? row['Default Product Types']
-                                  .split(',')
-                                  .map((productName: string) => ({
-                                      product_name: productName.trim(),
-                                      description: '',
-                                  }))
-                            : [],
-                    });
-                }
-            });
-
-            for (const companyName in groupedData) {
-                const client = groupedData[companyName];
-
-                const { error } = await supabase
-                    .from('customers')
-                    .insert(client);
-                if (error) {
-                    console.error('Supabase Insert Error:', error);
-                    throw new Error(
-                        `Failed to insert row for company: ${companyName}`
-                    );
+                    if (supabaseError) {
+                        console.error('Supabase Insert Error:', supabaseError);
+                        throw new Error(
+                            `Failed to insert data for company: ${companyName}`
+                        );
+                    }
                 }
             }
 
             onImportSuccess();
+            setFiles([]);
         } catch (err) {
             const errorMessage =
                 err instanceof Error ? err.message : 'Unknown error occurred';
@@ -159,7 +195,6 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
         if (isOpen) {
             document.addEventListener('mousedown', handleClickOutside);
         }
-
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
@@ -171,7 +206,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
         <div className="fixed inset-0 bg-gray-800 bg-opacity-60 flex items-center justify-center z-50">
             <div
                 ref={modalRef}
-                className="bg-white w-full max-w-lg rounded-lg shadow-lg p-8 relative"
+                className="bg-white w-full max-w-lg rounded-lg shadow-lg p-8 relative max-h-[80vh] overflow-y-auto"
             >
                 <button
                     onClick={onClose}
@@ -181,62 +216,77 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     <IoMdClose size={24} />
                 </button>
 
-                <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
+                <h2 className="text-2xl font-semibold text-gray-800 text-center mb-2">
                     Import CSV
                 </h2>
 
-                <div className="bg-blue-100 border border-blue-300 text-blue-700 px-4 py-3 rounded mb-6">
-                    <p className="text-sm">
-                        <strong>CSV Import Guidelines:</strong>
-                    </p>
-                    <ul className="list-disc list-inside text-sm">
-                        <li>
-                            Each row in the CSV file should represent a unique
-                            location for a client. For clients with multiple
-                            locations, repeat the client information across
-                            multiple rows, with each row containing details of a
-                            different location.
-                        </li>
-                        <li>
-                            The{' '}
-                            <strong>&quot;Default Product Types&quot;</strong>{' '}
-                            field should contain comma-separated values (e.g.,
-                            &quot;Plastic, Metal, Paper&quot;).
-                        </li>
-                        <li>
-                            Ensure the following fields are included in the CSV:
-                            <ul className="list-disc list-inside ml-6">
-                                <li>
-                                    <strong>Company Name</strong> (required)
-                                </li>
-                                <li>
-                                    <strong>Email</strong> (required)
-                                </li>
-                                <li>
-                                    <strong>Phone</strong> (required)
-                                </li>
-                                <li>
-                                    <strong>Address</strong> (required)
-                                </li>
-                                <li>
-                                    <strong>Location Name</strong> (optional)
-                                </li>
-                                <li>
-                                    <strong>Default Product Types</strong>{' '}
-                                    (optional)
-                                </li>
-                                <li>
-                                    <strong>Initial Empty Bins</strong>{' '}
-                                    (optional)
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <p className="text-sm mt-2">
-                        Please double-check your CSV file before importing to
-                        ensure the data is correctly formatted.
-                    </p>
+                <div className="text-center mb-3">
+                    <button
+                        className="text-blue-500 underline text-sm"
+                        onClick={() => setShowGuidelines(!showGuidelines)}
+                    >
+                        {showGuidelines ? 'Hide Guidelines' : 'View Guidelines'}
+                    </button>
                 </div>
+
+                {showGuidelines && (
+                    <div className="bg-blue-100 border border-blue-300 text-blue-700 px-4 py-3 rounded mb-6">
+                        <p className="text-sm">
+                            <strong>CSV Import Guidelines:</strong>
+                        </p>
+                        <ul className="list-disc list-inside text-sm">
+                            <li>
+                                Each row in the CSV file should represent a
+                                unique location for a client. For clients with
+                                multiple locations, repeat the client info
+                                across multiple rows, with each row containing
+                                details of a different location.
+                            </li>
+                            <li>
+                                The{' '}
+                                <strong>
+                                    &quot;Default Product Types&quot;
+                                </strong>{' '}
+                                field should contain comma-separated values
+                                (e.g., &quot;Plastic, Metal, Paper&quot;).
+                            </li>
+                            <li>
+                                Ensure the following fields are included in the
+                                CSV:
+                                <ul className="list-disc list-inside ml-6">
+                                    <li>
+                                        <strong>Company Name</strong> (required)
+                                    </li>
+                                    <li>
+                                        <strong>Email</strong> (required)
+                                    </li>
+                                    <li>
+                                        <strong>Phone</strong> (required)
+                                    </li>
+                                    <li>
+                                        <strong>Address</strong> (required)
+                                    </li>
+                                    <li>
+                                        <strong>Location Name</strong>{' '}
+                                        (optional)
+                                    </li>
+                                    <li>
+                                        <strong>Default Product Types</strong>{' '}
+                                        (optional)
+                                    </li>
+                                    <li>
+                                        <strong>Initial Empty Bins</strong>{' '}
+                                        (optional)
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <p className="text-sm mt-2">
+                            Please double-check your CSV file before importing
+                            to ensure the data is correctly formatted.
+                        </p>
+                    </div>
+                )}
 
                 <div className="mb-6 text-center">
                     <p className="text-sm text-gray-700 mb-2">
@@ -245,43 +295,67 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     <a
                         href="/samples/Sample_Customers_No_Timestamp.csv"
                         download
-                        className="text-blue-500 underline hover:text-blue-600"
+                        className="text-blue-500 underline hover:text-blue-600 block"
                     >
                         Sample CSV 1 (No Timestamp)
                     </a>
-                    <br />
                     <a
                         href="/samples/Sample_Customers_Timestamp.csv"
                         download
-                        className="text-blue-500 underline hover:text-blue-600"
+                        className="text-blue-500 underline hover:text-blue-600 block mt-1"
                     >
                         Sample CSV 2 (With Timestamp)
                     </a>
                 </div>
 
-                <div className="mb-6 relative">
+                <div className="mb-6">
+                    {files.length > 0 && (
+                        <div className="mb-4 space-y-2">
+                            {files.map((file, idx) => (
+                                <div
+                                    key={`${file.name}-${idx}`}
+                                    className="flex items-center justify-between bg-gray-100 rounded px-3 py-2"
+                                >
+                                    <span className="text-gray-700 text-sm truncate max-w-[80%]">
+                                        {file.name}
+                                    </span>
+                                    <IoMdClose
+                                        className="text-gray-600 hover:text-red-500 cursor-pointer"
+                                        onClick={() => handleRemoveFile(idx)}
+                                        size={20}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     <label
                         htmlFor="file-upload"
-                        className="flex items-center w-full h-12 bg-gray-100 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-200 focus:outline-none px-4"
+                        className={`flex items-center w-full h-16 border border-dashed rounded-md 
+                        cursor-pointer focus:outline-none px-4
+                        ${
+                            isDragging
+                                ? 'bg-green-100 border-green-500'
+                                : 'bg-gray-100 border-gray-300 hover:bg-gray-200'
+                        }`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
                     >
                         <span className="text-gray-600 text-center w-full">
-                            {file ? file.name : 'Click to select a file'}
+                            {files.length === 0
+                                ? 'Click or Drag CSV files here'
+                                : 'Click or Drag more CSV files here'}
                         </span>
                         <input
                             id="file-upload"
                             type="file"
                             accept=".csv"
+                            multiple
                             onChange={handleFileChange}
                             className="hidden"
                         />
                     </label>
-                    {file && (
-                        <IoMdClose
-                            className="absolute top-1/2 right-4 transform -translate-y-1/2 text-gray-600 hover:text-red-500 cursor-pointer"
-                            onClick={handleRemoveFile}
-                            size={20}
-                        />
-                    )}
                 </div>
 
                 {error && (
@@ -290,21 +364,34 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     </p>
                 )}
 
-                <div className="flex justify-center space-x-4">
+                <div className="flex justify-center flex-wrap gap-4">
                     <button
                         className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-200"
                         onClick={onClose}
                     >
                         Cancel
                     </button>
+
                     <button
                         className={`px-6 py-2 rounded-lg text-white ${
-                            importing || !file
+                            files.length === 0
+                                ? 'bg-red-300 cursor-not-allowed'
+                                : 'bg-red-500 hover:bg-red-600'
+                        } transition duration-200`}
+                        onClick={handleRemoveAllFiles}
+                        disabled={files.length === 0}
+                    >
+                        Delete All Files
+                    </button>
+
+                    <button
+                        className={`px-6 py-2 rounded-lg text-white ${
+                            importing || !files.length
                                 ? 'bg-green-300 cursor-not-allowed'
                                 : 'bg-green-500 hover:bg-green-600'
                         } transition duration-200`}
                         onClick={handleImport}
-                        disabled={importing || !file}
+                        disabled={importing || !files.length}
                     >
                         {importing ? 'Importing...' : 'Import'}
                     </button>

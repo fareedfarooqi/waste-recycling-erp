@@ -58,8 +58,6 @@ const ClientManagement = () => {
             alert('An error occurred whilst updating your customer');
             throw error;
         } else {
-            alert('Successfully updated details of the client.');
-
             if (updatedRows && updatedRows.length > 0) {
                 const newRow = updatedRows[0];
 
@@ -103,8 +101,6 @@ const ClientManagement = () => {
                 'An ERROR occurred whilst attempting to delete the customer.'
             );
             throw error;
-        } else {
-            alert('Successfully deleted the customer.');
         }
 
         setClients((prevClients) =>

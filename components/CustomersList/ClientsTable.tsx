@@ -10,12 +10,14 @@ import {
     FaAngleLeft,
     FaAngleRight,
     FaAngleDoubleRight,
+    FaSort,
 } from 'react-icons/fa';
 import { GoSearch } from 'react-icons/go';
 import ClientEditModal from './ClientEditModal';
 import ClientDeleteModal from './ClientDeleteModal';
 import ImportCSVModal from './ImportCSVModal';
-import SortDropdown from './SortDropdown';
+import SortModal from './SortModal';
+import SuccessAnimation from '../SuccessAnimation';
 import { FaPlus } from 'react-icons/fa';
 import { CiImport, CiExport } from 'react-icons/ci';
 import Papa from 'papaparse';
@@ -63,24 +65,27 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     handleDelete,
     handleSave,
 }): JSX.Element => {
-    const [isEditingClientDetails, setIsEditingClientDetails] =
-        useState<boolean>(false);
+    const [isEditingClientDetails, setIsEditingClientDetails] = useState(false);
     const [customerToEditClientDetails, setCustomerToEditClientDetails] =
         useState<Partial<Client>>({});
     const [isDeletingClientDetails, setIsDeletingClientDetails] =
-        useState<boolean>(false);
+        useState(false);
     const [customerToDelete, setCustomerToDelete] = useState<Partial<Client>>(
         {}
     );
-    const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
-    const [sortField, setSortField] = useState<string>('Company Name');
-    const [sortOrder, setSortOrder] = useState<string>('Ascending');
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [sortField, setSortField] = useState<string>('company_name');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
     const [sortedClients, setSortedClients] = useState<Client[]>(clients);
+    const [showSuccess, setShowSuccess] = useState<boolean>(false);
+    const [isSortModalOpen, setIsSortModalOpen] = useState(false);
 
-    const router = useRouter();
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 7;
-    const totalPages = Math.max(1, Math.ceil(clients.length / itemsPerPage));
+    const totalPages = Math.max(
+        1,
+        Math.ceil(sortedClients.length / itemsPerPage)
+    );
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentClients = sortedClients.slice(
@@ -89,20 +94,37 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     );
 
     const toFirstPage = () => setCurrentPage(1);
-    const toLastPage = () =>
-        currentPage < totalPages && setCurrentPage(totalPages);
-    const prevPage = () => currentPage > 1 && setCurrentPage(currentPage - 1);
-    const nextPage = () =>
-        currentPage < totalPages && setCurrentPage(currentPage + 1);
+    const toLastPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(totalPages);
+        }
+    };
+    const prevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+    const nextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
+
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
+    const router = useRouter();
 
     const openEditModal = (clientId: string) => {
-        const client = clients.find((client) => client.id === clientId);
+        const client = clients.find((c) => c.id === clientId);
         if (client) {
             setIsEditingClientDetails(true);
             setCustomerToEditClientDetails(client);
         }
     };
-
     const closeEditModal = () => {
         setIsEditingClientDetails(false);
         setCustomerToEditClientDetails({});
@@ -113,13 +135,12 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     };
 
     const openDeleteModal = (clientId: string) => {
-        const client = clients.find((client) => client.id === clientId);
+        const client = clients.find((c) => c.id === clientId);
         if (client) {
             setIsDeletingClientDetails(true);
             setCustomerToDelete(client);
         }
     };
-
     const closeDeleteModal = () => {
         setIsDeletingClientDetails(false);
         setCustomerToDelete({});
@@ -129,6 +150,10 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
         try {
             await handleSave(updatedClient);
             closeEditModal();
+            setShowSuccess(true);
+            setTimeout(() => {
+                setShowSuccess(false);
+            }, 700);
         } catch (error) {
             console.error('Save operation failed:', error);
         }
@@ -138,6 +163,10 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
         try {
             await handleDelete(clientToRemove);
             closeDeleteModal();
+            setShowSuccess(true);
+            setTimeout(() => {
+                setShowSuccess(false);
+            }, 700);
         } catch (error) {
             console.error('Delete operation failed:', error);
         }
@@ -152,7 +181,6 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     };
 
     const exportCSV = () => {
-        // Our client's data is quite nested, we need to flatten it.
         const flatData = clients.flatMap((client) =>
             client.locations.map((location) => ({
                 'Company Name': client.company_name || 'Unknown Company',
@@ -163,16 +191,14 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                 'Initial Empty Bins': location.initial_empty_bins || '0',
                 'Default Product Types': location.default_product_types?.length
                     ? location.default_product_types
-                          .map((product) => product.product_name)
+                          .map((p) => p.product_name)
                           .join(', ')
                     : 'No Products',
                 'Last Updated': client.updated_at || 'Not Available',
                 'Created At': client.created_at || 'Not Available',
             }))
         );
-
         const csv = Papa.unparse(flatData, { header: true });
-
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -186,59 +212,51 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     useEffect(() => {
         const sortClients = () => {
             const sorted = [...clients].sort((a, b) => {
-                const compare = (
-                    val1: string | number,
-                    val2: string | number
-                ): number => {
-                    if (typeof val1 === 'string' && typeof val2 === 'string') {
-                        return sortOrder === 'Ascending'
-                            ? val1.localeCompare(val2)
-                            : val2.localeCompare(val1);
-                    } else if (
-                        typeof val1 === 'number' &&
-                        typeof val2 === 'number'
-                    ) {
-                        return sortOrder === 'Ascending'
-                            ? val1 - val2
-                            : val2 - val1;
-                    } else {
-                        return 0;
-                    }
-                };
+                let val1: string | number;
+                let val2: string | number;
 
                 switch (sortField) {
-                    case 'Company Name':
-                        return compare(
-                            a.company_name.toLowerCase(),
-                            b.company_name.toLowerCase()
-                        );
-                    case 'Number of Locations':
-                        return compare(a.locations.length, b.locations.length);
-                    case 'Total Empty Bins': {
-                        const totalBinsA = a.locations.reduce(
+                    case 'company_name':
+                        val1 = a.company_name.toLowerCase();
+                        val2 = b.company_name.toLowerCase();
+                        break;
+                    case 'number_of_locations':
+                        val1 = a.locations.length;
+                        val2 = b.locations.length;
+                        break;
+                    case 'total_empty_bins':
+                        val1 = a.locations.reduce(
                             (sum, loc) =>
                                 sum + Number(loc.initial_empty_bins || 0),
                             0
                         );
-                        const totalBinsB = b.locations.reduce(
+                        val2 = b.locations.reduce(
                             (sum, loc) =>
                                 sum + Number(loc.initial_empty_bins || 0),
                             0
                         );
-                        return compare(totalBinsA, totalBinsB);
-                    }
-                    case 'Recently Updated':
-                        return compare(
-                            Date.parse(a.updated_at),
-                            Date.parse(b.updated_at)
-                        );
-                    case 'Recently Added':
-                        return compare(
-                            Date.parse(a.created_at),
-                            Date.parse(b.created_at)
-                        );
+                        break;
+                    case 'recently_updated':
+                        val1 = Date.parse(a.updated_at);
+                        val2 = Date.parse(b.updated_at);
+                        break;
+                    case 'recently_added':
+                        val1 = Date.parse(a.created_at);
+                        val2 = Date.parse(b.created_at);
+                        break;
                     default:
-                        return 0;
+                        val1 = a.company_name.toLowerCase();
+                        val2 = b.company_name.toLowerCase();
+                }
+
+                if (typeof val1 === 'string' && typeof val2 === 'string') {
+                    return sortOrder === 'asc'
+                        ? val1.localeCompare(val2)
+                        : val2.localeCompare(val1);
+                } else {
+                    return sortOrder === 'asc'
+                        ? (val1 as number) - (val2 as number)
+                        : (val2 as number) - (val1 as number);
                 }
             });
 
@@ -248,8 +266,13 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
         sortClients();
     }, [sortField, sortOrder, clients]);
 
+    const handleSortChange = (field: string, direction: 'asc' | 'desc') => {
+        setSortField(field);
+        setSortOrder(direction);
+    };
+
     return (
-        <div className={`flex justify-center py-8 transition-all duration-100`}>
+        <div className="flex justify-center py-8 transition-all duration-100">
             <div className="w-11/12 border border-gray-300 rounded-lg shadow-lg mt-5">
                 <div className="flex items-center bg-white sticky top-0 z-10 border-b rounded-t-lg px-4 py-3 space-x-4">
                     <div className="relative flex-grow my-2">
@@ -261,19 +284,17 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                             name="search"
                             placeholder="Search for Customer"
                             className="pl-10 pr-4 py-2 border rounded-lg w-full focus:outline-none focus:ring focus:ring-green-500"
-                            style={{
-                                height: '3rem',
-                            }}
+                            style={{ height: '3rem' }}
                             onChange={(e) =>
                                 fetchClients(e.target.value.trim())
                             }
                         />
                     </div>
+
                     <button
-                        className="flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg hover:bg-green-700 shadow-md transition-all duration-800 ease-in-out"
-                        style={{
-                            height: '3rem',
-                        }}
+                        className="flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg 
+                       hover:bg-green-700 shadow-md transition-all duration-800 ease-in-out"
+                        style={{ height: '3rem' }}
                         onClick={handleAddCustomerButtonClick}
                     >
                         <span className="pr-2 text-lg">
@@ -281,11 +302,11 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                         </span>
                         Add Customer
                     </button>
+
                     <button
-                        className="flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg hover:bg-green-700 shadow-md transition-all duration-800 ease-in-out"
-                        style={{
-                            height: '3rem',
-                        }}
+                        className="flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg 
+                       hover:bg-green-700 shadow-md transition-all duration-800 ease-in-out"
+                        style={{ height: '3rem' }}
                         onClick={openImportCSVModal}
                     >
                         <span className="pr-2 text-lg">
@@ -293,11 +314,11 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                         </span>
                         Import CSV
                     </button>
+
                     <button
-                        className="flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg hover:bg-green-700 shadow-md transition-all duration-800 ease-in-out"
-                        style={{
-                            height: '3rem',
-                        }}
+                        className="flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg 
+                       hover:bg-green-700 shadow-md transition-all duration-800 ease-in-out"
+                        style={{ height: '3rem' }}
                         onClick={exportCSV}
                     >
                         <span className="pr-2 text-lg">
@@ -305,11 +326,11 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                         </span>
                         Export CSV
                     </button>
-                    <SortDropdown
-                        sortField={sortField}
-                        sortOrder={sortOrder}
-                        setSortField={setSortField}
-                        setSortOrder={setSortOrder}
+
+                    <FaSort
+                        className="text-gray-500 cursor-pointer hover:text-green-500 -ml-2"
+                        size={24}
+                        onClick={() => setIsSortModalOpen(true)}
                     />
                 </div>
 
@@ -367,7 +388,6 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                                         <FaEye
                                             className="text-gray-500 cursor-pointer hover:text-green-500"
                                             onClick={() =>
-                                                //openViewModal(client.id)
                                                 handleCustomerViewButtonClick(
                                                     client
                                                 )
@@ -415,7 +435,7 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                         size={20}
                     />
                     <span className="text-gray-600">
-                        Page {currentPage} of {totalPages || 1}
+                        Page {currentPage} of {totalPages}
                     </span>
                     <FaAngleRight
                         className={`cursor-pointer ${
@@ -437,6 +457,17 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                     />
                 </div>
             </div>
+
+            {showSuccess && <SuccessAnimation />}
+
+            <SortModal
+                isOpen={isSortModalOpen}
+                onClose={() => setIsSortModalOpen(false)}
+                initialField={sortField}
+                initialDirection={sortOrder}
+                onSortChange={handleSortChange}
+            />
+
             <ClientEditModal
                 isOpen={isEditingClientDetails}
                 client={customerToEditClientDetails}
