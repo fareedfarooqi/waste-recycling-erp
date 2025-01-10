@@ -210,7 +210,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
             >
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                    className="absolute top-4 right-4 text-gray-400 hover:text-red-500"
                     aria-label="Close"
                 >
                     <IoMdClose size={24} />
