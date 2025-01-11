@@ -64,10 +64,11 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     fetchClients,
     handleDelete,
     handleSave,
-}): JSX.Element => {
+}) => {
     const [isEditingClientDetails, setIsEditingClientDetails] = useState(false);
     const [customerToEditClientDetails, setCustomerToEditClientDetails] =
         useState<Partial<Client>>({});
+
     const [isDeletingClientDetails, setIsDeletingClientDetails] =
         useState(false);
     const [customerToDelete, setCustomerToDelete] = useState<Partial<Client>>(
@@ -79,9 +80,29 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     const [sortedClients, setSortedClients] = useState<Client[]>(clients);
     const [showSuccess, setShowSuccess] = useState<boolean>(false);
     const [isSortModalOpen, setIsSortModalOpen] = useState(false);
-
     const [currentPage, setCurrentPage] = useState(1);
+
     const itemsPerPage = 7;
+    const router = useRouter();
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const query = new URLSearchParams(window.location.search);
+            if (query.get('success') === '1') {
+                setShowSuccess(true);
+
+                query.delete('success');
+                const newUrl =
+                    window.location.pathname + '?' + query.toString();
+                router.replace(newUrl);
+
+                setTimeout(() => {
+                    setShowSuccess(false);
+                }, 700);
+            }
+        }
+    }, [router]);
+
     const totalPages = Math.max(
         1,
         Math.ceil(sortedClients.length / itemsPerPage)
@@ -116,7 +137,69 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
         }
     }, [currentPage, totalPages]);
 
-    const router = useRouter();
+    useEffect(() => {
+        const sorted = [...clients].sort((a, b) => {
+            let val1: string | number;
+            let val2: string | number;
+
+            switch (sortField) {
+                case 'company_name':
+                    val1 = a.company_name.toLowerCase();
+                    val2 = b.company_name.toLowerCase();
+                    break;
+                case 'number_of_locations':
+                    val1 = a.locations.length;
+                    val2 = b.locations.length;
+                    break;
+                case 'total_empty_bins':
+                    val1 = a.locations.reduce(
+                        (sum, loc) => sum + Number(loc.initial_empty_bins || 0),
+                        0
+                    );
+                    val2 = b.locations.reduce(
+                        (sum, loc) => sum + Number(loc.initial_empty_bins || 0),
+                        0
+                    );
+                    break;
+                case 'recently_updated':
+                    val1 = Date.parse(a.updated_at);
+                    val2 = Date.parse(b.updated_at);
+                    break;
+                case 'recently_added':
+                    val1 = Date.parse(a.created_at);
+                    val2 = Date.parse(b.created_at);
+                    break;
+                default:
+                    val1 = a.company_name.toLowerCase();
+                    val2 = b.company_name.toLowerCase();
+            }
+
+            if (typeof val1 === 'string' && typeof val2 === 'string') {
+                return sortOrder === 'asc'
+                    ? val1.localeCompare(val2)
+                    : val2.localeCompare(val1);
+            } else {
+                return sortOrder === 'asc'
+                    ? (val1 as number) - (val2 as number)
+                    : (val2 as number) - (val1 as number);
+            }
+        });
+
+        setSortedClients(sorted);
+    }, [sortField, sortOrder, clients]);
+
+    const handleSortChange = (field: string, direction: 'asc' | 'desc') => {
+        setSortField(field);
+        setSortOrder(direction);
+    };
+
+    const handleAddCustomerButtonClick = () => {
+        router.push('/customers/add');
+    };
+
+    const handleCustomerViewButtonClick = (customer: Partial<Client>) => {
+        router.push(`/customers/${customer.slug}`);
+    };
 
     const openEditModal = (clientId: string) => {
         const client = clients.find((c) => c.id === clientId);
@@ -130,8 +213,13 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
         setCustomerToEditClientDetails({});
     };
 
-    const openImportCSVModal = () => {
-        setIsImportModalOpen(true);
+    const onSuccessfulCSVImport = () => {
+        setIsImportModalOpen(false);
+        fetchClients('');
+        setShowSuccess(true);
+        setTimeout(() => {
+            setShowSuccess(false);
+        }, 700);
     };
 
     const openDeleteModal = (clientId: string) => {
@@ -151,9 +239,7 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
             await handleSave(updatedClient);
             closeEditModal();
             setShowSuccess(true);
-            setTimeout(() => {
-                setShowSuccess(false);
-            }, 700);
+            setTimeout(() => setShowSuccess(false), 700);
         } catch (error) {
             console.error('Save operation failed:', error);
         }
@@ -164,20 +250,10 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
             await handleDelete(clientToRemove);
             closeDeleteModal();
             setShowSuccess(true);
-            setTimeout(() => {
-                setShowSuccess(false);
-            }, 700);
+            setTimeout(() => setShowSuccess(false), 700);
         } catch (error) {
             console.error('Delete operation failed:', error);
         }
-    };
-
-    const handleCustomerViewButtonClick = (customer: Partial<Client>) => {
-        router.push(`/customers/${customer.slug}`);
-    };
-
-    const handleAddCustomerButtonClick = () => {
-        router.push('/customers/add');
     };
 
     const exportCSV = () => {
@@ -198,6 +274,7 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                 'Created At': client.created_at || 'Not Available',
             }))
         );
+
         const csv = Papa.unparse(flatData, { header: true });
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -207,68 +284,6 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    };
-
-    useEffect(() => {
-        const sortClients = () => {
-            const sorted = [...clients].sort((a, b) => {
-                let val1: string | number;
-                let val2: string | number;
-
-                switch (sortField) {
-                    case 'company_name':
-                        val1 = a.company_name.toLowerCase();
-                        val2 = b.company_name.toLowerCase();
-                        break;
-                    case 'number_of_locations':
-                        val1 = a.locations.length;
-                        val2 = b.locations.length;
-                        break;
-                    case 'total_empty_bins':
-                        val1 = a.locations.reduce(
-                            (sum, loc) =>
-                                sum + Number(loc.initial_empty_bins || 0),
-                            0
-                        );
-                        val2 = b.locations.reduce(
-                            (sum, loc) =>
-                                sum + Number(loc.initial_empty_bins || 0),
-                            0
-                        );
-                        break;
-                    case 'recently_updated':
-                        val1 = Date.parse(a.updated_at);
-                        val2 = Date.parse(b.updated_at);
-                        break;
-                    case 'recently_added':
-                        val1 = Date.parse(a.created_at);
-                        val2 = Date.parse(b.created_at);
-                        break;
-                    default:
-                        val1 = a.company_name.toLowerCase();
-                        val2 = b.company_name.toLowerCase();
-                }
-
-                if (typeof val1 === 'string' && typeof val2 === 'string') {
-                    return sortOrder === 'asc'
-                        ? val1.localeCompare(val2)
-                        : val2.localeCompare(val1);
-                } else {
-                    return sortOrder === 'asc'
-                        ? (val1 as number) - (val2 as number)
-                        : (val2 as number) - (val1 as number);
-                }
-            });
-
-            setSortedClients(sorted);
-        };
-
-        sortClients();
-    }, [sortField, sortOrder, clients]);
-
-    const handleSortChange = (field: string, direction: 'asc' | 'desc') => {
-        setSortField(field);
-        setSortOrder(direction);
     };
 
     return (
@@ -290,10 +305,10 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                             }
                         />
                     </div>
-
                     <button
                         className="flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg 
-                       hover:bg-green-700 shadow-md transition-all duration-800 ease-in-out"
+        hover:bg-green-700 shadow-md transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 
+        focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                         style={{ height: '3rem' }}
                         onClick={handleAddCustomerButtonClick}
                     >
@@ -305,9 +320,10 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
 
                     <button
                         className="flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg 
-                       hover:bg-green-700 shadow-md transition-all duration-800 ease-in-out"
+        hover:bg-green-700 shadow-md transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 
+        focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                         style={{ height: '3rem' }}
-                        onClick={openImportCSVModal}
+                        onClick={() => setIsImportModalOpen(true)}
                     >
                         <span className="pr-2 text-lg">
                             <CiImport style={{ strokeWidth: 2 }} size={20} />
@@ -317,7 +333,8 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
 
                     <button
                         className="flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg 
-                       hover:bg-green-700 shadow-md transition-all duration-800 ease-in-out"
+        hover:bg-green-700 shadow-md transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 
+        focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                         style={{ height: '3rem' }}
                         onClick={exportCSV}
                     >
@@ -474,19 +491,18 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                 onClose={closeEditModal}
                 onSave={handleSaveClient}
             />
+
             <ClientDeleteModal
                 isOpen={isDeletingClientDetails}
                 client={customerToDelete}
                 onClose={closeDeleteModal}
                 onDelete={handleDeleteClient}
             />
+
             <ImportCSVModal
                 isOpen={isImportModalOpen}
                 onClose={() => setIsImportModalOpen(false)}
-                onImportSuccess={() => {
-                    setIsImportModalOpen(false);
-                    fetchClients('');
-                }}
+                onImportSuccess={onSuccessfulCSVImport}
             />
         </div>
     );

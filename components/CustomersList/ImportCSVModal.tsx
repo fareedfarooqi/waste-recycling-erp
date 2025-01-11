@@ -402,3 +402,11 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
 };
 
 export default ImportCSVModal;
+
+/*
+setShowSuccess(true);
+            setTimeout(() => {
+                setShowSuccess(false);
+            }, 700);
+
+*/

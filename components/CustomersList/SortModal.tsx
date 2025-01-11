@@ -40,7 +40,7 @@ const SortModal: React.FC<SortModalProps> = ({
         >
             <div
                 className="relative bg-white w-full max-w-sm sm:max-w-md mx-2 sm:mx-0 
-                   rounded-xl shadow-2xl p-6 transform transition duration-300
+                   rounded-lg shadow-2xl p-6 transform transition duration-300
                    animate-fadeInUp"
                 onClick={(e) => e.stopPropagation()}
             >
