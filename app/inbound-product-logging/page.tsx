@@ -1,14 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import SidebarSmall from '@/components/SidebarSmall';
-import Sidebar from '@/components/Sidebar';
-import Navbar from '@/components/Navbar';
+// import SidebarSmall from '@/components/SidebarSmall';
+import SidebarSmall from '@/components/Sidebar/SidebarSmall';
+// import Sidebar from '@/components/Sidebar';
+import Sidebar from '@/components/Sidebar/Sidebar';
+// import Navbar from '@/components/Navbar';
 import Button from '@/components/Button';
 import { FaTruck } from 'react-icons/fa';
 import LoggingForm from '@/components/LoggingForm';
 import LogsModal from '@/components/LogsModal';
-import { useSidebar } from '@/context/SidebarContext';
+// import { useSidebar } from '@/context/SidebarContext';
+import { useSidebar } from '@/components/Sidebar/SidebarContext';
 
 const InboundProductLoggingPage: React.FC = () => {
     const { isSidebarOpen } = useSidebar();
@@ -21,8 +24,6 @@ const InboundProductLoggingPage: React.FC = () => {
             {isSidebarOpen ? <Sidebar /> : <SidebarSmall />}
 
             <div className="flex-1 flex flex-col">
-                <Navbar />
-
                 {/* Main Content */}
                 <div className="flex-grow bg-green-50 p-12">
                     <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg border border-gray-200">
