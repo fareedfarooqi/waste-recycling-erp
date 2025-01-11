@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
     FaUsers,
     FaBox,
@@ -10,48 +11,65 @@ import {
 } from 'react-icons/fa';
 import { CgProfile } from 'react-icons/cg';
 import { ImExit } from 'react-icons/im';
-import { useSidebar } from '@/context/SidebarContext';
+import { useSidebar } from '@/components/Sidebar/SidebarContext';
 
 const SidebarSmall = (): JSX.Element => {
     const { setSidebarOpen } = useSidebar();
     const [hoverTimeout, setHoverTimeout] = useState<ReturnType<
         typeof setTimeout
     > | null>(null);
+    const router = useRouter();
 
+    const menuItems = [
+        {
+            icon: <FaUsers className="text-3xl text-white" />,
+            label: 'Customers',
+            route: '/customers',
+        },
+        {
+            icon: <FaBox className="text-3xl text-white" />,
+            label: 'Inventory',
+            route: '/inventory-list',
+        },
+        {
+            icon: <FaCalendarAlt className="text-3xl text-white" />,
+            label: 'Schedule Pickup',
+            route: '/schedule',
+        },
+        {
+            icon: <FaQuestion className="text-3xl text-white" />,
+            label: 'Requests',
+            route: '/requests',
+        },
+        {
+            icon: <FaCog className="text-3xl text-white" />,
+            label: 'Settings',
+            route: '/settings',
+        },
+    ];
+
+    // Start hover timer
     const handleMouseEnter = () => {
         const timeout = setTimeout(() => {
             setSidebarOpen(true);
-        }, 1500); // 1.5 second delay
+        }, 1500);
         setHoverTimeout(timeout);
     };
 
+    // Clear hover timer and close sidebar on mouse leave
     const handleMouseLeave = () => {
         if (hoverTimeout) clearTimeout(hoverTimeout);
         setSidebarOpen(false);
     };
 
-    const menuItems = [
-        {
-            icon: <FaUsers className="text-3xl text-gray-300" />,
-            label: 'Customers',
-        },
-        {
-            icon: <FaBox className="text-3xl text-gray-300" />,
-            label: 'Inventory',
-        },
-        {
-            icon: <FaCalendarAlt className="text-3xl text-gray-300" />,
-            label: 'Schedule Pickup',
-        },
-        {
-            icon: <FaQuestion className="text-3xl text-gray-300" />,
-            label: 'Requests',
-        },
-        {
-            icon: <FaCog className="text-3xl text-gray-300" />,
-            label: 'Settings',
-        },
-    ];
+    // On click, navigate + CLEAR any existing timeout
+    const handleMenuClick = (route: string) => {
+        if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+        }
+        setSidebarOpen(false);
+        router.push(route);
+    };
 
     return (
         <div
@@ -60,18 +78,29 @@ const SidebarSmall = (): JSX.Element => {
             onMouseLeave={handleMouseLeave}
         >
             <div className="space-y-6 mt-4">
+                {/* Top Profile Icon */}
                 <div className="relative flex items-center justify-center h-20 group">
-                    <CgProfile className="text-5xl cursor-pointer text-gray-300 hover:bg-green-600 p-1 rounded-full" />
+                    <CgProfile
+                        className="text-5xl cursor-pointer text-white hover:bg-green-600 p-1 rounded-full"
+                        onClick={() => {
+                            // Also clear any timeouts here
+                            if (hoverTimeout) clearTimeout(hoverTimeout);
+                            setSidebarOpen(false);
+                            router.push('/profile');
+                        }}
+                    />
                     <span className="absolute left-14 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 bg-white text-green-700 text-sm rounded-xl px-3 py-1 shadow-lg transition-all duration-500 transform group-hover:scale-105 border border-green-500">
                         Profile
                     </span>
                 </div>
 
+                {/* Main Menu */}
                 <div className="space-y-6">
                     {menuItems.map((item, index) => (
                         <div
                             key={index}
                             className="flex items-center justify-center relative group"
+                            onClick={() => handleMenuClick(item.route)} // <-- updated
                         >
                             <div className="p-2 hover:bg-green-600 rounded-full cursor-pointer flex items-center justify-center">
                                 {item.icon}
@@ -84,9 +113,17 @@ const SidebarSmall = (): JSX.Element => {
                 </div>
             </div>
 
-            <div className="flex items-center justify-center mb-8 relative group">
+            {/* Exit at bottom */}
+            <div
+                className="flex items-center justify-center mb-8 relative group"
+                onClick={() => {
+                    if (hoverTimeout) clearTimeout(hoverTimeout);
+                    setSidebarOpen(false);
+                    router.push('/logout');
+                }}
+            >
                 <div className="p-2 hover:bg-green-600 rounded-full cursor-pointer flex items-center justify-center">
-                    <ImExit className="text-3xl text-gray-300" />
+                    <ImExit className="text-3xl text-white" />
                 </div>
                 <span className="absolute left-14 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 bg-white text-green-700 text-sm rounded-xl px-3 py-1 shadow-lg transition-all duration-500 transform group-hover:scale-105 border border-green-500">
                     Exit
