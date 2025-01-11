@@ -131,7 +131,7 @@ const EditProcessingRequestModal = ({
                 >
                     <IoMdClose size={24} />
                 </button>
-                <h2 className="text-xl font-bold mb-4 pr-8">
+                <h2 className="text-xl font-bold mb-4 pr-8 text-center">
                     Edit Processing Request
                 </h2>
                 <div className="mb-4">

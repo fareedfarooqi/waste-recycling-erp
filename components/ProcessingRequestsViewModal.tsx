@@ -39,7 +39,7 @@ const ProcessingRequestsViewModal: React.FC<ProcessingRequestModalProps> = ({
             onClick={onClose}
         >
             <div
-                className="bg-white w-[90%] max-w-xl rounded-md border-[0.35rem] border-gray-300 p-6 font-sans shadow-lg relative"
+                className="bg-white w-[90%] max-w-xl rounded-md p-6 font-sans shadow-lg relative"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
@@ -49,7 +49,7 @@ const ProcessingRequestsViewModal: React.FC<ProcessingRequestModalProps> = ({
                 >
                     <IoMdClose size={24} />
                 </button>
-                <h3 className="font-bold text-lg mb-4">
+                <h3 className="font-bold text-lg mb-4 text-center">
                     Processing Request Details
                 </h3>
                 <div className="space-y-2">
@@ -101,12 +101,14 @@ const ProcessingRequestsViewModal: React.FC<ProcessingRequestModalProps> = ({
                         )}
                     </p>
                 </div>
-                <button
-                    className="mt-6 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                    onClick={onClose}
-                >
-                    Close
-                </button>
+                <div className="flex justify-center">
+                    <button
+                        className="mt-6 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 font-bold"
+                        onClick={onClose}
+                    >
+                        Close
+                    </button>
+                </div>
             </div>
         </div>
     );

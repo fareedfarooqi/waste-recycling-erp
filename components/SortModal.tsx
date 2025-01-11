@@ -34,7 +34,7 @@ const SortModal: React.FC<SortModalProps> = ({
             onClick={onClose}
         >
             <div
-                className="bg-white w-[90%] max-w-xl rounded-md border-[0.35rem] border-gray-300 p-6 pb-8 font-sans shadow-lg relative"
+                className="bg-white w-[90%] max-w-xl rounded-md p-6 pb-8 font-sans shadow-lg relative"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
@@ -44,7 +44,9 @@ const SortModal: React.FC<SortModalProps> = ({
                 >
                     <IoMdClose size={24} />
                 </button>
-                <h3 className="font-bold text-lg mb-4">Sort Requests</h3>
+                <h3 className="font-bold text-lg mb-4 text-center">
+                    Sort Requests
+                </h3>
                 <div className="space-y-4">
                     <div>
                         <label className="font-medium">Sort by:</label>

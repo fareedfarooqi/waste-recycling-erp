@@ -316,7 +316,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
     }, [totalPages]);
 
     return (
-        <div className="py-8 bg-green-50 -mt-5">
+        <div className="py-8 bg-green-50 -mt-50">
             {showSuccess && <SuccessAnimation />}
             <div className="w-11/12 mx-auto overflow-x-auto border rounded-lg shadow-lg">
                 <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-4 border-b">
@@ -324,13 +324,24 @@ const ProcessingRequestsTable = (): JSX.Element => {
                         <input
                             type="text"
                             placeholder="Search for product name, quantity or status..."
-                            className="p-2 border rounded-md flex-1"
+                            className="p-2 border rounded-md flex-1 h-12"
                             onChange={(e) => handleSearch(e.target.value)}
                         />
                         <Button
                             label="New Request"
                             icon={<FaPlus />}
                             onClick={() => setIsAddModalOpen(true)}
+                            variant="primary"
+                        />
+                        <Button
+                            label="Import CSV"
+                            icon={
+                                <CiExport
+                                    style={{ strokeWidth: 2 }}
+                                    size={20}
+                                />
+                            }
+                            onClick={() => setIsImportModalOpen(true)}
                             variant="primary"
                         />
                         <Button
@@ -357,17 +368,6 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                 csvLink.click();
                                 document.body.removeChild(csvLink);
                             }}
-                            variant="primary"
-                        />
-                        <Button
-                            label="Import CSV"
-                            icon={
-                                <CiExport
-                                    style={{ strokeWidth: 2 }}
-                                    size={20}
-                                />
-                            }
-                            onClick={() => setIsImportModalOpen(true)}
                             variant="primary"
                         />
                     </div>
@@ -555,11 +555,10 @@ const ProcessingRequestsTable = (): JSX.Element => {
             <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
-                title="Delete Product"
+                title="Delete Processing Request"
                 content={
                     <p>
-                        Are you sure you want to delete{' '}
-                        <strong>{itemToDelete?.product_name}</strong>?
+                        Are you sure you want to delete this processing request?
                     </p>
                 }
                 buttons={[
