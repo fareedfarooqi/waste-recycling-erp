@@ -1,15 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-// import { supabase } from '@/supabase/Client'; // Import Supabase client
 import { createClient } from '@/utils/supabase/client';
-// import SidebarSmall from '@/components/SidebarSmall';
 import SidebarSmall from '@/components/Sidebar/SidebarSmall';
-// import Sidebar from '@/components/Sidebar';
 import Sidebar from '@/components/Sidebar/Sidebar';
-// import { useSidebar } from '@/context/SidebarContext';
 import { useSidebar } from '@/components/Sidebar/SidebarContext';
-// import Navbar from '@/components/Navbar';
 import FormField from '@/components/FormField';
 import Button from '@/components/Button';
 import { FaPlus, FaTimes } from 'react-icons/fa';

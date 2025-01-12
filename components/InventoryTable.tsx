@@ -4,9 +4,7 @@ import {
     FaEye,
     FaEdit,
     FaPlus,
-    FaSearch,
     FaCalendarAlt,
-    FaFilter,
     FaSort,
     FaAngleLeft,
     FaAngleRight,
@@ -23,6 +21,7 @@ import DeleteConfirmationModal from './DeleteConfirmationModal';
 import { useRouter } from 'next/navigation';
 import ImportCSVModal from './ImportCSVModal';
 import SuccessAnimation from './SuccessAnimation';
+import { GoSearch } from 'react-icons/go';
 
 type InventoryItem = {
     id: string;
@@ -165,17 +164,6 @@ const InventoryTable = (): JSX.Element => {
         setFilteredInventory(sortedData);
     };
 
-    // const handlePageChange = (direction: 'next' | 'prev') => {
-    //     if (
-    //         direction === 'next' &&
-    //         currentPage < Math.ceil(filteredInventory.length / itemsPerPage)
-    //     ) {
-    //         setCurrentPage((prev) => prev + 1);
-    //     } else if (direction === 'prev' && currentPage > 1) {
-    //         setCurrentPage((prev) => prev - 1);
-    //     }
-    // };
-
     useEffect(() => {
         fetchInventory();
     }, []);
@@ -207,227 +195,6 @@ const InventoryTable = (): JSX.Element => {
     const endIndex = startIndex + itemsPerPage;
     const currentItems = filteredInventory.slice(startIndex, endIndex);
 
-    // return (
-    //     <div className="py-8 bg-green-50 -mt-5">
-    //         {showSuccess && <SuccessAnimation />}
-    //         <div className="w-11/12 mx-auto overflow-x-auto border rounded-lg shadow-lg">
-    //             <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-4 border-b">
-    //                 <div className="flex-1 flex items-center space-x-4">
-    //                     <input
-    //                         type="text"
-    //                         placeholder="Search Products"
-    //                         className="p-2 border rounded-md flex-1"
-    //                         onChange={(e) => handleSearch(e.target.value)}
-    //                     />
-    //                     <Button
-    //                         label="Log Products"
-    //                         variant="primary"
-    //                         onClick={() => router.push('/inbound-product-logging')}
-    //                         icon={<FaTruck />}
-    //                         className="flex items-center px-4 py-2 text-sm"
-    //                     />
-    //                     <Button
-    //                         label="Add New Product"
-    //                         variant="primary"
-    //                         onClick={() => router.push('/add-product')}
-    //                         icon={<FaPlus />}
-    //                         className="flex items-center px-4 py-2 text-sm"
-    //                     />
-    //                     <Button
-    //                         label="Import CSV"
-    //                         icon={
-    //                             <CiExport
-    //                                 style={{ strokeWidth: 2 }}
-    //                                 size={20}
-    //                             />
-    //                         }
-    //                         onClick={() => setIsImportModalOpen(true)}
-    //                         variant="primary"
-    //                     />
-    //                                         <Button
-    //                         label="Export CSV"
-    //                         icon={
-    //                             <CiImport
-    //                                 style={{ strokeWidth: 2 }}
-    //                                 size={20}
-    //                             />
-    //                         }
-    //                         onClick={() => {
-    //                             // const csvContent = prepareCSVData()
-    //                             //     .map((row) => row.join(','))
-    //                             //     .join('\n');
-    //                             // const csvLink = document.createElement('a');
-    //                             // csvLink.href = URL.createObjectURL(
-    //                             //     new Blob([csvContent], { type: 'text/csv' })
-    //                             // );
-    //                             // csvLink.setAttribute(
-    //                             //     'download',
-    //                             //     'processing-requests.csv'
-    //                             // );
-    //                             // document.body.appendChild(csvLink);
-    //                             // csvLink.click();
-    //                             // document.body.removeChild(csvLink);
-    //                         }}
-    //                         variant="primary"
-    //                     />
-    //                 </div>
-    //                 <FaSort
-    //                     className="text-gray-500 cursor-pointer hover:text-green-500 ml-4"
-    //                     size={24}
-    //                     onClick={() => setIsSortModalOpen(true)}
-    //                 />
-    //             </div>
-
-    //             <table className="min-w-full border-collapse">
-    //                 <thead className="bg-green-600 text-white text-center">
-    //                     <tr>
-    //                         <th className="font-extrabold px-6 py-8">
-    //                             Product Name
-    //                         </th>
-    //                         <th className="font-extrabold px-6 py-8">
-    //                             Quantity (kg)
-    //                         </th>
-    //                         <th className="font-extrabold px-6 py-8">
-    //                             Last Updated Date
-    //                         </th>
-    //                         <th className="font-extrabold px-6 py-8">Actions</th>
-    //                     </tr>
-    //                 </thead>
-    //                 <tbody>
-    //                     {currentItems.map((item) => (
-    //                         <tr
-    //                             key={item.id}
-    //                             className="hover:bg-gray-100 even:bg-gray-50 odd:bg-white text-center"
-    //                         >
-    //                             <td className="px-6 py-8 border-b">
-    //                                 {item.product_name}
-    //                             </td>
-    //                             <td className="px-6 py-8 border-b">{item.quantity}</td>
-    //                             <td className="px-6 py-8 border-b">
-    //                                 {`${new Date(item.updated_at).getDate().toString().padStart(2, '0')}/${(new Date(item.updated_at).getMonth() + 1).toString().padStart(2, '0')}/${new Date(item.updated_at).getFullYear()}`}
-    //                             </td>
-    //                             <td className="px-6 py-8 border-b">
-    //                                 <div className="flex justify-center space-x-4">
-    //                                     <FaEye
-    //                                         className="text-gray-500 cursor-pointer hover:text-green-500"
-    //                                         onClick={() => openViewModal(item)}
-    //                                     />
-    //                                     <FaEdit
-    //                                         className="text-gray-500 cursor-pointer hover:text-green-500"
-    //                                         onClick={() =>
-    //                                             router.push(
-    //                                                 `/edit-product/${item.id}`
-    //                                             )
-    //                                         }
-    //                                     />
-    //                                     <FaTrashAlt
-    //                                         className="text-gray-500 cursor-pointer hover:text-red-500"
-    //                                         onClick={() => {
-    //                                             setItemToDelete(item);
-    //                                             setIsDeleteModalOpen(true);
-    //                                         }}
-    //                                     />
-    //                                 </div>
-    //                             </td>
-    //                         </tr>
-    //                     ))}
-    //                 </tbody>
-    //             </table>
-
-    //             <div className="flex justify-center items-center p-4 border-t bg-white rounded-b-lg space-x-4">
-    //                 <FaAngleDoubleLeft
-    //                     className={`cursor-pointer ${
-    //                         currentPage === 1
-    //                             ? 'text-gray-300 cursor-not-allowed'
-    //                             : 'hover:text-green-500'
-    //                     }`}
-    //                     onClick={currentPage > 1 ? toFirstPage : undefined}
-    //                     size={20}
-    //                 />
-    //                 <FaAngleLeft
-    //                     className={`cursor-pointer ${
-    //                         currentPage === 1
-    //                             ? 'text-gray-300 cursor-not-allowed'
-    //                             : 'hover:text-green-500'
-    //                     }`}
-    //                     onClick={currentPage > 1 ? prevPage : undefined}
-    //                     size={20}
-    //                 />
-    //                 <span className="text-gray-600">
-    //                     Page {currentPage} of {totalPages || 1}
-    //                 </span>
-    //                 <FaAngleRight
-    //                     className={`cursor-pointer ${
-    //                         currentPage === totalPages || totalPages === 0
-    //                             ? 'text-gray-300 cursor-not-allowed'
-    //                             : 'hover:text-green-500'
-    //                     }`}
-    //                     onClick={
-    //                         currentPage < totalPages ? nextPage : undefined
-    //                     }
-    //                     size={20}
-    //                 />
-    //                 <FaAngleDoubleRight
-    //                     className={`cursor-pointer ${
-    //                         currentPage === totalPages || totalPages === 0
-    //                             ? 'text-gray-300 cursor-not-allowed'
-    //                             : 'hover:text-green-500'
-    //                     }`}
-    //                     onClick={
-    //                         currentPage < totalPages ? toLastPage : undefined
-    //                     }
-    //                     size={20}
-    //                 />
-    //             </div>
-    //         </div>
-
-    //         <SortModal
-    //             isOpen={isSortModalOpen}
-    //             onClose={() => setIsSortModalOpen(false)}
-    //             onSortChange={handleSortChange}
-    //         />
-    //         {isViewModalOpen && selectedInventoryItem && (
-    //             <InventoryViewModal
-    //                 isOpen={isViewModalOpen}
-    //                 onClose={closeViewModal}
-    //                 inventoryId={selectedInventoryItem.id}
-    //             />
-    //         )}
-    //         <DeleteConfirmationModal
-    //             isOpen={isDeleteModalOpen}
-    //             onClose={() => setIsDeleteModalOpen(false)}
-    //             title="Delete Product"
-    //             content={
-    //                 <p>
-    //                     Are you sure you want to delete{' '}
-    //                     <strong>{itemToDelete?.product_name}</strong>?
-    //                 </p>
-    //             }
-    //             buttons={[
-    //                 {
-    //                     label: 'Cancel',
-    //                     onClick: () => setIsDeleteModalOpen(false),
-    //                     variant: 'secondary',
-    //                 },
-    //                 {
-    //                     label: 'Delete',
-    //                     onClick: handleDeleteItem,
-    //                     variant: 'primary',
-    //                 },
-    //             ]}
-    //         />
-    //         <ImportCSVModal
-    //             isOpen={isImportModalOpen}
-    //             onClose={() => setIsImportModalOpen(false)}
-    //             onImportSuccess={() => {
-    //                 setRefresh((prev) => !prev);
-    //                 setIsImportModalOpen(false);
-    //             }}
-    //         />
-    //     </div>
-    // );
-    // };
-
     return (
         <div className="py-8 bg-green-50 -mt-5 min-h-screen">
             {' '}
@@ -436,14 +203,20 @@ const InventoryTable = (): JSX.Element => {
             <div className="w-11/12 mx-auto overflow-x-auto border rounded-lg shadow-lg bg-white">
                 {' '}
                 {/* Set the inner content to white */}
-                <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-4 border-b">
-                    <div className="flex-1 flex items-center space-x-4">
+                <div className="flex items-center justify-between p-4 border-b bg-white">
+                    {/* Search Bar with Icon */}
+                    <div className="relative flex items-center flex-grow mr-4">
+                        <GoSearch className="absolute left-3 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Search Products"
-                            className="p-2 border rounded-md flex-1"
+                            placeholder="Search for Products"
+                            className="w-full max-w-[98%] p-2 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:outline-none"
                             onChange={(e) => handleSearch(e.target.value)}
                         />
+                    </div>
+
+                    {/* Buttons */}
+                    <div className="flex items-center space-x-4 mr-4">
                         <Button
                             label="Log Products"
                             variant="primary"
@@ -451,30 +224,31 @@ const InventoryTable = (): JSX.Element => {
                                 router.push('/inbound-product-logging')
                             }
                             icon={<FaTruck />}
-                            className="flex items-center px-4 py-2 text-sm"
+                            className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
                         />
                         <Button
-                            label="Add New Product"
+                            label="Add Product"
                             variant="primary"
                             onClick={() => router.push('/add-product')}
                             icon={<FaPlus />}
-                            className="flex items-center px-4 py-2 text-sm"
+                            className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
                         />
                         <Button
                             label="Import CSV"
                             icon={
-                                <CiExport
+                                <CiImport
                                     style={{ strokeWidth: 2 }}
                                     size={20}
                                 />
                             }
                             onClick={() => setIsImportModalOpen(true)}
                             variant="primary"
+                            className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
                         />
                         <Button
                             label="Export CSV"
                             icon={
-                                <CiImport
+                                <CiExport
                                     style={{ strokeWidth: 2 }}
                                     size={20}
                                 />
@@ -483,71 +257,88 @@ const InventoryTable = (): JSX.Element => {
                                 // CSV export logic (optional)
                             }}
                             variant="primary"
+                            className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
                         />
                     </div>
+
+                    {/* Sort Arrows */}
                     <FaSort
                         className="text-gray-500 cursor-pointer hover:text-green-500 ml-4"
-                        size={24}
+                        size={26}
                         onClick={() => setIsSortModalOpen(true)}
                     />
                 </div>
                 <table className="min-w-full border-collapse">
                     <thead className="bg-green-600 text-white text-center">
                         <tr>
-                            <th className="font-extrabold px-6 py-8">
+                            <th className="text-xl font-bold px-6 py-8">
                                 Product Name
                             </th>
-                            <th className="font-extrabold px-6 py-8">
+                            <th className="text-xl font-bold px-6 py-8">
                                 Quantity (kg)
                             </th>
-                            <th className="font-extrabold px-6 py-8">
+                            <th className="text-xl font-bold px-6 py-8">
                                 Last Updated Date
                             </th>
-                            <th className="font-extrabold px-6 py-8">
+                            <th className="text-xl font-bold px-6 py-8">
                                 Actions
                             </th>
                         </tr>
                     </thead>
                     <tbody>
-                        {currentItems.map((item) => (
-                            <tr
-                                key={item.id}
-                                className="hover:bg-gray-100 even:bg-gray-50 odd:bg-white text-center"
-                            >
-                                <td className="px-6 py-8 border-b">
-                                    {item.product_name}
-                                </td>
-                                <td className="px-6 py-8 border-b">
-                                    {item.quantity}
-                                </td>
-                                <td className="px-6 py-8 border-b">
-                                    {`${new Date(item.updated_at).getDate().toString().padStart(2, '0')}/${(new Date(item.updated_at).getMonth() + 1).toString().padStart(2, '0')}/${new Date(item.updated_at).getFullYear()}`}
-                                </td>
-                                <td className="px-6 py-8 border-b">
-                                    <div className="flex justify-center space-x-4">
-                                        <FaEye
-                                            className="text-gray-500 cursor-pointer hover:text-green-500"
-                                            onClick={() => openViewModal(item)}
-                                        />
-                                        <FaEdit
-                                            className="text-gray-500 cursor-pointer hover:text-green-500"
-                                            onClick={() =>
-                                                router.push(
-                                                    `/edit-product/${item.id}`
-                                                )
-                                            }
-                                        />
-                                        <FaTrashAlt
-                                            className="text-gray-500 cursor-pointer hover:text-red-500"
-                                            onClick={() => {
-                                                setItemToDelete(item);
-                                                setIsDeleteModalOpen(true);
-                                            }}
-                                        />
-                                    </div>
+                        {filteredInventory.length > 0 ? (
+                            currentItems.map((item) => (
+                                <tr
+                                    key={item.id}
+                                    className="hover:bg-gray-100 even:bg-gray-100 odd:bg-white text-center"
+                                >
+                                    <td className="text-base px-6 py-4 border-b">
+                                        {item.product_name}
+                                    </td>
+                                    <td className="text-base px-6 py-4 border-b">
+                                        {item.quantity}
+                                    </td>
+                                    <td className="text-base px-6 py-4 border-b">
+                                        {`${new Date(item.updated_at).getDate().toString().padStart(2, '0')}/${(new Date(item.updated_at).getMonth() + 1).toString().padStart(2, '0')}/${new Date(item.updated_at).getFullYear()}`}
+                                    </td>
+                                    <td className="text-base px-6 py-4 border-b">
+                                        <div className="flex justify-center space-x-4">
+                                            <FaEye
+                                                className="text-gray-500 cursor-pointer hover:text-green-500"
+                                                onClick={() =>
+                                                    openViewModal(item)
+                                                }
+                                            />
+                                            <FaEdit
+                                                className="text-gray-500 cursor-pointer hover:text-green-500"
+                                                onClick={() =>
+                                                    router.push(
+                                                        `/edit-product/${item.id}`
+                                                    )
+                                                }
+                                            />
+                                            <FaTrashAlt
+                                                className="text-gray-500 cursor-pointer hover:text-red-500"
+                                                onClick={() => {
+                                                    setItemToDelete(item);
+                                                    setIsDeleteModalOpen(true);
+                                                }}
+                                            />
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td
+                                    colSpan={4}
+                                    className="text-center text-gray-500 font-semibold py-10"
+                                >
+                                    No products available. Add a product to get
+                                    started.
                                 </td>
                             </tr>
-                        ))}
+                        )}
                     </tbody>
                 </table>
                 <div className="flex justify-center items-center p-4 border-t bg-white rounded-b-lg space-x-4">
@@ -628,3 +419,235 @@ const InventoryTable = (): JSX.Element => {
 };
 
 export default InventoryTable;
+
+// return (
+//     <div className="py-8 bg-green-50 -mt-5">
+//         {showSuccess && <SuccessAnimation />}
+//         <div className="w-11/12 mx-auto overflow-x-auto border rounded-lg shadow-lg">
+//             <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-4 border-b">
+//                 <div className="flex-1 flex items-center space-x-4">
+//                     <input
+//                         type="text"
+//                         placeholder="Search Products"
+//                         className="p-2 border rounded-md flex-1"
+//                         onChange={(e) => handleSearch(e.target.value)}
+//                     />
+//                     <Button
+//                         label="Log Products"
+//                         variant="primary"
+//                         onClick={() => router.push('/inbound-product-logging')}
+//                         icon={<FaTruck />}
+//                         className="flex items-center px-4 py-2 text-sm"
+//                     />
+//                     <Button
+//                         label="Add New Product"
+//                         variant="primary"
+//                         onClick={() => router.push('/add-product')}
+//                         icon={<FaPlus />}
+//                         className="flex items-center px-4 py-2 text-sm"
+//                     />
+//                     <Button
+//                         label="Import CSV"
+//                         icon={
+//                             <CiExport
+//                                 style={{ strokeWidth: 2 }}
+//                                 size={20}
+//                             />
+//                         }
+//                         onClick={() => setIsImportModalOpen(true)}
+//                         variant="primary"
+//                     />
+//                                         <Button
+//                         label="Export CSV"
+//                         icon={
+//                             <CiImport
+//                                 style={{ strokeWidth: 2 }}
+//                                 size={20}
+//                             />
+//                         }
+//                         onClick={() => {
+//                             // const csvContent = prepareCSVData()
+//                             //     .map((row) => row.join(','))
+//                             //     .join('\n');
+//                             // const csvLink = document.createElement('a');
+//                             // csvLink.href = URL.createObjectURL(
+//                             //     new Blob([csvContent], { type: 'text/csv' })
+//                             // );
+//                             // csvLink.setAttribute(
+//                             //     'download',
+//                             //     'processing-requests.csv'
+//                             // );
+//                             // document.body.appendChild(csvLink);
+//                             // csvLink.click();
+//                             // document.body.removeChild(csvLink);
+//                         }}
+//                         variant="primary"
+//                     />
+//                 </div>
+//                 <FaSort
+//                     className="text-gray-500 cursor-pointer hover:text-green-500 ml-4"
+//                     size={24}
+//                     onClick={() => setIsSortModalOpen(true)}
+//                 />
+//             </div>
+
+//             <table className="min-w-full border-collapse">
+//                 <thead className="bg-green-600 text-white text-center">
+//                     <tr>
+//                         <th className="font-extrabold px-6 py-8">
+//                             Product Name
+//                         </th>
+//                         <th className="font-extrabold px-6 py-8">
+//                             Quantity (kg)
+//                         </th>
+//                         <th className="font-extrabold px-6 py-8">
+//                             Last Updated Date
+//                         </th>
+//                         <th className="font-extrabold px-6 py-8">Actions</th>
+//                     </tr>
+//                 </thead>
+//                 <tbody>
+//                     {currentItems.map((item) => (
+//                         <tr
+//                             key={item.id}
+//                             className="hover:bg-gray-100 even:bg-gray-50 odd:bg-white text-center"
+//                         >
+//                             <td className="px-6 py-8 border-b">
+//                                 {item.product_name}
+//                             </td>
+//                             <td className="px-6 py-8 border-b">{item.quantity}</td>
+//                             <td className="px-6 py-8 border-b">
+//                                 {`${new Date(item.updated_at).getDate().toString().padStart(2, '0')}/${(new Date(item.updated_at).getMonth() + 1).toString().padStart(2, '0')}/${new Date(item.updated_at).getFullYear()}`}
+//                             </td>
+//                             <td className="px-6 py-8 border-b">
+//                                 <div className="flex justify-center space-x-4">
+//                                     <FaEye
+//                                         className="text-gray-500 cursor-pointer hover:text-green-500"
+//                                         onClick={() => openViewModal(item)}
+//                                     />
+//                                     <FaEdit
+//                                         className="text-gray-500 cursor-pointer hover:text-green-500"
+//                                         onClick={() =>
+//                                             router.push(
+//                                                 `/edit-product/${item.id}`
+//                                             )
+//                                         }
+//                                     />
+//                                     <FaTrashAlt
+//                                         className="text-gray-500 cursor-pointer hover:text-red-500"
+//                                         onClick={() => {
+//                                             setItemToDelete(item);
+//                                             setIsDeleteModalOpen(true);
+//                                         }}
+//                                     />
+//                                 </div>
+//                             </td>
+//                         </tr>
+//                     ))}
+//                 </tbody>
+//             </table>
+
+//             <div className="flex justify-center items-center p-4 border-t bg-white rounded-b-lg space-x-4">
+//                 <FaAngleDoubleLeft
+//                     className={`cursor-pointer ${
+//                         currentPage === 1
+//                             ? 'text-gray-300 cursor-not-allowed'
+//                             : 'hover:text-green-500'
+//                     }`}
+//                     onClick={currentPage > 1 ? toFirstPage : undefined}
+//                     size={20}
+//                 />
+//                 <FaAngleLeft
+//                     className={`cursor-pointer ${
+//                         currentPage === 1
+//                             ? 'text-gray-300 cursor-not-allowed'
+//                             : 'hover:text-green-500'
+//                     }`}
+//                     onClick={currentPage > 1 ? prevPage : undefined}
+//                     size={20}
+//                 />
+//                 <span className="text-gray-600">
+//                     Page {currentPage} of {totalPages || 1}
+//                 </span>
+//                 <FaAngleRight
+//                     className={`cursor-pointer ${
+//                         currentPage === totalPages || totalPages === 0
+//                             ? 'text-gray-300 cursor-not-allowed'
+//                             : 'hover:text-green-500'
+//                     }`}
+//                     onClick={
+//                         currentPage < totalPages ? nextPage : undefined
+//                     }
+//                     size={20}
+//                 />
+//                 <FaAngleDoubleRight
+//                     className={`cursor-pointer ${
+//                         currentPage === totalPages || totalPages === 0
+//                             ? 'text-gray-300 cursor-not-allowed'
+//                             : 'hover:text-green-500'
+//                     }`}
+//                     onClick={
+//                         currentPage < totalPages ? toLastPage : undefined
+//                     }
+//                     size={20}
+//                 />
+//             </div>
+//         </div>
+
+//         <SortModal
+//             isOpen={isSortModalOpen}
+//             onClose={() => setIsSortModalOpen(false)}
+//             onSortChange={handleSortChange}
+//         />
+//         {isViewModalOpen && selectedInventoryItem && (
+//             <InventoryViewModal
+//                 isOpen={isViewModalOpen}
+//                 onClose={closeViewModal}
+//                 inventoryId={selectedInventoryItem.id}
+//             />
+//         )}
+//         <DeleteConfirmationModal
+//             isOpen={isDeleteModalOpen}
+//             onClose={() => setIsDeleteModalOpen(false)}
+//             title="Delete Product"
+//             content={
+//                 <p>
+//                     Are you sure you want to delete{' '}
+//                     <strong>{itemToDelete?.product_name}</strong>?
+//                 </p>
+//             }
+//             buttons={[
+//                 {
+//                     label: 'Cancel',
+//                     onClick: () => setIsDeleteModalOpen(false),
+//                     variant: 'secondary',
+//                 },
+//                 {
+//                     label: 'Delete',
+//                     onClick: handleDeleteItem,
+//                     variant: 'primary',
+//                 },
+//             ]}
+//         />
+//         <ImportCSVModal
+//             isOpen={isImportModalOpen}
+//             onClose={() => setIsImportModalOpen(false)}
+//             onImportSuccess={() => {
+//                 setRefresh((prev) => !prev);
+//                 setIsImportModalOpen(false);
+//             }}
+//         />
+//     </div>
+// );
+// };
+
+// const handlePageChange = (direction: 'next' | 'prev') => {
+//     if (
+//         direction === 'next' &&
+//         currentPage < Math.ceil(filteredInventory.length / itemsPerPage)
+//     ) {
+//         setCurrentPage((prev) => prev + 1);
+//     } else if (direction === 'prev' && currentPage > 1) {
+//         setCurrentPage((prev) => prev - 1);
+//     }
+// };

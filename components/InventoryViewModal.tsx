@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// import { createClient } from '../utils/supabase/client';  // Adjust the path to match your folder structure
 import { createClient } from '@/utils/supabase/client';
 
 // Type definition for inventory item
