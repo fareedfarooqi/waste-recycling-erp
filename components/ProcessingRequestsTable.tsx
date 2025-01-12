@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { GoSearch } from 'react-icons/go';
 import SuccessAnimation from './SuccessAnimation';
 import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
@@ -321,12 +322,17 @@ const ProcessingRequestsTable = (): JSX.Element => {
             <div className="w-11/12 mx-auto overflow-x-auto border rounded-lg shadow-lg">
                 <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-4 border-b">
                     <div className="flex-1 flex items-center space-x-4">
-                        <input
-                            type="text"
-                            placeholder="Search for product name, quantity or status..."
-                            className="p-2 border rounded-md flex-1 h-12"
-                            onChange={(e) => handleSearch(e.target.value)}
-                        />
+                        <div className="relative flex-1">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                <GoSearch className="h-5 w-5" />
+                            </span>
+                            <input
+                                type="text"
+                                placeholder="Search for product name, quantity or status..."
+                                className="p-2 pl-10 border rounded-md h-12 w-full"
+                                onChange={(e) => handleSearch(e.target.value)}
+                            />
+                        </div>
                         <Button
                             label="New Request"
                             icon={<FaPlus />}
