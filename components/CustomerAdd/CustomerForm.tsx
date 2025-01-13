@@ -428,7 +428,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ onAdditionSuccess }) => {
                         </button>
                         <button
                             type="submit"
-                            className="bg-green-500 text-white px-6 py-3 rounded-lg transition hover:bg-green-700"
+                            className="bg-green-600 text-white px-6 py-3 rounded-lg transition hover:bg-green-700"
                         >
                             Submit
                         </button>
