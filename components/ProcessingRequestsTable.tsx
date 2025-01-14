@@ -400,82 +400,95 @@ const ProcessingRequestsTable = (): JSX.Element => {
                         </tr>
                     </thead>
                     <tbody>
-                        {currentItems.map((item) => (
-                            <tr
-                                key={item.id}
-                                className="hover:bg-gray-100 even:bg-gray-50 odd:bg-white text-center"
-                            >
-                                <td className="px-6 py-8 border-b">
-                                    {item.product_name}
-                                </td>
-                                <td className="px-6 py-8 border-b">
-                                    {item.quantity}
-                                </td>
-                                <td className="px-6 py-8 border-b">
-                                    <span
-                                        className={`inline-block ${
-                                            item.status === 'completed'
-                                                ? 'bg-[#c6efcd] border border-[#4caf50]'
-                                                : item.status === 'in_progress'
-                                                  ? 'bg-[#feeb9c] border border-[#ff9800]'
-                                                  : item.status === 'new'
-                                                    ? 'bg-[#ffc8ce] border border-[#f44336]'
-                                                    : ''
-                                        } px-2 py-1 rounded-full w-[120px] text-center`}
-                                    >
-                                        {item.status
-                                            ? item.status === 'in_progress'
-                                                ? 'In Progress'
-                                                : item.status
-                                                      .charAt(0)
-                                                      .toUpperCase() +
-                                                  item.status.slice(1)
-                                            : 'N/A'}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-8 border-b">
-                                    <div className="flex justify-center space-x-4">
-                                        <FaEye
-                                            className="text-gray-500 cursor-pointer hover:text-green-500"
-                                            size={18}
-                                            onClick={() => {
-                                                setSelectedProcessingRequestItem(
-                                                    item
-                                                );
-                                                setIsViewModalOpen(true);
-                                            }}
-                                        />
-                                        <FaEdit
-                                            className="text-gray-500 cursor-pointer hover:text-green-500"
-                                            size={18}
-                                            onClick={() => {
-                                                setItemToEdit(item);
-                                                setIsEditModalOpen(true);
-                                            }}
-                                        />
-                                        <FaCheckSquare
-                                            className={`cursor-pointer ${
+                        {filteredProcessingRequests.length > 0 ? (
+                            currentItems.map((item) => (
+                                <tr
+                                    key={item.id}
+                                    className="hover:bg-gray-100 even:bg-gray-50 odd:bg-white text-center"
+                                >
+                                    <td className="px-6 py-8 border-b">
+                                        {item.product_name}
+                                    </td>
+                                    <td className="px-6 py-8 border-b">
+                                        {item.quantity}
+                                    </td>
+                                    <td className="px-6 py-8 border-b">
+                                        <span
+                                            className={`inline-block ${
                                                 item.status === 'completed'
-                                                    ? 'text-gray-300 cursor-not-allowed'
-                                                    : 'text-gray-500 hover:text-green-500'
-                                            }`}
-                                            size={18}
-                                            onClick={() =>
-                                                markRequestAsCompleted(item)
-                                            }
-                                        />
-                                        <FaTrashAlt
-                                            className="text-gray-500 cursor-pointer hover:text-red-500"
-                                            size={18}
-                                            onClick={() => {
-                                                setItemToDelete(item);
-                                                setIsDeleteModalOpen(true);
-                                            }}
-                                        />
-                                    </div>
+                                                    ? 'bg-[#c6efcd] border border-[#4caf50]'
+                                                    : item.status ===
+                                                        'in_progress'
+                                                      ? 'bg-[#feeb9c] border border-[#ff9800]'
+                                                      : item.status === 'new'
+                                                        ? 'bg-[#ffc8ce] border border-[#f44336]'
+                                                        : ''
+                                            } px-2 py-1 rounded-full w-[120px] text-center`}
+                                        >
+                                            {item.status
+                                                ? item.status === 'in_progress'
+                                                    ? 'In Progress'
+                                                    : item.status
+                                                          .charAt(0)
+                                                          .toUpperCase() +
+                                                      item.status.slice(1)
+                                                : 'N/A'}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-8 border-b">
+                                        <div className="flex justify-center space-x-4">
+                                            <FaEye
+                                                className="text-gray-500 cursor-pointer hover:text-green-500"
+                                                size={18}
+                                                onClick={() => {
+                                                    setSelectedProcessingRequestItem(
+                                                        item
+                                                    );
+                                                    setIsViewModalOpen(true);
+                                                }}
+                                            />
+                                            <FaEdit
+                                                className="text-gray-500 cursor-pointer hover:text-green-500"
+                                                size={18}
+                                                onClick={() => {
+                                                    setItemToEdit(item);
+                                                    setIsEditModalOpen(true);
+                                                }}
+                                            />
+                                            <FaCheckSquare
+                                                className={`cursor-pointer ${
+                                                    item.status === 'completed'
+                                                        ? 'text-gray-300 cursor-not-allowed'
+                                                        : 'text-gray-500 hover:text-green-500'
+                                                }`}
+                                                size={18}
+                                                onClick={() =>
+                                                    markRequestAsCompleted(item)
+                                                }
+                                            />
+                                            <FaTrashAlt
+                                                className="text-gray-500 cursor-pointer hover:text-red-500"
+                                                size={18}
+                                                onClick={() => {
+                                                    setItemToDelete(item);
+                                                    setIsDeleteModalOpen(true);
+                                                }}
+                                            />
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td
+                                    colSpan={4}
+                                    className="text-center text-gray-500 font-semibold py-10 bg-white"
+                                >
+                                    No processing requests available. Add a new
+                                    processing request to get started.
                                 </td>
                             </tr>
-                        ))}
+                        )}
                     </tbody>
                 </table>
                 <div className="flex justify-center items-center p-4 border-t bg-white rounded-b-lg space-x-4">
