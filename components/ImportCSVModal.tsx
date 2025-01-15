@@ -3,6 +3,7 @@ import { supabase } from '@/config/supabaseClient';
 import Button from './Button';
 import { IoMdClose } from 'react-icons/io';
 import SuccessAnimation from './SuccessAnimation';
+import Papa from 'papaparse';
 
 interface ImportCSVModalProps {
     isOpen: boolean;
@@ -16,7 +17,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
     onImportSuccess,
 }) => {
     const [files, setFiles] = useState<File[]>([]);
-    const [importing, setImporting] = useState(false);
+    // const [importing, setImporting] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -88,73 +89,171 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
             setError('Please select at least one file to import.');
             return;
         }
-
-        // Check if all files are CSV files
-        const invalidFiles = files.filter(
-            (file) => !file.name.endsWith('.csv')
-        );
+    
+        const invalidFiles = files.filter((file) => !file.name.endsWith('.csv'));
         if (invalidFiles.length > 0) {
             setError('Please select only CSV files.');
             return;
         }
-
+    
         setIsImporting(true);
         setError(null);
         setProgress(0);
-
+    
         try {
             let totalRows = 0;
             let processedRows = 0;
-
-            // Count total rows for all files
-            for (const file of files) {
-                const text = await file.text();
-                const rows = text.split('\n');
-                totalRows += rows.length - 1; // Subtract 1 for header row
+    
+            interface CSVRow {
+                'Product Name': string;
+                'Quantity (kg)': string;
+                'Product Description': string;
+                'Reserved Location': string;
+                'Created Date': string;
+                'Last Updated Date': string;
             }
-
+    
+            const isValidDate = (dateString: string): boolean => {
+                const date = new Date(dateString);
+                return !isNaN(date.getTime());
+            };
+    
             for (const file of files) {
                 const text = await file.text();
-                const rows = text.split('\n').map((row) => row.split(','));
-                const headers = rows[0];
-                const data = rows.slice(1);
-
+                const { data } = Papa.parse<CSVRow>(text, { header: true });
+                totalRows += data.length;
+    
                 for (const row of data) {
-                    if (row.length === headers.length) {
-                        const item = {
-                            product_id: row[1],
-                            quantity: parseInt(row[3]),
-                            status: row[4].toLowerCase().replace(' ', '_'),
-                            created_at: row[5],
-                            updated_at: row[6],
-                        };
-
-                        const { error } = await supabase
-                            .from('processing_requests')
-                            .insert(item);
-                        if (error) throw error;
+                    if (!row['Product Name'] || !row['Quantity (kg)']) {
+                        setError(
+                            `Error in file "${file.name}": Invalid data in one or more rows. Please check the CSV file and try again.`
+                        );
+                        setIsImporting(false);
+                        setProgress(0);
+                        return;
                     }
+    
+                    const productName = row['Product Name'];
+                    const quantity = parseInt(row['Quantity (kg)'], 10);
+                    const productDescription = row['Product Description'] || 'N/A';
+                    const reservedLocation = row['Reserved Location'] || 'N/A';
+                    const createdAt = isValidDate(row['Created Date'])
+                        ? new Date(row['Created Date']).toISOString()
+                        : null;
+                    const updatedAt = isValidDate(row['Last Updated Date'])
+                        ? new Date(row['Last Updated Date']).toISOString()
+                        : new Date().toISOString();
+    
+                    // Check if the product already exists
+                    const { data: existingProducts, error: fetchError } = await supabase
+                        .from('products')
+                        .select('*')
+                        .eq('product_name', productName)
+                        .limit(1);
+    
+                    // if (fetchError) throw fetchError;
+
+                    if (fetchError) {
+                        setError(
+                            `Error in file "${file.name}": Unable to fetch existing products. Please try again.`
+                        );
+                        setIsImporting(false);
+                        setProgress(0);
+                        return;
+                    }
+    
+                    if (existingProducts && existingProducts.length > 0) {
+                        // Update existing product
+                        const existingProduct = existingProducts[0];
+                        const updatedQuantity = existingProduct.quantity + quantity;
+    
+                        if (updatedQuantity > 10_000_000) {
+                            setError(
+                                `CSV file "${file.name}" cannot be imported as the quantity for product "${productName}" exceeds the maximum quantity limit.`
+                            );
+                            setIsImporting(false);
+                            setProgress(0);
+                            return;
+                        }
+    
+                        const { error: updateError } = await supabase
+                            .from('products')
+                            .update({
+                                quantity: updatedQuantity,
+                                product_description: productDescription,
+                                reserved_location: reservedLocation,
+                                updated_at: updatedAt,
+                            })
+                            .eq('id', existingProduct.id);
+    
+                        if (updateError) {
+                            setError(
+                                `Error in file "${file.name}": Unable to update product "${productName}". Please try again.`
+                            );
+                            setIsImporting(false);
+                            setProgress(0);
+                            return;
+                        }
+                    } else {
+                        // Insert new product
+                        if (quantity > 10_000_000) {
+                            setError(
+                                `CSV file "${file.name}" cannot be imported as the quantity for product "${productName}" exceeds the maximum quantity limit.`
+                            );
+                            setIsImporting(false);
+                            setProgress(0);
+                            return;
+                        }
+    
+                        const { error: insertError } = await supabase
+                            .from('products')
+                            .insert([
+                                {
+                                    product_name: productName,
+                                    quantity,
+                                    product_description: productDescription,
+                                    reserved_location: reservedLocation,
+                                    created_at: createdAt || new Date().toISOString(),
+                                    updated_at: updatedAt,
+                                },
+                            ]);
+    
+                        // if (insertError) throw insertError;
+                        if (insertError) {
+                            setError(
+                                `Error in file "${file.name}": Unable to insert product "${productName}". Please try again.`
+                            );
+                            setIsImporting(false);
+                            setProgress(0);
+                            return;
+                        }
+                    }
+    
                     processedRows++;
                     setProgress(Math.round((processedRows / totalRows) * 100));
                 }
             }
-
+    
+            // router.refresh();
+    
             setShowSuccess(true);
             setTimeout(() => {
                 setShowSuccess(false);
                 onImportSuccess();
                 onClose();
             }, 700);
-        } catch (err) {
+        } catch (err: any) {
+            console.error(err);
             setError(
-                'Error importing CSV: Please ensure that you have selected the correct CSV file/s and try again.'
+                err.message ||
+                    'Error importing CSV: Please ensure that you have selected the correct CSV file/s and try again.'
             );
         } finally {
             setIsImporting(false);
             setProgress(0);
         }
     };
-
+    
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
@@ -200,7 +299,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
             >
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                    className="absolute top-4 right-4 text-gray-500 hover:text-red-700"
                     aria-label="Close"
                 >
                     <IoMdClose size={24} />

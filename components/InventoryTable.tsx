@@ -4,7 +4,7 @@ import {
     FaEye,
     FaEdit,
     FaPlus,
-    FaCalendarAlt,
+    // FaCalendarAlt,
     FaSort,
     FaAngleLeft,
     FaAngleRight,
@@ -29,6 +29,8 @@ type InventoryItem = {
     quantity: number;
     created_at: string;
     updated_at: string;
+    product_description: string;
+    reserved_location: string;
 };
 
 const InventoryTable = (): JSX.Element => {
@@ -48,10 +50,10 @@ const InventoryTable = (): JSX.Element => {
 
     const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
 
-    const [searchTerm, setSearchTerm] = useState<string>('');
-    const [dateFilter, setDateFilter] = useState<string>('');
+    const [, setSearchTerm] = useState<string>('');
+    // const [, setDateFilter] = useState<string>('');
     const [isSortModalOpen, setIsSortModalOpen] = useState<boolean>(false);
-    const [refresh, setRefresh] = useState<boolean>(false);
+    const [, setRefresh] = useState<boolean>(false);
 
     const [currentPage, setCurrentPage] = useState<number>(1);
     // const itemsPerPage = 10;
@@ -76,8 +78,10 @@ const InventoryTable = (): JSX.Element => {
         setLoading(true);
         const { data, error } = await supabase
             .from('products')
-            .select('id, product_name, quantity, created_at, updated_at');
-
+            .select(
+                'id, product_name, quantity, created_at, updated_at, product_description, reserved_location'
+            );
+    
         if (error) {
             console.error('Error fetching products: ', error.message);
         } else {
@@ -87,12 +91,15 @@ const InventoryTable = (): JSX.Element => {
                 quantity: item.quantity,
                 created_at: item.created_at,
                 updated_at: item.updated_at,
+                product_description: item.product_description || 'N/A',
+                reserved_location: item.reserved_location || 'N/A',
             }));
             setInventory(formattedData);
             setFilteredInventory(formattedData);
         }
         setLoading(false);
     };
+    
 
     const handleSearch = (searchTerm: string) => {
         setSearchTerm(searchTerm);
@@ -104,16 +111,16 @@ const InventoryTable = (): JSX.Element => {
         setCurrentPage(1); // Reset to first page after filtering
     };
 
-    const handleDateFilter = (date: string) => {
-        setDateFilter(date);
-        const filteredData = inventory.filter((item) => {
-            const itemDate = new Date(item.created_at);
-            const formattedItemDate = itemDate.toISOString().slice(0, 10);
-            return formattedItemDate === date;
-        });
-        setFilteredInventory(filteredData);
-        setCurrentPage(1); // Reset to first page after filtering
-    };
+    // const handleDateFilter = (date: string) => {
+    //     setDateFilter(date);
+    //     const filteredData = inventory.filter((item) => {
+    //         const itemDate = new Date(item.created_at);
+    //         const formattedItemDate = itemDate.toISOString().slice(0, 10);
+    //         return formattedItemDate === date;
+    //     });
+    //     setFilteredInventory(filteredData);
+    //     setCurrentPage(1); // Reset to first page after filtering
+    // };
 
     // const handleFilter = () => {
     //     setIsSortModalOpen(true);
@@ -167,28 +174,35 @@ const InventoryTable = (): JSX.Element => {
     useEffect(() => {
         fetchInventory();
     }, []);
-
-    // const prepareCSVData = () => {
-    //     const headers = [
-    //         'ID',
-    //         'Product ID',
-    //         'Product Name',
-    //         'Quantity',
-    //         'Product Description',
-    //         'Created At',
-    //         'Updated At',
-    //     ];
-    //     const data = filteredInventory.map((item) => [
-    //         item.id,
-    //         item.product_name,
-    //         item.quantity.toString(),
-    //         item.product_description,
-    //         item.reserved_location,
-    //         item.created_at,
-    //         item.updated_at,
-    //     ]);
-    //     return [headers, ...data];
-    // };
+    
+    const prepareCSVData = () => {
+        const headers = [
+            'ID',
+            'Product Name',
+            'Quantity (kg)',
+            'Product Description',
+            'Reserved Location',
+            'Created Date',
+            'Last Updated Date',
+        ];
+    
+        const data = filteredInventory.map((item) => [
+            item.id,
+            item.product_name,
+            item.quantity.toString(),
+            `"${(item.product_description || 'N/A').replace(/"/g, '""')}"`, // Wrap in quotes and escape any existing quotes
+            `"${(item.reserved_location || 'N/A').replace(/"/g, '""')}"`, // Wrap in quotes and escape any existing quotes
+            item.created_at
+                ? new Date(item.created_at).toLocaleDateString('en-AU') // Format as dd/mm/yyyy
+                : 'N/A',
+            item.updated_at
+                ? new Date(item.updated_at).toLocaleDateString('en-AU') // Format as dd/mm/yyyy
+                : 'N/A',
+        ]);
+    
+        return [headers, ...data];
+    };
+    
 
     // Calculate items for the current page
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -223,14 +237,26 @@ const InventoryTable = (): JSX.Element => {
                             onClick={() =>
                                 router.push('/inbound-product-logging')
                             }
-                            icon={<FaTruck />}
+                            // icon={<FaTruck />}
+                            icon={
+                                <FaTruck
+                                    style={{ strokeWidth: 2 }}
+                                    size={18}
+                                />
+                            }
                             className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
                         />
                         <Button
                             label="Add Product"
                             variant="primary"
                             onClick={() => router.push('/add-product')}
-                            icon={<FaPlus />}
+                            // icon={<FaPlus />}
+                            icon={
+                                <FaPlus
+                                    style={{ strokeWidth: 2 }}
+                                    size={18}
+                                />
+                            }
                             className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
                         />
                         <Button
@@ -245,20 +271,29 @@ const InventoryTable = (): JSX.Element => {
                             variant="primary"
                             className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
                         />
+
                         <Button
                             label="Export CSV"
-                            icon={
-                                <CiExport
-                                    style={{ strokeWidth: 2 }}
-                                    size={20}
-                                />
-                            }
+                            icon={<CiExport style={{ strokeWidth: 2 }} size={20} />}
                             onClick={() => {
-                                // CSV export logic (optional)
+                                const csvContent = prepareCSVData()
+                                    .map((row) => row.join(',')) // Convert each row to a CSV string
+                                    .join('\n'); // Combine rows with newlines
+
+                                const blob = new Blob([csvContent], { type: 'text/csv' });
+                                const csvUrl = URL.createObjectURL(blob);
+
+                                const link = document.createElement('a');
+                                link.href = csvUrl;
+                                link.setAttribute('download', 'inventory-list.csv'); // CSV filename
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
                             }}
                             variant="primary"
                             className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
                         />
+
                     </div>
 
                     {/* Sort Arrows */}
@@ -419,235 +454,3 @@ const InventoryTable = (): JSX.Element => {
 };
 
 export default InventoryTable;
-
-// return (
-//     <div className="py-8 bg-green-50 -mt-5">
-//         {showSuccess && <SuccessAnimation />}
-//         <div className="w-11/12 mx-auto overflow-x-auto border rounded-lg shadow-lg">
-//             <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-4 border-b">
-//                 <div className="flex-1 flex items-center space-x-4">
-//                     <input
-//                         type="text"
-//                         placeholder="Search Products"
-//                         className="p-2 border rounded-md flex-1"
-//                         onChange={(e) => handleSearch(e.target.value)}
-//                     />
-//                     <Button
-//                         label="Log Products"
-//                         variant="primary"
-//                         onClick={() => router.push('/inbound-product-logging')}
-//                         icon={<FaTruck />}
-//                         className="flex items-center px-4 py-2 text-sm"
-//                     />
-//                     <Button
-//                         label="Add New Product"
-//                         variant="primary"
-//                         onClick={() => router.push('/add-product')}
-//                         icon={<FaPlus />}
-//                         className="flex items-center px-4 py-2 text-sm"
-//                     />
-//                     <Button
-//                         label="Import CSV"
-//                         icon={
-//                             <CiExport
-//                                 style={{ strokeWidth: 2 }}
-//                                 size={20}
-//                             />
-//                         }
-//                         onClick={() => setIsImportModalOpen(true)}
-//                         variant="primary"
-//                     />
-//                                         <Button
-//                         label="Export CSV"
-//                         icon={
-//                             <CiImport
-//                                 style={{ strokeWidth: 2 }}
-//                                 size={20}
-//                             />
-//                         }
-//                         onClick={() => {
-//                             // const csvContent = prepareCSVData()
-//                             //     .map((row) => row.join(','))
-//                             //     .join('\n');
-//                             // const csvLink = document.createElement('a');
-//                             // csvLink.href = URL.createObjectURL(
-//                             //     new Blob([csvContent], { type: 'text/csv' })
-//                             // );
-//                             // csvLink.setAttribute(
-//                             //     'download',
-//                             //     'processing-requests.csv'
-//                             // );
-//                             // document.body.appendChild(csvLink);
-//                             // csvLink.click();
-//                             // document.body.removeChild(csvLink);
-//                         }}
-//                         variant="primary"
-//                     />
-//                 </div>
-//                 <FaSort
-//                     className="text-gray-500 cursor-pointer hover:text-green-500 ml-4"
-//                     size={24}
-//                     onClick={() => setIsSortModalOpen(true)}
-//                 />
-//             </div>
-
-//             <table className="min-w-full border-collapse">
-//                 <thead className="bg-green-600 text-white text-center">
-//                     <tr>
-//                         <th className="font-extrabold px-6 py-8">
-//                             Product Name
-//                         </th>
-//                         <th className="font-extrabold px-6 py-8">
-//                             Quantity (kg)
-//                         </th>
-//                         <th className="font-extrabold px-6 py-8">
-//                             Last Updated Date
-//                         </th>
-//                         <th className="font-extrabold px-6 py-8">Actions</th>
-//                     </tr>
-//                 </thead>
-//                 <tbody>
-//                     {currentItems.map((item) => (
-//                         <tr
-//                             key={item.id}
-//                             className="hover:bg-gray-100 even:bg-gray-50 odd:bg-white text-center"
-//                         >
-//                             <td className="px-6 py-8 border-b">
-//                                 {item.product_name}
-//                             </td>
-//                             <td className="px-6 py-8 border-b">{item.quantity}</td>
-//                             <td className="px-6 py-8 border-b">
-//                                 {`${new Date(item.updated_at).getDate().toString().padStart(2, '0')}/${(new Date(item.updated_at).getMonth() + 1).toString().padStart(2, '0')}/${new Date(item.updated_at).getFullYear()}`}
-//                             </td>
-//                             <td className="px-6 py-8 border-b">
-//                                 <div className="flex justify-center space-x-4">
-//                                     <FaEye
-//                                         className="text-gray-500 cursor-pointer hover:text-green-500"
-//                                         onClick={() => openViewModal(item)}
-//                                     />
-//                                     <FaEdit
-//                                         className="text-gray-500 cursor-pointer hover:text-green-500"
-//                                         onClick={() =>
-//                                             router.push(
-//                                                 `/edit-product/${item.id}`
-//                                             )
-//                                         }
-//                                     />
-//                                     <FaTrashAlt
-//                                         className="text-gray-500 cursor-pointer hover:text-red-500"
-//                                         onClick={() => {
-//                                             setItemToDelete(item);
-//                                             setIsDeleteModalOpen(true);
-//                                         }}
-//                                     />
-//                                 </div>
-//                             </td>
-//                         </tr>
-//                     ))}
-//                 </tbody>
-//             </table>
-
-//             <div className="flex justify-center items-center p-4 border-t bg-white rounded-b-lg space-x-4">
-//                 <FaAngleDoubleLeft
-//                     className={`cursor-pointer ${
-//                         currentPage === 1
-//                             ? 'text-gray-300 cursor-not-allowed'
-//                             : 'hover:text-green-500'
-//                     }`}
-//                     onClick={currentPage > 1 ? toFirstPage : undefined}
-//                     size={20}
-//                 />
-//                 <FaAngleLeft
-//                     className={`cursor-pointer ${
-//                         currentPage === 1
-//                             ? 'text-gray-300 cursor-not-allowed'
-//                             : 'hover:text-green-500'
-//                     }`}
-//                     onClick={currentPage > 1 ? prevPage : undefined}
-//                     size={20}
-//                 />
-//                 <span className="text-gray-600">
-//                     Page {currentPage} of {totalPages || 1}
-//                 </span>
-//                 <FaAngleRight
-//                     className={`cursor-pointer ${
-//                         currentPage === totalPages || totalPages === 0
-//                             ? 'text-gray-300 cursor-not-allowed'
-//                             : 'hover:text-green-500'
-//                     }`}
-//                     onClick={
-//                         currentPage < totalPages ? nextPage : undefined
-//                     }
-//                     size={20}
-//                 />
-//                 <FaAngleDoubleRight
-//                     className={`cursor-pointer ${
-//                         currentPage === totalPages || totalPages === 0
-//                             ? 'text-gray-300 cursor-not-allowed'
-//                             : 'hover:text-green-500'
-//                     }`}
-//                     onClick={
-//                         currentPage < totalPages ? toLastPage : undefined
-//                     }
-//                     size={20}
-//                 />
-//             </div>
-//         </div>
-
-//         <SortModal
-//             isOpen={isSortModalOpen}
-//             onClose={() => setIsSortModalOpen(false)}
-//             onSortChange={handleSortChange}
-//         />
-//         {isViewModalOpen && selectedInventoryItem && (
-//             <InventoryViewModal
-//                 isOpen={isViewModalOpen}
-//                 onClose={closeViewModal}
-//                 inventoryId={selectedInventoryItem.id}
-//             />
-//         )}
-//         <DeleteConfirmationModal
-//             isOpen={isDeleteModalOpen}
-//             onClose={() => setIsDeleteModalOpen(false)}
-//             title="Delete Product"
-//             content={
-//                 <p>
-//                     Are you sure you want to delete{' '}
-//                     <strong>{itemToDelete?.product_name}</strong>?
-//                 </p>
-//             }
-//             buttons={[
-//                 {
-//                     label: 'Cancel',
-//                     onClick: () => setIsDeleteModalOpen(false),
-//                     variant: 'secondary',
-//                 },
-//                 {
-//                     label: 'Delete',
-//                     onClick: handleDeleteItem,
-//                     variant: 'primary',
-//                 },
-//             ]}
-//         />
-//         <ImportCSVModal
-//             isOpen={isImportModalOpen}
-//             onClose={() => setIsImportModalOpen(false)}
-//             onImportSuccess={() => {
-//                 setRefresh((prev) => !prev);
-//                 setIsImportModalOpen(false);
-//             }}
-//         />
-//     </div>
-// );
-// };
-
-// const handlePageChange = (direction: 'next' | 'prev') => {
-//     if (
-//         direction === 'next' &&
-//         currentPage < Math.ceil(filteredInventory.length / itemsPerPage)
-//     ) {
-//         setCurrentPage((prev) => prev + 1);
-//     } else if (direction === 'prev' && currentPage > 1) {
-//         setCurrentPage((prev) => prev - 1);
-//     }
-// };

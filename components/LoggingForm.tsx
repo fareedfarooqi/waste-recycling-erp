@@ -74,31 +74,6 @@ const LoggingForm: React.FC = () => {
         }
     };
 
-    // const handleSubmit = async () => {
-    //     if (!isFormValid()) return;
-    //     const { product, provider, quantity, arrivalDate, invoiceRequired } =
-    //         formValues;
-
-    //     const { data, error } = await supabase
-    //         .from('inbound_product_logging')
-    //         .insert([
-    //             {
-    //                 product_id: product,
-    //                 provider_id: provider,
-    //                 quantity_received: parseFloat(quantity),
-    //                 invoice_required: invoiceRequired,
-    //                 created_at: arrivalDate,
-    //                 pickup_id: null,
-    //             },
-    //         ]);
-
-    //     if (error) {
-    //         console.error('Error inserting log:', error.message);
-    //     } else {
-    //         router.push('/inventory-list');
-    //     }
-    // };
-
     const handleSubmit = async () => {
         if (!isFormValid()) return;
 
@@ -135,6 +110,7 @@ const LoggingForm: React.FC = () => {
     };
 
     if (!isClient) return null;
+   
 
     return (
         <form>
@@ -151,12 +127,6 @@ const LoggingForm: React.FC = () => {
                         value: product.id,
                         label: product.product_name,
                     }))}
-                    // onChange={(selectedOption) =>
-                    //     handleInputChange(
-                    //         'product',
-                    //         selectedOption?.value || ''
-                    //     )
-                    // }
                     onChange={(selectedOption) =>
                         handleInputChange(
                             'product',
@@ -181,12 +151,6 @@ const LoggingForm: React.FC = () => {
                         value: provider.id,
                         label: provider.company_name,
                     }))}
-                    // onChange={(selectedOption) =>
-                    //     handleInputChange(
-                    //         'provider',
-                    //         selectedOption?.value || ''
-                    //     )
-                    // }
                     onChange={(selectedOption) =>
                         handleInputChange(
                             'provider',
@@ -256,13 +220,15 @@ const LoggingForm: React.FC = () => {
                     label="Cancel"
                     variant="secondary"
                     onClick={() => router.push('/inventory-list')}
-                />
+                    className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-gray-100 text-black rounded hover:bg-gray-100 transition whitespace-nowrap min-w-[120px] min-h-[50px]"
+                    />
                 <Button
                     label="Save Log"
                     variant="primary"
                     onClick={handleSubmit}
                     disabled={!isFormValid()}
-                />
+                    className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px] min-h-[50px]"
+                    />
             </div>
         </form>
     );
