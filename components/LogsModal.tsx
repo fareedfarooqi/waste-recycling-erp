@@ -16,6 +16,8 @@ const LogsModal: React.FC<LogsModalProps> = ({ onClose }) => {
 
     const supabase = createClient(); // Create Supabase client instance
 
+    // trying to test linting
+
     useEffect(() => {
         const fetchLogs = async () => {
             setIsLoading(true);
