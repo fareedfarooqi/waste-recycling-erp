@@ -80,7 +80,7 @@ const LoggingForm: React.FC = () => {
         const { product, provider, quantity, arrivalDate, invoiceRequired } =
             formValues;
 
-        const { data, error } = await supabase
+        const { error } = await supabase
             .from('inbound_product_logging')
             .insert([
                 {
@@ -104,13 +104,26 @@ const LoggingForm: React.FC = () => {
         }
     };
 
+    // const handleSetTodayDate = () => {
+    //     const today = new Date().toISOString().split('T')[0];
+    //     setFormValues((prev) => ({ ...prev, arrivalDate: today }));
+    // };
+
     const handleSetTodayDate = () => {
-        const today = new Date().toISOString().split('T')[0];
-        setFormValues((prev) => ({ ...prev, arrivalDate: today }));
+        const today = new Date();
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        // Convert the local date to an ISO string in the user's time zone
+        const localDate = new Date(
+            today.toLocaleString('en-US', { timeZone: userTimezone })
+        )
+            .toISOString()
+            .split('T')[0]; // Extract the date part (YYYY-MM-DD)
+
+        setFormValues((prev) => ({ ...prev, arrivalDate: localDate }));
     };
 
     if (!isClient) return null;
-   
 
     return (
         <form>
@@ -196,9 +209,10 @@ const LoggingForm: React.FC = () => {
                         label="Today"
                         variant="secondary"
                         onClick={handleSetTodayDate}
+                        className="flex items-center justify-center px-2 py-1 text-sm font-bold bg-gray-100 text-black rounded hover:bg-gray-100 min-w-[100px] min-h-[40px]"
                     />
                 </div>
-                <div className="flex items-center gap-3 mt-2 ml-0">
+                <div className="flex items-center gap-3 mt-1 ml-0">
                     <label className="text-lg font-medium text-gray-700">
                         Invoice Required
                     </label>
@@ -221,14 +235,14 @@ const LoggingForm: React.FC = () => {
                     variant="secondary"
                     onClick={() => router.push('/inventory-list')}
                     className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-gray-100 text-black rounded hover:bg-gray-100 transition whitespace-nowrap min-w-[120px] min-h-[50px]"
-                    />
+                />
                 <Button
                     label="Save Log"
                     variant="primary"
                     onClick={handleSubmit}
                     disabled={!isFormValid()}
                     className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px] min-h-[50px]"
-                    />
+                />
             </div>
         </form>
     );

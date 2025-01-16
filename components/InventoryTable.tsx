@@ -4,7 +4,6 @@ import {
     FaEye,
     FaEdit,
     FaPlus,
-    // FaCalendarAlt,
     FaSort,
     FaAngleLeft,
     FaAngleRight,
@@ -53,7 +52,7 @@ const InventoryTable = (): JSX.Element => {
     const [, setSearchTerm] = useState<string>('');
     // const [, setDateFilter] = useState<string>('');
     const [isSortModalOpen, setIsSortModalOpen] = useState<boolean>(false);
-    const [, setRefresh] = useState<boolean>(false);
+    // const [, setRefresh] = useState<boolean>(false);
 
     const [currentPage, setCurrentPage] = useState<number>(1);
     // const itemsPerPage = 10;
@@ -81,7 +80,7 @@ const InventoryTable = (): JSX.Element => {
             .select(
                 'id, product_name, quantity, created_at, updated_at, product_description, reserved_location'
             );
-    
+
         if (error) {
             console.error('Error fetching products: ', error.message);
         } else {
@@ -99,7 +98,6 @@ const InventoryTable = (): JSX.Element => {
         }
         setLoading(false);
     };
-    
 
     const handleSearch = (searchTerm: string) => {
         setSearchTerm(searchTerm);
@@ -161,11 +159,37 @@ const InventoryTable = (): JSX.Element => {
         setIsDeleteModalOpen(false);
     };
 
+    // const handleSortChange = (sortBy: string, direction: 'asc' | 'desc') => {
+    //     const sortedData = [...filteredInventory].sort((a, b) => {
+    //         const key = sortBy as keyof InventoryItem;
+    //         if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
+    //         if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+    //         return 0;
+    //     });
+    //     setFilteredInventory(sortedData);
+    // };
+
+    // useEffect(() => {
+    //     fetchInventory();
+    // }, []);
+
     const handleSortChange = (sortBy: string, direction: 'asc' | 'desc') => {
         const sortedData = [...filteredInventory].sort((a, b) => {
             const key = sortBy as keyof InventoryItem;
-            if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
-            if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
+            const aValue = a[key];
+            const bValue = b[key];
+
+            if (typeof aValue === 'string' && typeof bValue === 'string') {
+                // Case-insensitive string comparison for sorting product_name
+                const comparison = aValue.localeCompare(bValue, undefined, {
+                    sensitivity: 'base',
+                });
+                return direction === 'asc' ? comparison : -comparison;
+            }
+
+            // Handle numeric and other types of comparison
+            if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return direction === 'asc' ? 1 : -1;
             return 0;
         });
         setFilteredInventory(sortedData);
@@ -174,7 +198,7 @@ const InventoryTable = (): JSX.Element => {
     useEffect(() => {
         fetchInventory();
     }, []);
-    
+
     const prepareCSVData = () => {
         const headers = [
             'ID',
@@ -185,7 +209,7 @@ const InventoryTable = (): JSX.Element => {
             'Created Date',
             'Last Updated Date',
         ];
-    
+
         const data = filteredInventory.map((item) => [
             item.id,
             item.product_name,
@@ -199,10 +223,9 @@ const InventoryTable = (): JSX.Element => {
                 ? new Date(item.updated_at).toLocaleDateString('en-AU') // Format as dd/mm/yyyy
                 : 'N/A',
         ]);
-    
+
         return [headers, ...data];
     };
-    
 
     // Calculate items for the current page
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -210,7 +233,7 @@ const InventoryTable = (): JSX.Element => {
     const currentItems = filteredInventory.slice(startIndex, endIndex);
 
     return (
-        <div className="py-8 bg-green-50 -mt-5 min-h-screen">
+        <div className="py-8 bg-green-50 -mt-1 min-h-screen">
             {' '}
             {/* Ensure the background extends to fill the screen */}
             {showSuccess && <SuccessAnimation />}
@@ -239,10 +262,7 @@ const InventoryTable = (): JSX.Element => {
                             }
                             // icon={<FaTruck />}
                             icon={
-                                <FaTruck
-                                    style={{ strokeWidth: 2 }}
-                                    size={18}
-                                />
+                                <FaTruck style={{ strokeWidth: 2 }} size={18} />
                             }
                             className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
                         />
@@ -252,10 +272,7 @@ const InventoryTable = (): JSX.Element => {
                             onClick={() => router.push('/add-product')}
                             // icon={<FaPlus />}
                             icon={
-                                <FaPlus
-                                    style={{ strokeWidth: 2 }}
-                                    size={18}
-                                />
+                                <FaPlus style={{ strokeWidth: 2 }} size={18} />
                             }
                             className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
                         />
@@ -274,18 +291,28 @@ const InventoryTable = (): JSX.Element => {
 
                         <Button
                             label="Export CSV"
-                            icon={<CiExport style={{ strokeWidth: 2 }} size={20} />}
+                            icon={
+                                <CiExport
+                                    style={{ strokeWidth: 2 }}
+                                    size={20}
+                                />
+                            }
                             onClick={() => {
                                 const csvContent = prepareCSVData()
                                     .map((row) => row.join(',')) // Convert each row to a CSV string
                                     .join('\n'); // Combine rows with newlines
 
-                                const blob = new Blob([csvContent], { type: 'text/csv' });
+                                const blob = new Blob([csvContent], {
+                                    type: 'text/csv',
+                                });
                                 const csvUrl = URL.createObjectURL(blob);
 
                                 const link = document.createElement('a');
                                 link.href = csvUrl;
-                                link.setAttribute('download', 'inventory-list.csv'); // CSV filename
+                                link.setAttribute(
+                                    'download',
+                                    'inventory-list.csv'
+                                ); // CSV filename
                                 document.body.appendChild(link);
                                 link.click();
                                 document.body.removeChild(link);
@@ -293,7 +320,6 @@ const InventoryTable = (): JSX.Element => {
                             variant="primary"
                             className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
                         />
-
                     </div>
 
                     {/* Sort Arrows */}
@@ -378,12 +404,12 @@ const InventoryTable = (): JSX.Element => {
                 </table>
                 <div className="flex justify-center items-center p-4 border-t bg-white rounded-b-lg space-x-4">
                     <FaAngleDoubleLeft
-                        className={`cursor-pointer ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'hover:text-green-500'}`}
+                        className={`cursor-pointer ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'hover:text-green-600'}`}
                         onClick={currentPage > 1 ? toFirstPage : undefined}
                         size={20}
                     />
                     <FaAngleLeft
-                        className={`cursor-pointer ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'hover:text-green-500'}`}
+                        className={`cursor-pointer ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'hover:text-green-600'}`}
                         onClick={currentPage > 1 ? prevPage : undefined}
                         size={20}
                     />
@@ -391,14 +417,14 @@ const InventoryTable = (): JSX.Element => {
                         Page {currentPage} of {totalPages || 1}
                     </span>
                     <FaAngleRight
-                        className={`cursor-pointer ${currentPage === totalPages || totalPages === 0 ? 'text-gray-300 cursor-not-allowed' : 'hover:text-green-500'}`}
+                        className={`cursor-pointer ${currentPage === totalPages || totalPages === 0 ? 'text-gray-300 cursor-not-allowed' : 'hover:text-green-600'}`}
                         onClick={
                             currentPage < totalPages ? nextPage : undefined
                         }
                         size={20}
                     />
                     <FaAngleDoubleRight
-                        className={`cursor-pointer ${currentPage === totalPages || totalPages === 0 ? 'text-gray-300 cursor-not-allowed' : 'hover:text-green-500'}`}
+                        className={`cursor-pointer ${currentPage === totalPages || totalPages === 0 ? 'text-gray-300 cursor-not-allowed' : 'hover:text-green-600'}`}
                         onClick={
                             currentPage < totalPages ? toLastPage : undefined
                         }
@@ -441,12 +467,22 @@ const InventoryTable = (): JSX.Element => {
                     },
                 ]}
             />
-            <ImportCSVModal
+            {/* <ImportCSVModal
                 isOpen={isImportModalOpen}
                 onClose={() => setIsImportModalOpen(false)}
                 onImportSuccess={() => {
                     setRefresh((prev) => !prev);
                     setIsImportModalOpen(false);
+                }}
+            /> */}
+            <ImportCSVModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                onImportSuccess={() => {
+                    fetchInventory(); // Refresh inventory data
+                    setIsImportModalOpen(false);
+                    setShowSuccess(true);
+                    setTimeout(() => setShowSuccess(false), 700);
                 }}
             />
         </div>

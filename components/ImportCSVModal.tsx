@@ -75,6 +75,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
 
     const handleRemoveFile = (index: number) => {
         setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
+        setError(null); // Clear the error when a file is removed
     };
 
     const handleRemoveAllFiles = () => {
@@ -82,6 +83,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
         if (fileInputRef.current) {
             fileInputRef.current.value = ''; // Reset the file input
         }
+        setError(null); // Clear the error when all files are removed
     };
 
     const handleImport = async () => {
@@ -89,21 +91,23 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
             setError('Please select at least one file to import.');
             return;
         }
-    
-        const invalidFiles = files.filter((file) => !file.name.endsWith('.csv'));
+
+        const invalidFiles = files.filter(
+            (file) => !file.name.endsWith('.csv')
+        );
         if (invalidFiles.length > 0) {
             setError('Please select only CSV files.');
             return;
         }
-    
+
         setIsImporting(true);
         setError(null);
         setProgress(0);
-    
+
         try {
             let totalRows = 0;
             let processedRows = 0;
-    
+
             interface CSVRow {
                 'Product Name': string;
                 'Quantity (kg)': string;
@@ -112,17 +116,17 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                 'Created Date': string;
                 'Last Updated Date': string;
             }
-    
+
             const isValidDate = (dateString: string): boolean => {
                 const date = new Date(dateString);
                 return !isNaN(date.getTime());
             };
-    
+
             for (const file of files) {
                 const text = await file.text();
                 const { data } = Papa.parse<CSVRow>(text, { header: true });
                 totalRows += data.length;
-    
+
                 for (const row of data) {
                     if (!row['Product Name'] || !row['Quantity (kg)']) {
                         setError(
@@ -132,10 +136,11 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                         setProgress(0);
                         return;
                     }
-    
+
                     const productName = row['Product Name'];
                     const quantity = parseInt(row['Quantity (kg)'], 10);
-                    const productDescription = row['Product Description'] || 'N/A';
+                    const productDescription =
+                        row['Product Description'] || 'N/A';
                     const reservedLocation = row['Reserved Location'] || 'N/A';
                     const createdAt = isValidDate(row['Created Date'])
                         ? new Date(row['Created Date']).toISOString()
@@ -143,14 +148,15 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                     const updatedAt = isValidDate(row['Last Updated Date'])
                         ? new Date(row['Last Updated Date']).toISOString()
                         : new Date().toISOString();
-    
+
                     // Check if the product already exists
-                    const { data: existingProducts, error: fetchError } = await supabase
-                        .from('products')
-                        .select('*')
-                        .eq('product_name', productName)
-                        .limit(1);
-    
+                    const { data: existingProducts, error: fetchError } =
+                        await supabase
+                            .from('products')
+                            .select('*')
+                            .eq('product_name', productName)
+                            .limit(1);
+
                     // if (fetchError) throw fetchError;
 
                     if (fetchError) {
@@ -161,12 +167,13 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                         setProgress(0);
                         return;
                     }
-    
+
                     if (existingProducts && existingProducts.length > 0) {
                         // Update existing product
                         const existingProduct = existingProducts[0];
-                        const updatedQuantity = existingProduct.quantity + quantity;
-    
+                        const updatedQuantity =
+                            existingProduct.quantity + quantity;
+
                         if (updatedQuantity > 10_000_000) {
                             setError(
                                 `CSV file "${file.name}" cannot be imported as the quantity for product "${productName}" exceeds the maximum quantity limit.`
@@ -175,7 +182,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                             setProgress(0);
                             return;
                         }
-    
+
                         const { error: updateError } = await supabase
                             .from('products')
                             .update({
@@ -185,7 +192,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                                 updated_at: updatedAt,
                             })
                             .eq('id', existingProduct.id);
-    
+
                         if (updateError) {
                             setError(
                                 `Error in file "${file.name}": Unable to update product "${productName}". Please try again.`
@@ -204,7 +211,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                             setProgress(0);
                             return;
                         }
-    
+
                         const { error: insertError } = await supabase
                             .from('products')
                             .insert([
@@ -213,11 +220,12 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                                     quantity,
                                     product_description: productDescription,
                                     reserved_location: reservedLocation,
-                                    created_at: createdAt || new Date().toISOString(),
+                                    created_at:
+                                        createdAt || new Date().toISOString(),
                                     updated_at: updatedAt,
                                 },
                             ]);
-    
+
                         // if (insertError) throw insertError;
                         if (insertError) {
                             setError(
@@ -228,32 +236,45 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
                             return;
                         }
                     }
-    
+
                     processedRows++;
                     setProgress(Math.round((processedRows / totalRows) * 100));
                 }
             }
-    
+
             // router.refresh();
-    
+
             setShowSuccess(true);
             setTimeout(() => {
                 setShowSuccess(false);
                 onImportSuccess();
                 onClose();
             }, 700);
-        } catch (err: any) {
-            console.error(err);
-            setError(
-                err.message ||
-                    'Error importing CSV: Please ensure that you have selected the correct CSV file/s and try again.'
-            );
+        } catch (err: unknown) {
+            // catch (err: any) {
+            //     console.error(err);
+            //     setError(
+            //         err.message ||
+            //             'Error importing CSV: Please ensure that you have selected the correct CSV file/s and try again.'
+            //     );
+            // }
+
+            if (err instanceof Error) {
+                console.error(err);
+                setError(
+                    err.message ||
+                        'Error importing CSV: Please ensure that you have selected the correct CSV file/s and try again.'
+                );
+            } else {
+                console.error('An unknown error occurred', err);
+                setError('An unknown error occurred. Please try again.');
+            }
         } finally {
             setIsImporting(false);
             setProgress(0);
         }
     };
-    
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (
