@@ -34,7 +34,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
                 <h3 className="text-3xl font-bold text-center mb-6">
                     Confirm Deletion
                 </h3>
-                <div className="mb-6">{content}</div>
+                <div className="mb-6 text-center">{content}</div>
                 <div className="flex justify-between space-x-4">
                     {buttons.map((button, index) => (
                         <button
