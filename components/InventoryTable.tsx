@@ -109,21 +109,6 @@ const InventoryTable = (): JSX.Element => {
         setCurrentPage(1); // Reset to first page after filtering
     };
 
-    // const handleDateFilter = (date: string) => {
-    //     setDateFilter(date);
-    //     const filteredData = inventory.filter((item) => {
-    //         const itemDate = new Date(item.created_at);
-    //         const formattedItemDate = itemDate.toISOString().slice(0, 10);
-    //         return formattedItemDate === date;
-    //     });
-    //     setFilteredInventory(filteredData);
-    //     setCurrentPage(1); // Reset to first page after filtering
-    // };
-
-    // const handleFilter = () => {
-    //     setIsSortModalOpen(true);
-    // };
-
     const openViewModal = (item: InventoryItem) => {
         setSelectedInventoryItem(item);
         setIsViewModalOpen(true);
@@ -158,20 +143,6 @@ const InventoryTable = (): JSX.Element => {
         }
         setIsDeleteModalOpen(false);
     };
-
-    // const handleSortChange = (sortBy: string, direction: 'asc' | 'desc') => {
-    //     const sortedData = [...filteredInventory].sort((a, b) => {
-    //         const key = sortBy as keyof InventoryItem;
-    //         if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
-    //         if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
-    //         return 0;
-    //     });
-    //     setFilteredInventory(sortedData);
-    // };
-
-    // useEffect(() => {
-    //     fetchInventory();
-    // }, []);
 
     const handleSortChange = (sortBy: string, direction: 'asc' | 'desc') => {
         const sortedData = [...filteredInventory].sort((a, b) => {
@@ -467,14 +438,6 @@ const InventoryTable = (): JSX.Element => {
                     },
                 ]}
             />
-            {/* <ImportCSVModal
-                isOpen={isImportModalOpen}
-                onClose={() => setIsImportModalOpen(false)}
-                onImportSuccess={() => {
-                    setRefresh((prev) => !prev);
-                    setIsImportModalOpen(false);
-                }}
-            /> */}
             <ImportCSVModal
                 isOpen={isImportModalOpen}
                 onClose={() => setIsImportModalOpen(false)}
