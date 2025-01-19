@@ -25,7 +25,6 @@ export default function Page({ searchParams }: PageProps) {
 
     return (
         <Background>
-            {/* Sign-in Card */}
             <SigninCard></SigninCard>
         </Background>
     );
