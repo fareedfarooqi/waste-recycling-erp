@@ -16,8 +16,17 @@ export default function SigninCard() {
         navigator.clipboard.writeText('info@wasteerp.com');
     };
 
-    const handleSubmissionSuccess = () => {
-        router.push('/customers');
+    const handleSubmissionSuccess = async (authUserId: string) => {
+        const { data, error } = await supabase
+            .from('company_users')
+            .select('id')
+            .eq('user_id', authUserId);
+
+        if (!data || data.length === 0) {
+            router.push('/setup-company');
+        } else {
+            router.push('/customers');
+        }
     };
 
     const handleSignin = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -58,7 +67,7 @@ export default function SigninCard() {
                 return;
             }
 
-            handleSubmissionSuccess();
+            handleSubmissionSuccess(data?.user?.id);
         } catch (err) {
             setError(
                 'Failed to connect to the server. Please try again later.'

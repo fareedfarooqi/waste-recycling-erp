@@ -115,7 +115,10 @@ const SidebarSmall = (): JSX.Element => {
                     router.push('/logout');
                 }}
             >
-                <div className="p-2 hover:bg-green-600 rounded-full cursor-pointer flex items-center justify-center">
+                <div
+                    className="p-2 hover:bg-green-600 rounded-full cursor-pointer flex items-center justify-center"
+                    onClick={() => router.push('/sign-in')}
+                >
                     <ImExit className="text-3xl text-white" />
                 </div>
                 <span className="absolute left-14 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 bg-white text-green-700 text-sm rounded-xl px-3 py-1 shadow-lg transition-all duration-500 transform group-hover:scale-105 border border-green-500">

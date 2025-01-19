@@ -81,7 +81,7 @@ const Sidebar = (): JSX.Element => {
                 <div className="font-bold text-2xl">Session</div>
                 <div
                     onClick={() => {
-                        router.push('/logout');
+                        router.push('/sign-in');
                         setSidebarOpen(false);
                     }}
                     className="flex items-center space-x-3 text-white hover:bg-green-600 p-2 rounded-lg cursor-pointer"
