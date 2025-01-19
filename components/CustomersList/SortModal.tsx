@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { IoMdClose } from 'react-icons/io';
+import { FaArrowUp, FaArrowDown } from 'react-icons/fa';
 
 type SortModalProps = {
     isOpen: boolean;
@@ -39,9 +40,7 @@ const SortModal: React.FC<SortModalProps> = ({
             onClick={onClose}
         >
             <div
-                className="relative bg-white w-full max-w-sm sm:max-w-md mx-2 sm:mx-0 
-                   rounded-lg shadow-2xl p-6 transform transition duration-300
-                   animate-fadeInUp"
+                className="relative bg-white w-full max-w-sm sm:max-w-md mx-2 sm:mx-0 rounded-lg shadow-2xl p-6 transform transition duration-300 animate-fadeInUp"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
@@ -52,7 +51,7 @@ const SortModal: React.FC<SortModalProps> = ({
                     <IoMdClose size={24} />
                 </button>
 
-                <h2 className="font-semibold text-xl text-gray-800 mb-6 text-center">
+                <h2 className="font-bold text-xl text-gray-800 mb-6 text-center">
                     Sort Clients
                 </h2>
 
@@ -62,9 +61,7 @@ const SortModal: React.FC<SortModalProps> = ({
                             Sort by:
                         </label>
                         <select
-                            className="w-full border border-gray-300 rounded-md p-2 
-                         focus:outline-none focus:ring-2 focus:ring-green-400
-                         hover:border-green-400 transition-colors"
+                            className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-400 hover:border-green-400 transition-colors"
                             value={selectedSort}
                             onChange={(e) => handleFieldChange(e.target.value)}
                         >
@@ -90,7 +87,7 @@ const SortModal: React.FC<SortModalProps> = ({
                         </label>
                         <div className="flex items-center justify-center space-x-4">
                             <button
-                                className={`px-5 py-2 rounded-md transition-all duration-200 font-semibold outline-none
+                                className={`flex items-center px-5 py-2 rounded-md transition-all duration-200 font-semibold outline-none space-x-2
                   ${
                       direction === 'asc'
                           ? 'bg-green-600 hover:bg-green-700 text-white'
@@ -98,11 +95,12 @@ const SortModal: React.FC<SortModalProps> = ({
                   }`}
                                 onClick={() => handleDirectionChange('asc')}
                             >
-                                Ascending
+                                <FaArrowUp size={16} />
+                                <span>Ascending</span>
                             </button>
 
                             <button
-                                className={`px-5 py-2 rounded-md transition-all duration-200 font-semibold outline-none
+                                className={`flex items-center px-5 py-2 rounded-md transition-all duration-200 font-semibold outline-none space-x-2
                   ${
                       direction === 'desc'
                           ? 'bg-green-600 hover:bg-green-700 text-white'
@@ -110,7 +108,8 @@ const SortModal: React.FC<SortModalProps> = ({
                   }`}
                                 onClick={() => handleDirectionChange('desc')}
                             >
-                                Descending
+                                <FaArrowDown size={16} />
+                                <span>Descending</span>
                             </button>
                         </div>
                     </div>

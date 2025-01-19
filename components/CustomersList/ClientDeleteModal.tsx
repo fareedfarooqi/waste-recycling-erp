@@ -60,7 +60,7 @@ const ClientDeleteModal: React.FC<ClientModalProps> = ({
                 onClick={(e) => e.stopPropagation()}
             >
                 <h2 className="text-3xl font-bold text-center mb-6">
-                    Confirm Deletion
+                    Delete Customer
                 </h2>
                 <p className="text-xl text-center mb-8">
                     Are you sure you want to delete{' '}

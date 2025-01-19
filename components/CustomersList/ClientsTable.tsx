@@ -372,63 +372,76 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                         </tr>
                     </thead>
                     <tbody>
-                        {currentClients.map((client) => (
-                            <tr
-                                key={client.id}
-                                className="hover:bg-gray-100 even:bg-gray-50 odd:bg-white text-center"
-                            >
-                                <td className="px-6 py-8 border-b">
-                                    {client.company_name}
-                                </td>
-                                <td className="px-6 py-8 border-b">
-                                    {client.contact_details.phone}
-                                    <br />
-                                    {client.contact_details.email}
-                                    <br />
-                                    {client.contact_details.address}
-                                </td>
-                                <td className="px-6 py-8 border-b">
-                                    {client.locations.length}
-                                </td>
-                                <td className="px-6 py-8 border-b">
-                                    {client.locations.reduce(
-                                        (total, location) =>
-                                            total +
-                                            Number(
-                                                location.initial_empty_bins || 0
-                                            ),
-                                        0
-                                    )}
-                                </td>
-                                <td className="px-6 py-8 border-b">
-                                    <div className="flex justify-center space-x-4">
-                                        <FaEye
-                                            className="text-gray-500 cursor-pointer hover:text-green-500"
-                                            onClick={() =>
-                                                handleCustomerViewButtonClick(
-                                                    client
-                                                )
-                                            }
-                                            size={18}
-                                        />
-                                        <FaEdit
-                                            className="text-gray-500 cursor-pointer hover:text-green-500"
-                                            onClick={() =>
-                                                openEditModal(client.id)
-                                            }
-                                            size={18}
-                                        />
-                                        <FaTrashAlt
-                                            className="text-gray-500 cursor-pointer hover:text-red-500"
-                                            onClick={() =>
-                                                openDeleteModal(client.id)
-                                            }
-                                            size={18}
-                                        />
-                                    </div>
+                        {clients.length === 0 ? (
+                            <tr className="bg-white">
+                                <td
+                                    colSpan={5}
+                                    className="py-8 text-center font-semibold text-gray-600"
+                                >
+                                    No customers available. Add a customer to
+                                    get started.
                                 </td>
                             </tr>
-                        ))}
+                        ) : (
+                            currentClients.map((client) => (
+                                <tr
+                                    key={client.id}
+                                    className="hover:bg-gray-100 even:bg-gray-50 odd:bg-white text-center"
+                                >
+                                    <td className="px-6 py-8 border-b">
+                                        {client.company_name}
+                                    </td>
+                                    <td className="px-6 py-8 border-b">
+                                        {client.contact_details.phone}
+                                        <br />
+                                        {client.contact_details.email}
+                                        <br />
+                                        {client.contact_details.address}
+                                    </td>
+                                    <td className="px-6 py-8 border-b">
+                                        {client.locations.length}
+                                    </td>
+                                    <td className="px-6 py-8 border-b">
+                                        {client.locations.reduce(
+                                            (total, location) =>
+                                                total +
+                                                Number(
+                                                    location.initial_empty_bins ||
+                                                        0
+                                                ),
+                                            0
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-8 border-b">
+                                        <div className="flex justify-center space-x-4">
+                                            <FaEye
+                                                className="text-gray-500 cursor-pointer hover:text-green-500"
+                                                onClick={() =>
+                                                    handleCustomerViewButtonClick(
+                                                        client
+                                                    )
+                                                }
+                                                size={18}
+                                            />
+                                            <FaEdit
+                                                className="text-gray-500 cursor-pointer hover:text-green-500"
+                                                onClick={() =>
+                                                    openEditModal(client.id)
+                                                }
+                                                size={18}
+                                            />
+                                            <FaTrashAlt
+                                                className="text-gray-500 cursor-pointer hover:text-red-500"
+                                                onClick={() =>
+                                                    openDeleteModal(client.id)
+                                                }
+                                                size={18}
+                                            />
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
 
