@@ -136,7 +136,8 @@ const EditProcessingRequestModal = ({
                 </h2>
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-2">
-                        Product
+                        Product{' '}
+                        <span className="text-red-500 font-bold">*</span>
                     </label>
                     <select
                         value={productId}
@@ -152,7 +153,8 @@ const EditProcessingRequestModal = ({
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-2">
-                        Quantity (kg)
+                        Quantity (kg){' '}
+                        <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
                         type="text" // Change to text to handle the input validation manually
@@ -178,7 +180,7 @@ const EditProcessingRequestModal = ({
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-2">
-                        Status
+                        Status <span className="text-red-500 font-bold">*</span>
                     </label>
                     <select
                         value={status}

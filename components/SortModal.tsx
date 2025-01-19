@@ -1,20 +1,27 @@
 import React, { useState } from 'react';
 import Button from './Button';
 import { IoMdClose } from 'react-icons/io';
+import { FaArrowUp, FaArrowDown } from 'react-icons/fa'; // Import arrow icons
 
 type SortModalProps = {
     isOpen: boolean;
     onClose: () => void;
     onSortChange: (sortBy: string, direction: 'asc' | 'desc') => void;
+    initialField?: string;
+    initialDirection?: 'asc' | 'desc';
 };
 
 const SortModal: React.FC<SortModalProps> = ({
     isOpen,
     onClose,
     onSortChange,
+    initialField = 'product_name',
+    initialDirection = 'asc',
 }) => {
-    const [selectedSort, setSelectedSort] = useState<string>('product_name');
-    const [direction, setDirection] = useState<'asc' | 'desc'>('asc');
+    const [selectedSort, setSelectedSort] = useState<string>(initialField);
+    const [direction, setDirection] = useState<'asc' | 'desc'>(
+        initialDirection
+    );
 
     const handleSortChange = (field: string) => {
         setSelectedSort(field);
@@ -30,28 +37,34 @@ const SortModal: React.FC<SortModalProps> = ({
 
     return (
         <div
-            className="fixed inset-0 bg-gray-700 bg-opacity-50 z-50 flex justify-center items-center"
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
             onClick={onClose}
         >
             <div
-                className="bg-white w-[90%] max-w-xl rounded-md p-6 pb-8 font-sans shadow-lg relative"
+                className="relative bg-white w-full max-w-sm sm:max-w-md mx-2 sm:mx-0 
+                rounded-lg shadow-2xl p-6 transform transition duration-300
+                animate-fadeInUp"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
                     onClick={onClose}
-                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                    className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
                     aria-label="Close"
                 >
                     <IoMdClose size={24} />
                 </button>
-                <h3 className="font-bold text-lg mb-4 text-center">
+                <h2 className="font-semibold text-xl text-gray-800 mb-6 text-center">
                     Sort Requests
-                </h3>
-                <div className="space-y-4">
+                </h2>
+                <div className="space-y-6">
                     <div>
-                        <label className="font-medium">Sort by:</label>
+                        <label className="block text-gray-700 font-medium mb-1">
+                            Sort by:
+                        </label>
                         <select
-                            className="w-full p-2 border rounded-md mt-2"
+                            className="w-full border border-gray-300 rounded-md p-2 
+                            focus:outline-none focus:ring-2 focus:ring-green-400
+                            hover:border-green-400 transition-colors"
                             value={selectedSort}
                             onChange={(e) => handleSortChange(e.target.value)}
                         >
@@ -64,8 +77,10 @@ const SortModal: React.FC<SortModalProps> = ({
                         </select>
                     </div>
                     <div>
-                        <label className="font-medium">Direction:</label>
-                        <div className="flex justify-center space-x-4 mt-2">
+                        <label className="block text-gray-700 font-medium mb-1">
+                            Direction:
+                        </label>
+                        <div className="flex items-center justify-center space-x-4">
                             <Button
                                 label="Ascending"
                                 variant={
@@ -74,6 +89,12 @@ const SortModal: React.FC<SortModalProps> = ({
                                         : 'secondary'
                                 }
                                 onClick={() => handleDirectionChange('asc')}
+                                icon={
+                                    <FaArrowUp
+                                        style={{ strokeWidth: 2 }}
+                                        size={18}
+                                    />
+                                }
                             />
                             <Button
                                 label="Descending"
@@ -83,6 +104,12 @@ const SortModal: React.FC<SortModalProps> = ({
                                         : 'secondary'
                                 }
                                 onClick={() => handleDirectionChange('desc')}
+                                icon={
+                                    <FaArrowDown
+                                        style={{ strokeWidth: 2 }}
+                                        size={18}
+                                    />
+                                }
                             />
                         </div>
                     </div>

@@ -159,9 +159,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
         const handleClickOutside = (event: MouseEvent) => {
             if (
                 modalRef.current &&
-                !modalRef.current.contains(event.target as Node) &&
-                event.target instanceof Node &&
-                !(event.target as Element).closest('.fixed')
+                !modalRef.current.contains(event.target as Node)
             ) {
                 onClose();
             }

@@ -116,9 +116,16 @@ const ProcessingRequestsTable = (): JSX.Element => {
                     product_name: productsMap[item.product_id] || 'Unknown',
                 }));
 
-                setProcessingRequests(enrichedData as ProcessingRequestItem[]);
+                // Sort the enriched data alphabetically by product_name
+                const sortedData = enrichedData.sort((a, b) => {
+                    if (a.product_name < b.product_name) return -1;
+                    if (a.product_name > b.product_name) return 1;
+                    return 0;
+                });
+
+                setProcessingRequests(sortedData as ProcessingRequestItem[]);
                 setFilteredProcessingRequests(
-                    enrichedData as ProcessingRequestItem[]
+                    sortedData as ProcessingRequestItem[]
                 );
             }
         }
@@ -156,21 +163,19 @@ const ProcessingRequestsTable = (): JSX.Element => {
     };
 
     const handleSearch = (searchTerm: string) => {
-        const normalizedSearchTerm = searchTerm.toLowerCase().trim();
+        const normalizedSearchTerm = searchTerm.trim();
 
         const filteredData = processingRequests.filter(
             (item) =>
-                item.product_name
-                    .toLowerCase()
-                    .includes(normalizedSearchTerm) ||
+                item.product_name.includes(normalizedSearchTerm) ||
                 item.status
                     .replace(/_/g, ' ')
                     .toLowerCase()
-                    .includes(normalizedSearchTerm) ||
+                    .includes(normalizedSearchTerm.toLowerCase()) ||
                 item.quantity
                     .toString()
                     .toLowerCase()
-                    .includes(normalizedSearchTerm)
+                    .includes(normalizedSearchTerm.toLowerCase())
         );
 
         setFilteredProcessingRequests(filteredData);
@@ -484,8 +489,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                     colSpan={4}
                                     className="text-center text-gray-500 font-semibold py-10 bg-white"
                                 >
-                                    No processing requests available. Add a new
-                                    processing request to get started.
+                                    No processing requests found.
                                 </td>
                             </tr>
                         )}

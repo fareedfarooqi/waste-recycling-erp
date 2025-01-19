@@ -47,11 +47,6 @@ const AddProcessingRequest = ({
     if (!isOpen) return null;
 
     const handleAddRequest = async () => {
-        if (!productId || !quantity) {
-            alert('Please fill out all fields.');
-            return;
-        }
-
         setLoading(true);
 
         const { data, error } = await supabase
@@ -83,21 +78,26 @@ const AddProcessingRequest = ({
     };
 
     return (
-        <div className="border p-4 rounded-md shadow-md relative min-h-[400px] flex flex-col">
+        <div className="p-4 relative min-h-[400px] flex flex-col bg-white">
             {showSuccess && <SuccessAnimation />}
             <button
                 onClick={onClose}
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                className="absolute -top-2 -right-2 text-gray-500 hover:text-gray-700"
                 aria-label="Close"
             >
                 <IoMdClose size={24} />
             </button>
-            <h2 className="text-lg font-bold mb-4 pr-8">
+            <h2 className="text-lg font-bold mb-4 mt-4">
                 Add New Processing Request
             </h2>
             <div className="flex-grow">
                 <div className="mb-4">
-                    <label className="block mb-1">Product</label>
+                    <label className="block mb-1">
+                        Product{' '}
+                        <span className="text-red-500 font-bold text-lg">
+                            *
+                        </span>
+                    </label>
                     {productLoading ? (
                         <p>Loading products...</p>
                     ) : (
@@ -118,7 +118,12 @@ const AddProcessingRequest = ({
                     )}
                 </div>
                 <div className="mb-4">
-                    <label className="block mb-1">Quantity</label>
+                    <label className="block mb-1">
+                        Quantity{' '}
+                        <span className="text-red-500 font-bold text-lg">
+                            *
+                        </span>
+                    </label>
                     <input
                         type="number"
                         value={quantity}
@@ -137,7 +142,12 @@ const AddProcessingRequest = ({
                     />
                 </div>
                 <div className="mb-4">
-                    <label className="block mb-1">Status</label>
+                    <label className="block mb-1">
+                        Status{' '}
+                        <span className="text-red-500 font-bold text-lg">
+                            *
+                        </span>
+                    </label>
                     <select
                         value={status}
                         onChange={(e) =>
@@ -162,7 +172,7 @@ const AddProcessingRequest = ({
                     label={loading ? 'Adding...' : 'Add Request'}
                     variant="primary"
                     onClick={handleAddRequest}
-                    disabled={loading}
+                    disabled={loading || !productId || !quantity}
                 />
             </div>
         </div>
