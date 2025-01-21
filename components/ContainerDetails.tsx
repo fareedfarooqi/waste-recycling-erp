@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/config/supabaseClient';
 import ImageModal from '@/components/ImageModal';
 import DateFormatter from './DateFormatter';
@@ -42,7 +43,40 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
 
             if (error) throw error;
 
-            setContainerInfo(data as OutboundContainerItem);
+            const containerData = data as OutboundContainerItem;
+
+            // Fetch product names for allocated products
+            if (containerData.products_allocated) {
+                const productIds = containerData.products_allocated.map(
+                    (product) => product.productId
+                );
+                const { data: products, error: productError } = await supabase
+                    .from('products')
+                    .select('id, product_name')
+                    .in('id', productIds);
+
+                if (productError) throw productError;
+
+                // Map product names to allocated products
+                const updatedProducts = containerData.products_allocated.map(
+                    (product) => {
+                        const productDetails = products?.find(
+                            (p) => p.id === product.productId
+                        );
+                        return {
+                            ...product,
+                            productName:
+                                productDetails?.product_name ||
+                                product.productName, // Fallback to existing productName if not found
+                        };
+                    }
+                );
+
+                // Update container data with product names
+                containerData.products_allocated = updatedProducts;
+            }
+
+            setContainerInfo(containerData);
             setLoadingContainer(false);
         } catch (err) {
             console.error('Error fetching container:', err);
@@ -180,43 +214,51 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                                 }
                             </dd>
                         </div>
-                        <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                            <dt className="text-sm font-medium text-gray-500">
-                                Allocated Products
-                            </dt>
-                            <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                {Array.isArray(
-                                    containerInfo.products_allocated
-                                ) &&
-                                containerInfo.products_allocated.length > 0 ? (
-                                    <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
-                                        {containerInfo.products_allocated.map(
-                                            (product, index) => (
-                                                <li
-                                                    key={index}
-                                                    className="pl-3 pr-4 py-3 flex items-center justify-between text-sm"
-                                                >
-                                                    <div className="w-0 flex-1 flex items-center">
-                                                        <span className="ml-2 flex-1 w-0 truncate">
-                                                            {
-                                                                product.productName
-                                                            }
-                                                        </span>
-                                                    </div>
-                                                    <div className="ml-4 flex-shrink-0">
-                                                        <span className="font-medium">
-                                                            Quantity:{' '}
-                                                            {product.quantity}
-                                                        </span>
-                                                    </div>
-                                                </li>
-                                            )
-                                        )}
-                                    </ul>
-                                ) : (
-                                    <p>No products allocated</p>
-                                )}
-                            </dd>
+                        <div className="py-4 sm:py-5 sm:px-6">
+                            <details className="w-full">
+                                <summary className="text-sm font-medium text-gray-500 cursor-pointer focus:outline-none">
+                                    Allocated Products
+                                </summary>
+                                <div className="mt-4">
+                                    {Array.isArray(
+                                        containerInfo.products_allocated
+                                    ) &&
+                                    containerInfo.products_allocated.length >
+                                        0 ? (
+                                        <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                                            {containerInfo.products_allocated.map(
+                                                (product, index) => (
+                                                    <li
+                                                        key={index}
+                                                        className="pl-3 pr-4 py-3 flex items-center justify-between text-sm"
+                                                    >
+                                                        <div className="w-0 flex-1 flex items-center">
+                                                            <span className="ml-2 flex-1 w-0 truncate">
+                                                                {
+                                                                    product.productName
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                        <div className="ml-4 flex-shrink-0">
+                                                            <span className="font-medium">
+                                                                Quantity:{' '}
+                                                                {
+                                                                    product.quantity
+                                                                }
+                                                                kg
+                                                            </span>
+                                                        </div>
+                                                    </li>
+                                                )
+                                            )}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-sm text-gray-500">
+                                            No products allocated
+                                        </p>
+                                    )}
+                                </div>
+                            </details>
                         </div>
                     </dl>
                 </div>
