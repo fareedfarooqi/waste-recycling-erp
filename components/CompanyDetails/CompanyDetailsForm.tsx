@@ -7,6 +7,15 @@ import { useRouter } from 'next/navigation';
 import { useLoadScript, Autocomplete, Libraries } from '@react-google-maps/api';
 import { supabase } from '@/config/supabaseClient';
 
+type Company = {
+    id: string;
+    name: string;
+    email: string;
+    phone_number: string | null;
+    created_at: string;
+    updated_at: string;
+};
+
 const libraries: Libraries = ['places'];
 
 export default function CompanyDetailsForm(): JSX.Element {
@@ -51,7 +60,9 @@ export default function CompanyDetailsForm(): JSX.Element {
         try {
             const { data, error } = await supabase
                 .from('companies')
-                .insert([companyDetails]);
+                .insert([companyDetails])
+                .select('*')
+                .single();
 
             if (error) {
                 console.error(
@@ -59,8 +70,9 @@ export default function CompanyDetailsForm(): JSX.Element {
                     error.message
                 );
             } else {
-                console.log('Company details inserted successfully:', data);
-                router.push('/add-staff');
+                const companyId = (data as Company).id;
+                localStorage.setItem('company_id', companyId);
+                router.push('/staff/complete-profile');
             }
         } catch (err) {
             console.error('Unexpected error:', err);
@@ -75,7 +87,7 @@ export default function CompanyDetailsForm(): JSX.Element {
                 <h1 className="mb-3 text-center text-4xl font-extrabold text-green-700 md:mb-5 md:text-5xl">
                     Company Details
                 </h1>
-                <p className="mb-8 text-center text-base text-gray-600 md:mb-10">
+                <p className="mb-8 text-center text-xl text-gray-600 md:mb-10">
                     Please fill in your company details to get started.
                 </p>
                 <form
