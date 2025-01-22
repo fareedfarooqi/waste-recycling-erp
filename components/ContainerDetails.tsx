@@ -328,6 +328,7 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                             isOpen={isAddModalOpenContainer}
                             onProductAdded={handleProductAdded}
                             onClose={() => setIsAddModalOpenContainer(false)}
+                            containerId={id}
                         />
                     </div>
                 </div>
