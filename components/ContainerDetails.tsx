@@ -1,10 +1,13 @@
 'use client';
 
-import type React from 'react';
+import React, { useRef } from 'react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/config/supabaseClient';
 import ImageModal from '@/components/ImageModal';
 import DateFormatter from './DateFormatter';
+import Button from '@/components/Button';
+import { FaPlus } from 'react-icons/fa';
+import AddOutboundContainer from './AddOutboundContainer';
 
 interface ProductAllocation {
     productId: string;
@@ -31,6 +34,10 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
     const [loadingContainer, setLoadingContainer] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+    const [isAddModalOpenContainer, setIsAddModalOpenContainer] =
+        useState<boolean>(false);
+    const [refresh, setRefresh] = useState<boolean>(false);
+    const modalRef = useRef<HTMLDivElement | null>(null);
 
     const fetchContainer = async (idParam: string) => {
         try {
@@ -84,6 +91,30 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
             setLoadingContainer(false);
         }
     };
+
+    const handleProductAdded = () => {
+        setRefresh((prev) => !prev);
+        setIsAddModalOpenContainer(false);
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                modalRef.current &&
+                !modalRef.current.contains(event.target as Node)
+            ) {
+                setIsAddModalOpenContainer(false);
+            }
+        };
+
+        if (isAddModalOpenContainer) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isAddModalOpenContainer]);
 
     useEffect(() => {
         fetchContainer(id);
@@ -258,18 +289,27 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                                         </p>
                                     )}
                                 </div>
+                                <div className="mt-4 scale-90 origin-left">
+                                    <Button
+                                        label="Product"
+                                        icon={<FaPlus />}
+                                        onClick={() =>
+                                            setIsAddModalOpenContainer(true)
+                                        }
+                                        variant="primary"
+                                    />
+                                </div>
                             </details>
                         </div>
                     </dl>
                 </div>
             </div>
             <div className="mt-8 flex justify-center">
-                <button
+                <Button
+                    label="Back"
                     onClick={() => window.history.back()}
-                    className="px-6 py-3 bg-green-600 text-white font-medium text-lg rounded-lg shadow hover:bg-green-700 transition"
-                >
-                    Back
-                </button>
+                    variant="primary"
+                />
             </div>
             {isImageModalOpen && containerInfo.container_photo && (
                 <ImageModal
@@ -277,6 +317,20 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                     alt="Container"
                     onClose={() => setIsImageModalOpen(false)}
                 />
+            )}
+            {isAddModalOpenContainer && (
+                <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
+                    <div
+                        ref={modalRef}
+                        className="bg-white p-6 rounded-lg shadow-lg"
+                    >
+                        <AddOutboundContainer
+                            isOpen={isAddModalOpenContainer}
+                            onProductAdded={handleProductAdded}
+                            onClose={() => setIsAddModalOpenContainer(false)}
+                        />
+                    </div>
+                </div>
             )}
         </div>
     );
