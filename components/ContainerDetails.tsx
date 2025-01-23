@@ -6,8 +6,9 @@ import { supabase } from '@/config/supabaseClient';
 import ImageModal from '@/components/ImageModal';
 import DateFormatter from './DateFormatter';
 import Button from '@/components/Button';
-import { FaPlus } from 'react-icons/fa';
-import AddOutboundContainer from './AddOutboundContainer';
+import { FaPlus, FaEdit, FaTrashAlt } from 'react-icons/fa';
+import AddOutboundContainer from './AddProductToContainer';
+import EditProductModal from './EditProductModal';
 
 interface ProductAllocation {
     productId: string;
@@ -38,6 +39,10 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
         useState<boolean>(false);
     const [refresh, setRefresh] = useState<boolean>(false);
     const modalRef = useRef<HTMLDivElement | null>(null);
+    const [productToEdit, setProductToEdit] = useState<string | null>(null);
+    const [productName, setProductName] = useState<string | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+    const [productQuantity, setProductQuantity] = useState<number | null>(null);
 
     const fetchContainer = async (idParam: string) => {
         try {
@@ -95,6 +100,10 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
     const handleProductAdded = () => {
         setRefresh((prev) => !prev);
         setIsAddModalOpenContainer(false);
+    };
+
+    const handleProductUpdated = () => {
+        setRefresh((prev) => !prev);
     };
 
     useEffect(() => {
@@ -279,6 +288,36 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                                                                 kg
                                                             </span>
                                                         </div>
+                                                        <div className="px-6 py-0">
+                                                            <FaEdit
+                                                                className="text-gray-500 cursor-pointer hover:text-green-500"
+                                                                size={18}
+                                                                onClick={() => {
+                                                                    setProductToEdit(
+                                                                        product.productId
+                                                                    );
+                                                                    setProductQuantity(
+                                                                        product.quantity
+                                                                    );
+                                                                    setProductName(
+                                                                        product.productName
+                                                                    );
+                                                                    setIsEditModalOpen(
+                                                                        true
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <FaTrashAlt
+                                                                className="text-gray-500 cursor-pointer hover:text-green-500"
+                                                                size={18}
+                                                                onClick={() => {
+                                                                    //setItemToEdit(item);
+                                                                    //setIsEditModalOpen(true);
+                                                                }}
+                                                            />
+                                                        </div>
                                                     </li>
                                                 )
                                             )}
@@ -333,6 +372,20 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                     </div>
                 </div>
             )}
+            {isEditModalOpen &&
+                productToEdit &&
+                productQuantity &&
+                productName && (
+                    <EditProductModal
+                        isOpen={isEditModalOpen}
+                        onClose={() => setIsEditModalOpen(false)}
+                        productToEditID={productToEdit}
+                        containerID={containerInfo.id}
+                        productQuantity={productQuantity}
+                        onProductUpdated={handleProductUpdated}
+                        productName={productName}
+                    />
+                )}
         </div>
     );
 };
