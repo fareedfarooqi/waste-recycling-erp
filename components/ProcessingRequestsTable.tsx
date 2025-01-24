@@ -33,6 +33,7 @@ import ImportCSVModal from './ImportCSVModal';
 import { cn } from '@/lib/utils';
 import Button from '@/components/Button';
 import { CiImport, CiExport } from 'react-icons/ci';
+import DateFormatter from './DateFormatter';
 import { updateSession } from '@/utils/supabase/middleware';
 
 type ProcessingRequestItem = {
@@ -400,6 +401,9 @@ const ProcessingRequestsTable = (): JSX.Element => {
                             </th>
                             <th className="font-extrabold px-6 py-8">Status</th>
                             <th className="font-extrabold px-6 py-8">
+                                Date Created
+                            </th>
+                            <th className="font-extrabold px-6 py-8">
                                 Actions
                             </th>
                         </tr>
@@ -439,6 +443,13 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                                       item.status.slice(1)
                                                 : 'N/A'}
                                         </span>
+                                    </td>
+                                    <td className="px-6 py-8 border-b">
+                                        {
+                                            <DateFormatter
+                                                date={item.created_at}
+                                            />
+                                        }
                                     </td>
                                     <td className="px-6 py-8 border-b">
                                         <div className="flex justify-center space-x-4">
