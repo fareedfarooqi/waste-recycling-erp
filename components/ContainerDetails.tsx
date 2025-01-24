@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useRef } from 'react';
+import type React from 'react';
+import { useRef } from 'react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/config/supabaseClient';
 import ImageModal from '@/components/ImageModal';
@@ -310,7 +311,7 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                                     ) &&
                                     containerInfo.products_allocated.length >
                                         0 ? (
-                                        <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                                        <ul className="border border-gray-200 rounded-md divide-y divide-gray-200 max-h-80 overflow-y-auto">
                                             {containerInfo.products_allocated.map(
                                                 (product, index) => (
                                                     <li
