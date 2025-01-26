@@ -452,25 +452,88 @@ export default function AddContainerPage() {
             (product) => product.productId && product.quantity > 0
         );
 
-    const handleSubmit = async () => {
-        const { status, productsAllocated } = formValues;
+    // const handleSubmit = async () => {
+    //     const { status, productsAllocated } = formValues;
 
+    //     const newContainer = {
+    //         status,
+    //         products_allocated: productsAllocated.map((product) => ({
+    //             product_id: product.productId,
+    //             quantity: product.quantity,
+    //         })),
+    //         created_at: new Date().toISOString(),
+    //         updated_at: new Date().toISOString(),
+    //     };
+
+    //     const { error } = await supabase
+    //         .from('containers')
+    //         .insert(newContainer);
+
+    //     if (error) {
+    //         console.error('Error saving container:', error.message);
+    //     } else {
+    //         console.log('Container saved successfully:', newContainer);
+    //     }
+    // };
+
+    const handleSubmit = async () => {
+        const supabase = createClient(); // Create Supabase client
+        const { status, productsAllocated, photos } = formValues;
+
+        // Ensure the user is authenticated
+        const {
+            data: { session },
+            error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError || !session) {
+            console.error('User is not authenticated or session is missing!');
+            return;
+        }
+
+        // Upload photos to the Supabase bucket
+        const photoUrls: string[] = [];
+        for (const photo of photos) {
+            const { data: uploadData, error: uploadError } =
+                await supabase.storage
+                    .from('container_photos')
+                    .upload(`containers/${photo.name}`, photo);
+
+            if (uploadError) {
+                console.error('Error uploading photo:', uploadError.message);
+                return;
+            }
+
+            console.log('Uploaded file:', uploadData);
+
+            // Get the public URL of the uploaded photo
+            const { data: publicUrlData } = supabase.storage
+                .from('container_photos')
+                .getPublicUrl(`containers/${photo.name}`);
+            if (publicUrlData) {
+                photoUrls.push(publicUrlData.publicUrl);
+            }
+        }
+
+        // Prepare the container data
         const newContainer = {
             status,
             products_allocated: productsAllocated.map((product) => ({
                 product_id: product.productId,
                 quantity: product.quantity,
             })),
+            container_photo: photoUrls.join(','), // Save photo URLs as a comma-separated string
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
         };
 
-        const { error } = await supabase
+        // Insert the new container into the database
+        const { error: insertError } = await supabase
             .from('containers')
             .insert(newContainer);
 
-        if (error) {
-            console.error('Error saving container:', error.message);
+        if (insertError) {
+            console.error('Error saving container:', insertError.message);
         } else {
             console.log('Container saved successfully:', newContainer);
         }

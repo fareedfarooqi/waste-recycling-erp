@@ -6,20 +6,19 @@ import Button from './Button';
 import { IoMdClose } from 'react-icons/io';
 import SuccessAnimation from './SuccessAnimation';
 
-const AddProcessingRequest = ({
+const AddOutboundContainer = ({
     isOpen,
     onClose,
-    onRequestAdded,
+    onProductAdded,
+    containerId, // Accept containerId as a prop
 }: {
     isOpen: boolean;
     onClose: () => void;
-    onRequestAdded: () => void;
+    onProductAdded: () => void;
+    containerId: string; // Ensure containerId is a string
 }) => {
     const [productId, setProductId] = useState<string | null>(null);
     const [quantity, setQuantity] = useState<number | ''>('');
-    const [status, setStatus] = useState<'new' | 'in_progress' | 'completed'>(
-        'new'
-    );
     const [loading, setLoading] = useState(false);
     const [products, setProducts] = useState<
         { id: string; product_name: string }[]
@@ -49,32 +48,66 @@ const AddProcessingRequest = ({
     const handleAddRequest = async () => {
         setLoading(true);
 
-        const { data, error } = await supabase
-            .from('processing_requests')
-            .insert([
-                {
-                    product_id: productId,
-                    quantity: Number(quantity),
-                    status,
-                },
-            ]);
+        // Fetch the current products_allocated for the specified container
+        const { data: containerData, error: fetchError } = await supabase
+            .from('containers')
+            .select('products_allocated')
+            .eq('id', containerId)
+            .single();
 
-        setLoading(false);
-
-        if (error) {
-            console.error('Error adding processing request:', error.message);
-            alert('Failed to add processing request.');
-        } else {
-            setShowSuccess(true);
-            setTimeout(() => {
-                setShowSuccess(false);
-                setProductId(null);
-                setQuantity('');
-                setStatus('new');
-                onRequestAdded();
-                onClose();
-            }, 700);
+        if (fetchError) {
+            console.error('Error fetching container data:', fetchError);
+            setLoading(false);
+            return;
         }
+
+        type ProductAllocated = {
+            productId: string;
+            quantity: number;
+        };
+
+        let productsAllocated: ProductAllocated[] =
+            containerData.products_allocated || [];
+
+        // Check if the productId already exists
+        const productIndex = productsAllocated.findIndex(
+            (item: ProductAllocated) => item.productId === productId
+        );
+
+        if (productIndex !== -1) {
+            // Update the quantity for the existing product
+            productsAllocated[productIndex].quantity += Number(quantity);
+        } else {
+            // Add the new product to the array
+            productsAllocated.push({
+                productId: productId as string,
+                quantity: Number(quantity),
+            });
+        }
+
+        // Update the container with the new products_allocated array
+        const { error: updateError } = await supabase
+            .from('containers')
+            .update({ products_allocated: productsAllocated })
+            .eq('id', containerId);
+
+        if (updateError) {
+            console.error('Error updating products_allocated:', updateError);
+            setLoading(false);
+            return;
+        }
+
+        // Show success animation and reset state
+        setLoading(false);
+        setShowSuccess(true);
+        setTimeout(() => {
+            setShowSuccess(false);
+            setProductId(null);
+            setQuantity('');
+            onProductAdded();
+            onClose();
+            window.location.reload();
+        }, 700);
     };
 
     return (
@@ -88,7 +121,7 @@ const AddProcessingRequest = ({
                 <IoMdClose size={24} />
             </button>
             <h2 className="text-lg font-bold mb-4 mt-4">
-                Add New Processing Request
+                Add New Product to Container
             </h2>
             <div className="flex-grow">
                 <div className="mb-4">
@@ -141,35 +174,11 @@ const AddProcessingRequest = ({
                         min="1"
                     />
                 </div>
-                <div className="mb-4">
-                    <label className="block mb-1">
-                        Status{' '}
-                        <span className="text-red-500 font-bold text-lg">
-                            *
-                        </span>
-                    </label>
-                    <select
-                        value={status}
-                        onChange={(e) =>
-                            setStatus(
-                                e.target.value as
-                                    | 'new'
-                                    | 'in_progress'
-                                    | 'completed'
-                            )
-                        }
-                        className="p-2 border rounded-md w-full"
-                    >
-                        <option value="new">New</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="completed">Completed</option>
-                    </select>
-                </div>
             </div>
             <div className="flex justify-center space-x-4 mt-6">
                 <Button label="Cancel" variant="secondary" onClick={onClose} />
                 <Button
-                    label={loading ? 'Adding...' : 'Add Request'}
+                    label={loading ? 'Adding...' : 'Add Product'}
                     variant="primary"
                     onClick={handleAddRequest}
                     disabled={loading || !productId || !quantity}
@@ -179,4 +188,4 @@ const AddProcessingRequest = ({
     );
 };
 
-export default AddProcessingRequest;
+export default AddOutboundContainer;

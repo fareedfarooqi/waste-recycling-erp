@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { GoSearch } from 'react-icons/go';
 import SuccessAnimation from './SuccessAnimation';
 import { format } from 'date-fns';
@@ -24,33 +25,39 @@ import {
     ChevronsRight,
 } from 'lucide-react';
 import { supabase } from '@/config/supabaseClient';
-import ProcessingRequestsViewModal from './ProcessingRequestsViewModal';
+import OutboundContainersViewModal from './OutboundContainersViewModal';
 import SortModal from './SortModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import AddProcessingRequest from './AddProcessingRequest';
-import EditProcessingRequestModal from './EditProcessingRequestModal';
+import EditOutboundContainerstModal from './EditOutboundContainerModal';
 import ImportCSVModal from './ImportCSVModal';
 import { cn } from '@/lib/utils';
 import Button from '@/components/Button';
 import { CiImport, CiExport } from 'react-icons/ci';
 import { updateSession } from '@/utils/supabase/middleware';
+import DateFormatter from './DateFormatter';
 
-type ProcessingRequestItem = {
-    id: string;
-    product_id: string;
+interface ProductAllocation {
+    productId: string;
     quantity: number;
-    status: 'new' | 'in_progress' | 'completed';
+    productName: string; // Add productName to the product allocation type
+}
+
+type OutboundContainerItem = {
+    id: string;
+    status: 'new' | 'packing' | 'sent' | 'invoiced';
+    products_allocated: ProductAllocation[];
+    container_photo: string;
     created_at: string;
     updated_at: string;
-    product_name: string;
 };
 
-const ProcessingRequestsTable = (): JSX.Element => {
-    const [processingRequests, setProcessingRequests] = useState<
-        ProcessingRequestItem[]
+const ContainersTable = (): JSX.Element => {
+    const [outboundContainers, setOutboundContainers] = useState<
+        OutboundContainerItem[]
     >([]);
-    const [filteredProcessingRequests, setFilteredProcessingRequests] =
-        useState<ProcessingRequestItem[]>([]);
+    const [filteredOutboundContainers, setFilteredOutboundContainers] =
+        useState<OutboundContainerItem[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
     const [isSortModalOpen, setIsSortModalOpen] = useState<boolean>(false);
@@ -58,13 +65,13 @@ const ProcessingRequestsTable = (): JSX.Element => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
-    const [sortField, setSortField] = useState<string>('product_name');
+    const [sortField, setSortField] = useState<string>('id');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-    const [selectedProcessingRequestItem, setSelectedProcessingRequestItem] =
-        useState<ProcessingRequestItem | null>(null);
+    const [selectedOutboundContainerItem, setSelectedOutboundContainerItem] =
+        useState<OutboundContainerItem | null>(null);
     const [itemToDelete, setItemToDelete] =
-        useState<ProcessingRequestItem | null>(null);
-    const [itemToEdit, setItemToEdit] = useState<ProcessingRequestItem | null>(
+        useState<OutboundContainerItem | null>(null);
+    const [itemToEdit, setItemToEdit] = useState<OutboundContainerItem | null>(
         null
     );
     const [refresh, setRefresh] = useState<boolean>(false);
@@ -72,7 +79,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [itemsPerPage] = useState<number>(10);
     const totalPages = Math.ceil(
-        filteredProcessingRequests.length / itemsPerPage
+        filteredOutboundContainers.length / itemsPerPage
     );
     const [showSuccess, setShowSuccess] = useState(false);
 
@@ -83,15 +90,39 @@ const ProcessingRequestsTable = (): JSX.Element => {
         }
     };
 
-    const fetchProcessingRequests = async () => {
+    const router = useRouter();
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const query = new URLSearchParams(window.location.search);
+            if (query.get('success') === '1') {
+                setShowSuccess(true);
+
+                query.delete('success');
+                const newUrl =
+                    window.location.pathname + '?' + query.toString();
+                router.replace(newUrl);
+
+                setTimeout(() => {
+                    setShowSuccess(false);
+                }, 700);
+            }
+        }
+    }, [router]);
+
+    const fetchOutboundContainers = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('processing_requests')
-            .select('*');
+        const { data, error } = await supabase.from('containers').select('*');
         if (error) {
             console.error('Error fetching inventory: ', error.message);
         } else {
-            const productIds = data.map((item) => item.product_id);
+            const productIds = data.flatMap(
+                (item) =>
+                    Array.isArray(item.products_allocated)
+                        ? item.products_allocated.map(
+                              (product: ProductAllocation) => product.productId
+                          )
+                        : [] // Return an empty array if products_allocated is not an array
+            );
             const { data: productsData, error: productsError } = await supabase
                 .from('products')
                 .select('id, product_name')
@@ -103,6 +134,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
                     productsError.message
                 );
             } else {
+                // Create a map of product ids to product names
                 const productsMap = productsData.reduce<Record<string, string>>(
                     (acc, product) => {
                         acc[product.id] = product.product_name;
@@ -111,21 +143,30 @@ const ProcessingRequestsTable = (): JSX.Element => {
                     {}
                 );
 
+                // Enrich each item in the data array with product names for each productId in products_allocated
                 const enrichedData = data.map((item) => ({
                     ...item,
-                    product_name: productsMap[item.product_id] || 'Unknown',
+                    products_allocated: Array.isArray(item.products_allocated)
+                        ? item.products_allocated.map(
+                              (product: ProductAllocation) => ({
+                                  ...product,
+                                  product_name:
+                                      productsMap[product.productId] ||
+                                      'Unknown',
+                              })
+                          )
+                        : [], // Default to an empty array if products_allocated is not an array
                 }));
 
                 // Sort the enriched data alphabetically by product_name
                 const sortedData = enrichedData.sort((a, b) => {
-                    if (a.product_name < b.product_name) return -1;
-                    if (a.product_name > b.product_name) return 1;
+                    if (a.id > b.id) return -1;
+                    if (a.id < b.id) return 1;
                     return 0;
                 });
-
-                setProcessingRequests(sortedData as ProcessingRequestItem[]);
-                setFilteredProcessingRequests(
-                    sortedData as ProcessingRequestItem[]
+                setOutboundContainers(sortedData as OutboundContainerItem[]);
+                setFilteredOutboundContainers(
+                    sortedData as OutboundContainerItem[]
                 );
             }
         }
@@ -136,10 +177,10 @@ const ProcessingRequestsTable = (): JSX.Element => {
         setSortField(field);
         setSortDirection(direction);
 
-        const sortedData = [...filteredProcessingRequests].sort((a, b) => {
+        const sortedData = [...filteredOutboundContainers].sort((a, b) => {
             // Check if the field is a string or a number
-            const aValue = a[field as keyof ProcessingRequestItem];
-            const bValue = b[field as keyof ProcessingRequestItem];
+            const aValue = a[field as keyof OutboundContainerItem];
+            const bValue = b[field as keyof OutboundContainerItem];
 
             if (typeof aValue === 'string' && typeof bValue === 'string') {
                 // String comparison (case-insensitive)
@@ -158,43 +199,44 @@ const ProcessingRequestsTable = (): JSX.Element => {
             return 0;
         });
 
-        setFilteredProcessingRequests(sortedData);
+        setFilteredOutboundContainers(sortedData);
         setCurrentPage(1);
     };
 
     const handleSearch = (searchTerm: string) => {
         const normalizedSearchTerm = searchTerm.trim();
 
-        const filteredData = processingRequests.filter(
+        const filteredData = outboundContainers.filter(
             (item) =>
-                item.product_name.includes(normalizedSearchTerm) ||
+                item.id.includes(normalizedSearchTerm) ||
                 item.status
-                    .replace(/_/g, ' ')
-                    .toLowerCase()
-                    .includes(normalizedSearchTerm.toLowerCase()) ||
-                item.quantity
-                    .toString()
                     .toLowerCase()
                     .includes(normalizedSearchTerm.toLowerCase())
         );
 
-        setFilteredProcessingRequests(filteredData);
+        setFilteredOutboundContainers(filteredData);
         setCurrentPage(1);
+    };
+
+    const handleOutboundContainerViewButton = (
+        container: Partial<OutboundContainerItem>
+    ) => {
+        router.push(`/outbound-container-management/${container.id}`);
     };
 
     const handleDeleteItem = async () => {
         if (itemToDelete) {
             const { error } = await supabase
-                .from('processing_requests')
+                .from('containers')
                 .delete()
                 .eq('id', itemToDelete.id);
             if (error) {
                 console.error('Error deleting item: ', error.message);
             } else {
-                setProcessingRequests((prev) =>
+                setOutboundContainers((prev) =>
                     prev.filter((item) => item.id !== itemToDelete.id)
                 );
-                setFilteredProcessingRequests((prev) =>
+                setFilteredOutboundContainers((prev) =>
                     prev.filter((item) => item.id !== itemToDelete.id)
                 );
 
@@ -207,20 +249,20 @@ const ProcessingRequestsTable = (): JSX.Element => {
         setIsDeleteModalOpen(false);
     };
 
-    const handleRequestAdded = () => {
+    const handleContainerAdded = () => {
         setRefresh((prev) => !prev);
         setIsAddModalOpen(false);
     };
 
-    const markRequestAsCompleted = async (item: ProcessingRequestItem) => {
-        if (item.status === 'completed') {
+    const markContainerAsSent = async (item: OutboundContainerItem) => {
+        if (item.status === 'sent') {
             return;
         }
 
         try {
             const { error } = await supabase
-                .from('processing_requests')
-                .update({ status: 'completed' })
+                .from('containers')
+                .update({ status: 'sent' })
                 .eq('id', item.id);
 
             if (error) {
@@ -231,18 +273,18 @@ const ProcessingRequestsTable = (): JSX.Element => {
                     'yyyy-MM-dd HH:mm:ss'
                 );
 
-                const updatedItem: ProcessingRequestItem = {
+                const updatedItem: OutboundContainerItem = {
                     ...item,
-                    status: 'completed',
+                    status: 'sent',
                     updated_at: updatedDate,
                 };
 
-                setProcessingRequests((prev) =>
+                setOutboundContainers((prev) =>
                     prev.map((request) =>
                         request.id === item.id ? updatedItem : request
                     )
                 );
-                setFilteredProcessingRequests((prev) =>
+                setFilteredOutboundContainers((prev) =>
                     prev.map((request) =>
                         request.id === item.id ? updatedItem : request
                     )
@@ -254,28 +296,24 @@ const ProcessingRequestsTable = (): JSX.Element => {
         }
     };
 
-    const handleRequestUpdated = () => {
+    const handleContainerUpdated = () => {
         setRefresh((prev) => !prev);
     };
 
     const prepareCSVData = () => {
         const headers = [
             'ID',
-            'Product ID',
-            'Product Name',
-            'Quantity',
             'Status',
+            'Products Allocated',
+            'Container Photo',
             'Created At',
             'Updated At',
         ];
-        const data = filteredProcessingRequests.map((item) => [
+        const data = filteredOutboundContainers.map((item) => [
             item.id,
-            item.product_id,
-            item.product_name,
-            item.quantity.toString(),
-            item.status === 'in_progress'
-                ? 'In Progress'
-                : item.status.charAt(0).toUpperCase() + item.status.slice(1),
+            item.status.charAt(0).toUpperCase() + item.status.slice(1),
+            item.products_allocated,
+            item.container_photo,
             item.created_at,
             item.updated_at,
         ]);
@@ -284,7 +322,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = filteredProcessingRequests.slice(
+    const currentItems = filteredOutboundContainers.slice(
         indexOfFirstItem,
         indexOfLastItem
     );
@@ -294,7 +332,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
         currentPage < totalPages && setCurrentPage(currentPage + 1);
 
     useEffect(() => {
-        fetchProcessingRequests();
+        fetchOutboundContainers();
     }, [refresh]);
 
     useEffect(() => {
@@ -333,15 +371,15 @@ const ProcessingRequestsTable = (): JSX.Element => {
                             </span>
                             <input
                                 type="text"
-                                placeholder="Search for product name, quantity or status..."
+                                placeholder="Search for container by ID or status..."
                                 className="p-2 pl-10 border rounded-md h-12 w-full"
                                 onChange={(e) => handleSearch(e.target.value)}
                             />
                         </div>
                         <Button
-                            label="New Request"
+                            label="New Container"
                             icon={<FaPlus />}
-                            onClick={() => setIsAddModalOpen(true)}
+                            onClick={() => router.push('/add-container')}
                             variant="primary"
                         />
                         <Button
@@ -373,7 +411,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                 );
                                 csvLink.setAttribute(
                                     'download',
-                                    'processing-requests.csv'
+                                    'oubound-containers.csv'
                                 );
                                 document.body.appendChild(csvLink);
                                 csvLink.click();
@@ -393,52 +431,56 @@ const ProcessingRequestsTable = (): JSX.Element => {
                     <thead className="bg-green-600 text-white text-center">
                         <tr>
                             <th className="font-extrabold px-6 py-8">
-                                Product Name
-                            </th>
-                            <th className="font-extrabold px-6 py-8">
-                                Quantity
+                                Container ID
                             </th>
                             <th className="font-extrabold px-6 py-8">Status</th>
+                            <th className="font-extrabold px-6 py-8">
+                                Date Created
+                            </th>
                             <th className="font-extrabold px-6 py-8">
                                 Actions
                             </th>
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredProcessingRequests.length > 0 ? (
+                        {filteredOutboundContainers.length > 0 ? (
                             currentItems.map((item) => (
                                 <tr
                                     key={item.id}
                                     className="hover:bg-gray-100 even:bg-gray-50 odd:bg-white text-center"
                                 >
                                     <td className="px-6 py-8 border-b">
-                                        {item.product_name}
-                                    </td>
-                                    <td className="px-6 py-8 border-b">
-                                        {item.quantity}
+                                        {item.id}
                                     </td>
                                     <td className="px-6 py-8 border-b">
                                         <span
                                             className={`inline-block ${
-                                                item.status === 'completed'
+                                                item.status === 'sent'
                                                     ? 'bg-[#c6efcd] border border-[#4caf50]'
-                                                    : item.status ===
-                                                        'in_progress'
+                                                    : item.status === 'packing'
                                                       ? 'bg-[#feeb9c] border border-[#ff9800]'
                                                       : item.status === 'new'
                                                         ? 'bg-[#ffc8ce] border border-[#f44336]'
-                                                        : ''
+                                                        : item.status ===
+                                                            'invoiced'
+                                                          ? 'bg-[#bbdefb] border border-[#2196f3]' // Blue background for 'invoiced'
+                                                          : ''
                                             } px-2 py-1 rounded-full w-[120px] text-center`}
                                         >
                                             {item.status
-                                                ? item.status === 'in_progress'
-                                                    ? 'In Progress'
-                                                    : item.status
-                                                          .charAt(0)
-                                                          .toUpperCase() +
-                                                      item.status.slice(1)
+                                                ? item.status
+                                                      .charAt(0)
+                                                      .toUpperCase() +
+                                                  item.status.slice(1)
                                                 : 'N/A'}
                                         </span>
+                                    </td>
+                                    <td className="px-6 py-8 border-b">
+                                        {
+                                            <DateFormatter
+                                                date={item.created_at}
+                                            />
+                                        }
                                     </td>
                                     <td className="px-6 py-8 border-b">
                                         <div className="flex justify-center space-x-4">
@@ -446,10 +488,9 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                                 className="text-gray-500 cursor-pointer hover:text-green-500"
                                                 size={18}
                                                 onClick={() => {
-                                                    setSelectedProcessingRequestItem(
+                                                    handleOutboundContainerViewButton(
                                                         item
                                                     );
-                                                    setIsViewModalOpen(true);
                                                 }}
                                             />
                                             <FaEdit
@@ -462,13 +503,13 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                             />
                                             <FaCheckSquare
                                                 className={`cursor-pointer ${
-                                                    item.status === 'completed'
+                                                    item.status === 'sent'
                                                         ? 'text-gray-300 cursor-not-allowed'
                                                         : 'text-gray-500 hover:text-green-500'
                                                 }`}
                                                 size={18}
                                                 onClick={() =>
-                                                    markRequestAsCompleted(item)
+                                                    markContainerAsSent(item)
                                                 }
                                             />
                                             <FaTrashAlt
@@ -489,7 +530,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
                                     colSpan={4}
                                     className="text-center text-gray-500 font-semibold py-10 bg-white"
                                 >
-                                    No processing requests found.
+                                    No outbound containers found.
                                 </td>
                             </tr>
                         )}
@@ -542,11 +583,11 @@ const ProcessingRequestsTable = (): JSX.Element => {
                 </div>
             </div>
             {isEditModalOpen && itemToEdit && (
-                <EditProcessingRequestModal
+                <EditOutboundContainerstModal
                     isOpen={isEditModalOpen}
                     onClose={() => setIsEditModalOpen(false)}
-                    processingRequest={itemToEdit}
-                    onRequestUpdated={handleRequestUpdated}
+                    outboundContainer={itemToEdit}
+                    onRequestUpdated={handleContainerUpdated}
                 />
             )}
             {isAddModalOpen && (
@@ -557,7 +598,7 @@ const ProcessingRequestsTable = (): JSX.Element => {
                     >
                         <AddProcessingRequest
                             isOpen={isAddModalOpen}
-                            onRequestAdded={handleRequestAdded}
+                            onRequestAdded={handleContainerAdded}
                             onClose={() => setIsAddModalOpen(false)}
                         />
                     </div>
@@ -568,10 +609,10 @@ const ProcessingRequestsTable = (): JSX.Element => {
                 onClose={() => setIsSortModalOpen(false)}
                 onSortChange={handleSortChange}
             />
-            {isViewModalOpen && selectedProcessingRequestItem && (
-                <ProcessingRequestsViewModal
+            {isViewModalOpen && selectedOutboundContainerItem && (
+                <OutboundContainersViewModal
                     isOpen={isViewModalOpen}
-                    processingRequest={selectedProcessingRequestItem}
+                    outboundContainer={selectedOutboundContainerItem}
                     onClose={() => setIsViewModalOpen(false)}
                 />
             )}
@@ -609,4 +650,4 @@ const ProcessingRequestsTable = (): JSX.Element => {
     );
 };
 
-export default ProcessingRequestsTable;
+export default ContainersTable;
