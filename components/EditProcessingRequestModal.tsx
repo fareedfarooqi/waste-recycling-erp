@@ -35,7 +35,7 @@ const EditProcessingRequestModal = ({
 }: EditProcessingRequestModalProps): JSX.Element | null => {
     if (!isOpen) return null;
 
-    const [productId, setProductId] = useState<string>(
+    const [product_id, setproduct_id] = useState<string>(
         processingRequest.product_id
     );
     const [showSuccess, setShowSuccess] = useState(false);
@@ -68,11 +68,11 @@ const EditProcessingRequestModal = ({
     useEffect(() => {
         // Check if any of the fields have changed
         setHasChanges(
-            productId !== processingRequest.product_id ||
+            product_id !== processingRequest.product_id ||
                 quantity !== processingRequest.quantity ||
                 status !== processingRequest.status
         );
-    }, [productId, quantity, status, processingRequest]);
+    }, [product_id, quantity, status, processingRequest]);
 
     const handleSaveChanges = async () => {
         if (quantity === null) {
@@ -86,7 +86,7 @@ const EditProcessingRequestModal = ({
         const { error } = await supabase
             .from('processing_requests')
             .update({
-                product_id: productId,
+                product_id: product_id,
                 quantity,
                 status,
             })
@@ -140,8 +140,8 @@ const EditProcessingRequestModal = ({
                         <span className="text-red-500 font-bold">*</span>
                     </label>
                     <select
-                        value={productId}
-                        onChange={(e) => setProductId(e.target.value)}
+                        value={product_id}
+                        onChange={(e) => setproduct_id(e.target.value)}
                         className="w-full p-2 border rounded-md"
                     >
                         {products.map((product) => (

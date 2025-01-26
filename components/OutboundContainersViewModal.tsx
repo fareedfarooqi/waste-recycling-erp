@@ -13,7 +13,7 @@ type ProcessingRequest = {
 };
 
 interface ProductAllocation {
-    productId: string;
+    product_id: string;
     quantity: number;
     productName: string; // Add productName to the product allocation type
 }

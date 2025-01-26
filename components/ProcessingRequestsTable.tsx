@@ -91,11 +91,11 @@ const ProcessingRequestsTable = (): JSX.Element => {
         if (error) {
             console.error('Error fetching inventory: ', error.message);
         } else {
-            const productIds = data.map((item) => item.product_id);
+            const product_ids = data.map((item) => item.product_id);
             const { data: productsData, error: productsError } = await supabase
                 .from('products')
                 .select('id, product_name')
-                .in('id', productIds);
+                .in('id', product_ids);
 
             if (productsError) {
                 console.error(

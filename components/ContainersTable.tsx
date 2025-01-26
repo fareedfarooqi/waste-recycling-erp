@@ -38,7 +38,7 @@ import { updateSession } from '@/utils/supabase/middleware';
 import DateFormatter from './DateFormatter';
 
 interface ProductAllocation {
-    productId: string;
+    product_id: string;
     quantity: number;
     productName: string; // Add productName to the product allocation type
 }
@@ -115,18 +115,18 @@ const ContainersTable = (): JSX.Element => {
         if (error) {
             console.error('Error fetching inventory: ', error.message);
         } else {
-            const productIds = data.flatMap(
+            const product_ids = data.flatMap(
                 (item) =>
                     Array.isArray(item.products_allocated)
                         ? item.products_allocated.map(
-                              (product: ProductAllocation) => product.productId
+                              (product: ProductAllocation) => product.product_id
                           )
                         : [] // Return an empty array if products_allocated is not an array
             );
             const { data: productsData, error: productsError } = await supabase
                 .from('products')
                 .select('id, product_name')
-                .in('id', productIds);
+                .in('id', product_ids);
 
             if (productsError) {
                 console.error(
@@ -143,7 +143,7 @@ const ContainersTable = (): JSX.Element => {
                     {}
                 );
 
-                // Enrich each item in the data array with product names for each productId in products_allocated
+                // Enrich each item in the data array with product names for each product_id in products_allocated
                 const enrichedData = data.map((item) => ({
                     ...item,
                     products_allocated: Array.isArray(item.products_allocated)
@@ -151,7 +151,7 @@ const ContainersTable = (): JSX.Element => {
                               (product: ProductAllocation) => ({
                                   ...product,
                                   product_name:
-                                      productsMap[product.productId] ||
+                                      productsMap[product.product_id] ||
                                       'Unknown',
                               })
                           )

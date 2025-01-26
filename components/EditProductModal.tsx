@@ -7,7 +7,7 @@ import { IoMdClose } from 'react-icons/io';
 import SuccessAnimation from './SuccessAnimation';
 
 interface ProductAllocation {
-    productId: string;
+    product_id: string;
     quantity: number;
     productName: string;
 }
@@ -42,7 +42,7 @@ const EditProductModal = ({
 }: EditProductModalProps): JSX.Element | null => {
     if (!isOpen) return null;
 
-    const [productId, setProductId] = useState<string>(productToEditID);
+    const [product_id, setproduct_id] = useState<string>(productToEditID);
     const [showSuccess, setShowSuccess] = useState(false);
     const [quantity, setQuantity] = useState<number | null>(productQuantity);
     const [error, setError] = useState<string>(''); // Initialize error state
@@ -50,7 +50,7 @@ const EditProductModal = ({
     const [hasChanges, setHasChanges] = useState<boolean>(false);
     const [product, setProduct] = useState<{
         quantity: number;
-        productId: string;
+        product_id: string;
     } | null>(null);
 
     useEffect(() => {
@@ -66,8 +66,8 @@ const EditProductModal = ({
             } else if (data && data.products_allocated) {
                 // Find the product with the given productToEditID
                 const productDetails = data.products_allocated.find(
-                    (product: { productId: string }) =>
-                        product.productId === productToEditID
+                    (product: { product_id: string }) =>
+                        product.product_id === productToEditID
                 );
 
                 if (productDetails) {
@@ -112,7 +112,7 @@ const EditProductModal = ({
             // Create a new array with the updated product quantity
             const updatedProducts = data.products_allocated.map(
                 (product: ProductAllocation) => {
-                    if (product.productId === productId) {
+                    if (product.product_id === product_id) {
                         return { ...product, quantity }; // Update the quantity of the product
                     }
                     return product; // Leave other products unchanged

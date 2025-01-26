@@ -15,7 +15,7 @@ const AddProcessingRequest = ({
     onClose: () => void;
     onRequestAdded: () => void;
 }) => {
-    const [productId, setProductId] = useState<string | null>(null);
+    const [product_id, setproduct_id] = useState<string | null>(null);
     const [quantity, setQuantity] = useState<number | ''>('');
     const [status, setStatus] = useState<'new' | 'in_progress' | 'completed'>(
         'new'
@@ -53,7 +53,7 @@ const AddProcessingRequest = ({
             .from('processing_requests')
             .insert([
                 {
-                    product_id: productId,
+                    product_id: product_id,
                     quantity: Number(quantity),
                     status,
                 },
@@ -68,7 +68,7 @@ const AddProcessingRequest = ({
             setShowSuccess(true);
             setTimeout(() => {
                 setShowSuccess(false);
-                setProductId(null);
+                setproduct_id(null);
                 setQuantity('');
                 setStatus('new');
                 onRequestAdded();
@@ -102,9 +102,9 @@ const AddProcessingRequest = ({
                         <p>Loading products...</p>
                     ) : (
                         <select
-                            value={productId || ''}
+                            value={product_id || ''}
                             onChange={(e) =>
-                                setProductId(e.target.value || null)
+                                setproduct_id(e.target.value || null)
                             }
                             className="p-2 border rounded-md w-full"
                         >
@@ -172,7 +172,7 @@ const AddProcessingRequest = ({
                     label={loading ? 'Adding...' : 'Add Request'}
                     variant="primary"
                     onClick={handleAddRequest}
-                    disabled={loading || !productId || !quantity}
+                    disabled={loading || !product_id || !quantity}
                 />
             </div>
         </div>
