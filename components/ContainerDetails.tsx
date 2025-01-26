@@ -1,13 +1,17 @@
 'use client';
 
-import React, { useRef } from 'react';
+import type React from 'react';
+import { useRef } from 'react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/config/supabaseClient';
 import ImageModal from '@/components/ImageModal';
 import DateFormatter from './DateFormatter';
 import Button from '@/components/Button';
-import { FaPlus } from 'react-icons/fa';
-import AddOutboundContainer from './AddOutboundContainer';
+import { FaPlus, FaEdit, FaTrashAlt } from 'react-icons/fa';
+import AddOutboundContainer from './AddProductToContainer';
+import EditProductModal from './EditProductModal';
+import SuccessAnimation from './SuccessAnimation';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 
 interface ProductAllocation {
     productId: string;
@@ -38,6 +42,18 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
         useState<boolean>(false);
     const [refresh, setRefresh] = useState<boolean>(false);
     const modalRef = useRef<HTMLDivElement | null>(null);
+    const [productToEdit, setProductToEdit] = useState<string | null>(null);
+    const [productName, setProductName] = useState<string | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+    const [productQuantity, setProductQuantity] = useState<number | null>(null);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+    const [productToDeleteID, setProductToDeleteID] = useState<string | null>(
+        null
+    );
+    const [productToDeleteName, setProductToDeleteName] = useState<
+        string | null
+    >(null);
 
     const fetchContainer = async (idParam: string) => {
         try {
@@ -95,6 +111,44 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
     const handleProductAdded = () => {
         setRefresh((prev) => !prev);
         setIsAddModalOpenContainer(false);
+    };
+
+    const handleProductUpdated = () => {
+        setRefresh((prev) => !prev);
+    };
+
+    const handleDeleteItem = async () => {
+        if (productToDeleteID && containerInfo?.products_allocated) {
+            try {
+                // Step 1: Filter out the product with the matching productId
+                const updatedProducts = containerInfo.products_allocated.filter(
+                    (product) => product.productId !== productToDeleteID
+                );
+
+                // Step 2: Update the products_allocated field in the database
+                const { error: updateError } = await supabase
+                    .from('containers')
+                    .update({ products_allocated: updatedProducts })
+                    .eq('id', containerInfo.id);
+
+                if (updateError) {
+                    console.error(
+                        'Error updating products: ',
+                        updateError.message
+                    );
+                } else {
+                    setShowSuccess(true);
+                    setTimeout(() => {
+                        setShowSuccess(false);
+                        window.location.reload();
+                    }, 700);
+                }
+            } catch (err) {
+                console.error('Unexpected error: ', err);
+            }
+        }
+
+        setIsDeleteModalOpen(false);
     };
 
     useEffect(() => {
@@ -177,6 +231,7 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
 
     return (
         <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-xl p-8">
+            {showSuccess && <SuccessAnimation />}
             <div className="bg-white shadow overflow-hidden sm:rounded-lg">
                 <div className="px-4 py-5 sm:px-6">
                     <h3 className="text-3xl font-bold text-green-700 mb-2">
@@ -246,7 +301,7 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                             </dd>
                         </div>
                         <div className="py-4 sm:py-5 sm:px-6">
-                            <details className="w-full">
+                            <details className="w-full" open>
                                 <summary className="text-sm font-medium text-gray-500 cursor-pointer focus:outline-none">
                                     Allocated Products
                                 </summary>
@@ -256,7 +311,7 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                                     ) &&
                                     containerInfo.products_allocated.length >
                                         0 ? (
-                                        <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
+                                        <ul className="border border-gray-200 rounded-md divide-y divide-gray-200 max-h-80 overflow-y-auto">
                                             {containerInfo.products_allocated.map(
                                                 (product, index) => (
                                                     <li
@@ -278,6 +333,43 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                                                                 }
                                                                 kg
                                                             </span>
+                                                        </div>
+                                                        <div className="px-6 py-0">
+                                                            <FaEdit
+                                                                className="text-gray-500 cursor-pointer hover:text-green-500"
+                                                                size={18}
+                                                                onClick={() => {
+                                                                    setProductToEdit(
+                                                                        product.productId
+                                                                    );
+                                                                    setProductQuantity(
+                                                                        product.quantity
+                                                                    );
+                                                                    setProductName(
+                                                                        product.productName
+                                                                    );
+                                                                    setIsEditModalOpen(
+                                                                        true
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <FaTrashAlt
+                                                                className="text-gray-500 cursor-pointer hover:text-green-500"
+                                                                size={18}
+                                                                onClick={() => {
+                                                                    setProductToDeleteID(
+                                                                        product.productId
+                                                                    );
+                                                                    setProductToDeleteName(
+                                                                        product.productName
+                                                                    );
+                                                                    setIsDeleteModalOpen(
+                                                                        true
+                                                                    );
+                                                                }}
+                                                            />
                                                         </div>
                                                     </li>
                                                 )
@@ -333,6 +425,44 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                     </div>
                 </div>
             )}
+            {isEditModalOpen &&
+                productToEdit &&
+                productQuantity &&
+                productName && (
+                    <EditProductModal
+                        isOpen={isEditModalOpen}
+                        onClose={() => setIsEditModalOpen(false)}
+                        productToEditID={productToEdit}
+                        containerID={containerInfo.id}
+                        productQuantity={productQuantity}
+                        onProductUpdated={handleProductUpdated}
+                        productName={productName}
+                    />
+                )}
+            <DeleteConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                title="Remove Product"
+                content={
+                    <p>
+                        Are you sure you want to remove{' '}
+                        <strong>{productToDeleteName}</strong> from the
+                        container?
+                    </p>
+                }
+                buttons={[
+                    {
+                        label: 'Cancel',
+                        onClick: () => setIsDeleteModalOpen(false),
+                        variant: 'secondary',
+                    },
+                    {
+                        label: 'Delete',
+                        onClick: handleDeleteItem,
+                        variant: 'primary',
+                    },
+                ]}
+            />
         </div>
     );
 };
