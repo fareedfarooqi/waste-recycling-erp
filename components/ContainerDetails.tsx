@@ -14,7 +14,7 @@ import SuccessAnimation from './SuccessAnimation';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 
 interface ProductAllocation {
-    productId: string;
+    product_id: string;
     quantity: number;
     productName: string;
 }
@@ -70,13 +70,13 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
 
             // Fetch product names for allocated products
             if (containerData.products_allocated) {
-                const productIds = containerData.products_allocated.map(
-                    (product) => product.productId
+                const product_ids = containerData.products_allocated.map(
+                    (product) => product.product_id
                 );
                 const { data: products, error: productError } = await supabase
                     .from('products')
                     .select('id, product_name')
-                    .in('id', productIds);
+                    .in('id', product_ids);
 
                 if (productError) throw productError;
 
@@ -84,7 +84,7 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                 const updatedProducts = containerData.products_allocated.map(
                     (product) => {
                         const productDetails = products?.find(
-                            (p) => p.id === product.productId
+                            (p) => p.id === product.product_id
                         );
                         return {
                             ...product,
@@ -120,9 +120,9 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
     const handleDeleteItem = async () => {
         if (productToDeleteID && containerInfo?.products_allocated) {
             try {
-                // Step 1: Filter out the product with the matching productId
+                // Step 1: Filter out the product with the matching product_id
                 const updatedProducts = containerInfo.products_allocated.filter(
-                    (product) => product.productId !== productToDeleteID
+                    (product) => product.product_id !== productToDeleteID
                 );
 
                 // Step 2: Update the products_allocated field in the database
@@ -340,7 +340,7 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                                                                 size={18}
                                                                 onClick={() => {
                                                                     setProductToEdit(
-                                                                        product.productId
+                                                                        product.product_id
                                                                     );
                                                                     setProductQuantity(
                                                                         product.quantity
@@ -360,7 +360,7 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                                                                 size={18}
                                                                 onClick={() => {
                                                                     setProductToDeleteID(
-                                                                        product.productId
+                                                                        product.product_id
                                                                     );
                                                                     setProductToDeleteName(
                                                                         product.productName

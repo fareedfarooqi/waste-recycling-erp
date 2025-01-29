@@ -17,7 +17,7 @@ const AddOutboundContainer = ({
     onProductAdded: () => void;
     containerId: string; // Ensure containerId is a string
 }) => {
-    const [productId, setProductId] = useState<string | null>(null);
+    const [product_id, setproduct_id] = useState<string | null>(null);
     const [quantity, setQuantity] = useState<number | ''>('');
     const [loading, setLoading] = useState(false);
     const [products, setProducts] = useState<
@@ -62,16 +62,16 @@ const AddOutboundContainer = ({
         }
 
         type ProductAllocated = {
-            productId: string;
+            product_id: string;
             quantity: number;
         };
 
         let productsAllocated: ProductAllocated[] =
             containerData.products_allocated || [];
 
-        // Check if the productId already exists
+        // Check if the product_id already exists
         const productIndex = productsAllocated.findIndex(
-            (item: ProductAllocated) => item.productId === productId
+            (item: ProductAllocated) => item.product_id === product_id
         );
 
         if (productIndex !== -1) {
@@ -80,7 +80,7 @@ const AddOutboundContainer = ({
         } else {
             // Add the new product to the array
             productsAllocated.push({
-                productId: productId as string,
+                product_id: product_id as string,
                 quantity: Number(quantity),
             });
         }
@@ -102,7 +102,7 @@ const AddOutboundContainer = ({
         setShowSuccess(true);
         setTimeout(() => {
             setShowSuccess(false);
-            setProductId(null);
+            setproduct_id(null);
             setQuantity('');
             onProductAdded();
             onClose();
@@ -135,9 +135,9 @@ const AddOutboundContainer = ({
                         <p>Loading products...</p>
                     ) : (
                         <select
-                            value={productId || ''}
+                            value={product_id || ''}
                             onChange={(e) =>
-                                setProductId(e.target.value || null)
+                                setproduct_id(e.target.value || null)
                             }
                             className="p-2 border rounded-md w-full"
                         >
@@ -181,7 +181,7 @@ const AddOutboundContainer = ({
                     label={loading ? 'Adding...' : 'Add Product'}
                     variant="primary"
                     onClick={handleAddRequest}
-                    disabled={loading || !productId || !quantity}
+                    disabled={loading || !product_id || !quantity}
                 />
             </div>
         </div>
