@@ -379,7 +379,11 @@ const ContainersTable = (): JSX.Element => {
                         <Button
                             label="New Container"
                             icon={<FaPlus />}
-                            onClick={() => setIsAddModalOpen(true)}
+                            // onClick={() => setIsAddModalOpen(true)}
+                            onClick={() =>
+                                // console.log('Cancel clicked')
+                                router.push('/add-container')
+                            }
                             variant="primary"
                         />
                         <Button
@@ -619,12 +623,8 @@ const ContainersTable = (): JSX.Element => {
             <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
-                title="Delete Processing Request"
-                content={
-                    <p>
-                        Are you sure you want to delete this processing request?
-                    </p>
-                }
+                title="Delete Container"
+                content={<p>Are you sure you want to delete this container?</p>}
                 buttons={[
                     {
                         label: 'Cancel',
