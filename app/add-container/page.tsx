@@ -328,11 +328,12 @@ import FormField from '@/components/FormField';
 import Button from '@/components/Button';
 import { FaPlus, FaTimes } from 'react-icons/fa';
 import Select from 'react-select';
+import { useRouter } from 'next/navigation';
 
-interface Product {
-    id: string;
-    product_name: string;
-}
+// interface Product {
+//     id: string;
+//     product_name: string;
+// }
 
 interface ProductAllocation {
     productId: string;
@@ -349,6 +350,7 @@ interface FormValues {
 export default function AddContainerPage() {
     const { isSidebarOpen } = useSidebar();
     const supabase = createClient();
+    // const router = useRouter()
 
     const [formValues, setFormValues] = useState<FormValues>({
         status: 'new',
@@ -480,24 +482,29 @@ export default function AddContainerPage() {
         const supabase = createClient(); // Create Supabase client
         const { status, productsAllocated, photos } = formValues;
 
-        // Ensure the user is authenticated
-        const {
-            data: { session },
-            error: sessionError,
-        } = await supabase.auth.getSession();
+        // // Ensure the user is authenticated
+        // const {
+        //     data: { session },
+        //     error: sessionError,
+        // } = await supabase.auth.getSession();
 
-        if (sessionError || !session) {
-            console.error('User is not authenticated or session is missing!');
-            return;
-        }
+        // if (sessionError || !session) {
+        //     console.error('User is not authenticated or session is missing!');
+        //     return;
+        // }
 
         // Upload photos to the Supabase bucket
         const photoUrls: string[] = [];
         for (const photo of photos) {
+            // const { data: uploadData, error: uploadError } =
+            //     await supabase.storage
+            //         .from('container_photos')
+            //         .upload(`containers/${photo.name}`, photo);
+
             const { data: uploadData, error: uploadError } =
                 await supabase.storage
                     .from('container_photos')
-                    .upload(`containers/${photo.name}`, photo);
+                    .upload(`${photo.name}`, photo);
 
             if (uploadError) {
                 console.error('Error uploading photo:', uploadError.message);
@@ -506,12 +513,23 @@ export default function AddContainerPage() {
 
             console.log('Uploaded file:', uploadData);
 
-            // Get the public URL of the uploaded photo
-            const { data: publicUrlData } = supabase.storage
+            // // Get the public URL of the uploaded photo
+            // const { data: publicUrlData } = supabase.storage
+            //     .from('container_photos')
+            //     .getPublicUrl(`${photo.name}`);
+            // if (publicUrlData) {
+            //     photoUrls.push(publicUrlData.publicUrl);
+            // }
+
+            // Generate a signed URL with a 1-year expiration
+            const { data: signedUrlData, error } = await supabase.storage
                 .from('container_photos')
-                .getPublicUrl(`containers/${photo.name}`);
-            if (publicUrlData) {
-                photoUrls.push(publicUrlData.publicUrl);
+                .createSignedUrl(photo.name, 365 * 24 * 60 * 60); // 1 year in seconds
+
+            if (error) {
+                console.error('Error generating signed URL:', error);
+            } else if (signedUrlData) {
+                photoUrls.push(signedUrlData.signedUrl);
             }
         }
 
@@ -538,6 +556,8 @@ export default function AddContainerPage() {
             console.log('Container saved successfully:', newContainer);
         }
     };
+
+    // const [isLoading, setIsLoading] = useState(false);
 
     return (
         <div className="min-h-screen bg-green-50 text-gray-800 flex">
