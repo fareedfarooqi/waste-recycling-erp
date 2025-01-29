@@ -17,12 +17,6 @@ import {
     FaAngleRight,
     FaAngleDoubleRight,
 } from 'react-icons/fa';
-import {
-    ChevronLeft,
-    ChevronRight,
-    ChevronsLeft,
-    ChevronsRight,
-} from 'lucide-react';
 import { supabase } from '@/config/supabaseClient';
 import ProcessingRequestsViewModal from './ProcessingRequestsViewModal';
 import SortModal from './SortModal';
@@ -30,10 +24,8 @@ import DeleteConfirmationModal from './DeleteConfirmationModal';
 import AddProcessingRequest from './AddProcessingRequest';
 import EditProcessingRequestModal from './EditProcessingRequestModal';
 import ImportCSVModal from './ImportCSVModal';
-import { cn } from '@/lib/utils';
 import Button from '@/components/Button';
 import { CiImport, CiExport } from 'react-icons/ci';
-import { updateSession } from '@/utils/supabase/middleware';
 
 type ProcessingRequestItem = {
     id: string;
@@ -51,15 +43,15 @@ const ProcessingRequestsTable = (): JSX.Element => {
     >([]);
     const [filteredProcessingRequests, setFilteredProcessingRequests] =
         useState<ProcessingRequestItem[]>([]);
-    const [loading, setLoading] = useState<boolean>(false);
+    const [, setLoading] = useState<boolean>(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
     const [isSortModalOpen, setIsSortModalOpen] = useState<boolean>(false);
     const [isViewModalOpen, setIsViewModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
-    const [sortField, setSortField] = useState<string>('product_name');
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+    const [, setSortField] = useState<string>('product_name');
+    const [, setSortDirection] = useState<'asc' | 'desc'>('asc');
     const [selectedProcessingRequestItem, setSelectedProcessingRequestItem] =
         useState<ProcessingRequestItem | null>(null);
     const [itemToDelete, setItemToDelete] =
@@ -567,6 +559,10 @@ const ProcessingRequestsTable = (): JSX.Element => {
                 isOpen={isSortModalOpen}
                 onClose={() => setIsSortModalOpen(false)}
                 onSortChange={handleSortChange}
+                sortOptions={[
+                    { value: 'created_at', label: 'Created Date' },
+                    { value: 'updated_at', label: 'Last Updated Date' },
+                ]}
             />
             {isViewModalOpen && selectedProcessingRequestItem && (
                 <ProcessingRequestsViewModal

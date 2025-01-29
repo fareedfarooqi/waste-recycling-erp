@@ -111,11 +111,11 @@ const AddOutboundContainer = ({
     };
 
     return (
-        <div className="p-4 relative min-h-[400px] flex flex-col bg-white">
+        <div className="p-4 relative min-h-[200px] flex flex-col bg-white">
             {showSuccess && <SuccessAnimation />}
             <button
                 onClick={onClose}
-                className="absolute -top-2 -right-2 text-gray-500 hover:text-gray-700"
+                className="absolute -top-2 -right-2 text-gray-500 hover:text-red-700"
                 aria-label="Close"
             >
                 <IoMdClose size={24} />
@@ -176,12 +176,25 @@ const AddOutboundContainer = ({
                 </div>
             </div>
             <div className="flex justify-center space-x-4 mt-6">
-                <Button label="Cancel" variant="secondary" onClick={onClose} />
+                {/* <Button label="Cancel" variant="secondary" onClick={onClose} /> */}
+                <Button
+                    label="Cancel"
+                    variant="secondary"
+                    onClick={() => onClose}
+                    className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-gray-100 text-black rounded hover:bg-gray-100 transition whitespace-nowrap min-w-[120px] min-h-[50px]"
+                />
+                {/* <Button
+                    label={loading ? 'Adding...' : 'Add Product'}
+                    variant="primary"
+                    onClick={handleAddRequest}
+                    disabled={loading || !product_id || !quantity}
+                /> */}
                 <Button
                     label={loading ? 'Adding...' : 'Add Product'}
                     variant="primary"
                     onClick={handleAddRequest}
                     disabled={loading || !product_id || !quantity}
+                    className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px] min-h-[50px]"
                 />
             </div>
         </div>

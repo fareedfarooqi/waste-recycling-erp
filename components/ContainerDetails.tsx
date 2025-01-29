@@ -7,7 +7,7 @@ import { supabase } from '@/config/supabaseClient';
 import ImageModal from '@/components/ImageModal';
 import DateFormatter from './DateFormatter';
 import Button from '@/components/Button';
-import { FaPlus, FaEdit, FaTrashAlt } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrashAlt, FaClipboard } from 'react-icons/fa';
 import AddOutboundContainer from './AddProductToContainer';
 import EditProductModal from './EditProductModal';
 import SuccessAnimation from './SuccessAnimation';
@@ -40,7 +40,7 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
     const [isAddModalOpenContainer, setIsAddModalOpenContainer] =
         useState<boolean>(false);
-    const [refresh, setRefresh] = useState<boolean>(false);
+    const [, setRefresh] = useState<boolean>(false);
     const modalRef = useRef<HTMLDivElement | null>(null);
     const [productToEdit, setProductToEdit] = useState<string | null>(null);
     const [productName, setProductName] = useState<string | null>(null);
@@ -234,7 +234,8 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
             {showSuccess && <SuccessAnimation />}
             <div className="bg-white shadow overflow-hidden sm:rounded-lg">
                 <div className="px-4 py-5 sm:px-6">
-                    <h3 className="text-3xl font-bold text-green-700 mb-2">
+                    <h3 className="text-3xl font-bold text-green-700 flex items-center mb-3">
+                        <FaClipboard className="mr-3 text-green-600" />
                         Container Details
                     </h3>
                     <span
@@ -356,7 +357,7 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                                                         </div>
                                                         <div>
                                                             <FaTrashAlt
-                                                                className="text-gray-500 cursor-pointer hover:text-green-500"
+                                                                className="text-gray-500 cursor-pointer hover:text-red-500"
                                                                 size={18}
                                                                 onClick={() => {
                                                                     setProductToDeleteID(
@@ -382,13 +383,28 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                                     )}
                                 </div>
                                 <div className="mt-4 scale-90 origin-left">
-                                    <Button
+                                    {/* <Button
                                         label="Product"
                                         icon={<FaPlus />}
                                         onClick={() =>
                                             setIsAddModalOpenContainer(true)
                                         }
                                         variant="primary"
+                                    /> */}
+                                    <Button
+                                        label="Add Product"
+                                        variant="primary"
+                                        onClick={() =>
+                                            setIsAddModalOpenContainer(true)
+                                        }
+                                        // icon={<FaPlus />}
+                                        icon={
+                                            <FaPlus
+                                                style={{ strokeWidth: 2 }}
+                                                size={18}
+                                            />
+                                        }
+                                        className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
                                     />
                                 </div>
                             </details>
@@ -397,10 +413,16 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                 </div>
             </div>
             <div className="mt-8 flex justify-center">
-                <Button
+                {/* <Button
                     label="Back"
                     onClick={() => window.history.back()}
                     variant="primary"
+                /> */}
+                <Button
+                    label="Back"
+                    variant="primary"
+                    onClick={() => window.history.back()}
+                    className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px] min-h-[50px]"
                 />
             </div>
             {isImageModalOpen && containerInfo.container_photo && (

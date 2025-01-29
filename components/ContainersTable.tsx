@@ -18,12 +18,6 @@ import {
     FaAngleRight,
     FaAngleDoubleRight,
 } from 'react-icons/fa';
-import {
-    ChevronLeft,
-    ChevronRight,
-    ChevronsLeft,
-    ChevronsRight,
-} from 'lucide-react';
 import { supabase } from '@/config/supabaseClient';
 import OutboundContainersViewModal from './OutboundContainersViewModal';
 import SortModal from './SortModal';
@@ -31,10 +25,8 @@ import DeleteConfirmationModal from './DeleteConfirmationModal';
 import AddProcessingRequest from './AddProcessingRequest';
 import EditOutboundContainerstModal from './EditOutboundContainerModal';
 import ImportCSVModal from './ImportCSVModal';
-import { cn } from '@/lib/utils';
 import Button from '@/components/Button';
 import { CiImport, CiExport } from 'react-icons/ci';
-import { updateSession } from '@/utils/supabase/middleware';
 import DateFormatter from './DateFormatter';
 
 interface ProductAllocation {
@@ -58,22 +50,20 @@ const ContainersTable = (): JSX.Element => {
     >([]);
     const [filteredOutboundContainers, setFilteredOutboundContainers] =
         useState<OutboundContainerItem[]>([]);
-    const [loading, setLoading] = useState<boolean>(false);
+    const [, setLoading] = useState<boolean>(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
     const [isSortModalOpen, setIsSortModalOpen] = useState<boolean>(false);
     const [isViewModalOpen, setIsViewModalOpen] = useState<boolean>(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
-    const [sortField, setSortField] = useState<string>('id');
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+    const [, setSortField] = useState<string>('id');
+    const [, setSortDirection] = useState<'asc' | 'desc'>('asc');
     const [selectedOutboundContainerItem, setSelectedOutboundContainerItem] =
         useState<OutboundContainerItem | null>(null);
     const [itemToDelete, setItemToDelete] =
         useState<OutboundContainerItem | null>(null);
-    const [itemToEdit, setItemToEdit] = useState<OutboundContainerItem | null>(
-        null
-    );
+    const [itemToEdit] = useState<OutboundContainerItem | null>(null);
     const [refresh, setRefresh] = useState<boolean>(false);
     const modalRef = useRef<HTMLDivElement | null>(null);
     const [currentPage, setCurrentPage] = useState<number>(1);
@@ -224,26 +214,100 @@ const ContainersTable = (): JSX.Element => {
         router.push(`/outbound-container-management/${container.id}`);
     };
 
+    // const handleDeleteItem = async () => {
+    //     if (itemToDelete) {
+    //         const { error } = await supabase
+    //             .from('containers')
+    //             .delete()
+    //             .eq('id', itemToDelete.id);
+    //         if (error) {
+    //             console.error('Error deleting item: ', error.message);
+    //         } else {
+    //             setOutboundContainers((prev) =>
+    //                 prev.filter((item) => item.id !== itemToDelete.id)
+    //             );
+    //             setFilteredOutboundContainers((prev) =>
+    //                 prev.filter((item) => item.id !== itemToDelete.id)
+    //             );
+
+    //             setShowSuccess(true);
+    //             setTimeout(() => {
+    //                 setShowSuccess(false);
+    //             }, 700);
+    //         }
+    //     }
+    //     setIsDeleteModalOpen(false);
+    // };
+
     const handleDeleteItem = async () => {
         if (itemToDelete) {
-            const { error } = await supabase
-                .from('containers')
-                .delete()
-                .eq('id', itemToDelete.id);
-            if (error) {
-                console.error('Error deleting item: ', error.message);
-            } else {
-                setOutboundContainers((prev) =>
-                    prev.filter((item) => item.id !== itemToDelete.id)
-                );
-                setFilteredOutboundContainers((prev) =>
-                    prev.filter((item) => item.id !== itemToDelete.id)
-                );
+            try {
+                // Fetch container photo URLs
+                const { data: containerData, error: fetchError } =
+                    await supabase
+                        .from('containers')
+                        .select('container_photo')
+                        .eq('id', itemToDelete.id)
+                        .single();
 
-                setShowSuccess(true);
-                setTimeout(() => {
-                    setShowSuccess(false);
-                }, 700);
+                if (fetchError) {
+                    console.error(
+                        'Error fetching container photos:',
+                        fetchError.message
+                    );
+                    return;
+                }
+
+                // Parse photo URLs
+                const photoUrls = containerData.container_photo
+                    ? containerData.container_photo.split(',')
+                    : [];
+
+                // Delete each photo from the bucket
+                for (const photoUrl of photoUrls) {
+                    const fileName = photoUrl.split('/').pop(); // Extract file name from URL
+                    if (fileName) {
+                        const { error: deleteError } = await supabase.storage
+                            .from('container_photos')
+                            .remove([fileName]);
+
+                        if (deleteError) {
+                            console.error(
+                                'Error deleting photo:',
+                                deleteError.message
+                            );
+                            return; // Stop further execution if a photo deletion fails
+                        }
+                    }
+                }
+
+                // Delete the container from the database
+                const { error: deleteError } = await supabase
+                    .from('containers')
+                    .delete()
+                    .eq('id', itemToDelete.id);
+
+                if (deleteError) {
+                    console.error(
+                        'Error deleting container:',
+                        deleteError.message
+                    );
+                } else {
+                    // Update the state to remove the container from the UI
+                    setOutboundContainers((prev) =>
+                        prev.filter((item) => item.id !== itemToDelete.id)
+                    );
+                    setFilteredOutboundContainers((prev) =>
+                        prev.filter((item) => item.id !== itemToDelete.id)
+                    );
+
+                    setShowSuccess(true);
+                    setTimeout(() => {
+                        setShowSuccess(false);
+                    }, 700);
+                }
+            } catch (err) {
+                console.error('Unexpected error during deletion:', err);
             }
         }
         setIsDeleteModalOpen(false);
@@ -300,23 +364,127 @@ const ContainersTable = (): JSX.Element => {
         setRefresh((prev) => !prev);
     };
 
+    // const prepareCSVData = () => {
+    //     const headers = [
+    //         'ID',
+    //         'Status',
+    //         'Products Allocated',
+    //         'Container Photo',
+    //         'Created At',
+    //         'Updated At',
+    //     ];
+    //     const data = filteredOutboundContainers.map((item) => [
+    //         item.id,
+    //         item.status.charAt(0).toUpperCase() + item.status.slice(1),
+    //         item.products_allocated,
+    //         item.container_photo,
+    //         item.created_at,
+    //         item.updated_at,
+    //     ]);
+    //     return [headers, ...data];
+    // };
+
+    // const prepareCSVData = () => {
+    //     const headers = [
+    //         'ID',
+    //         'Status',
+    //         'Products Allocated',
+    //         'Container Photo',
+    //         'Created Date',
+    //         'Last Updated Date',
+    //     ];
+
+    //     const data = filteredOutboundContainers.map((item) => [
+    //         item.id,
+    //         item.status.charAt(0).toUpperCase() + item.status.slice(1), // Capitalize status
+    //         item.products_allocated
+    //             .map(
+    //                 (product) =>
+    //                     `${product.productName} (ID: ${product.product_id}, Quantity: ${product.quantity})`
+    //             )
+    //             .join('; ') || 'N/A', // Join products with semicolons, default to 'N/A'
+    //         `"${(item.container_photo || 'N/A').replace(/"/g, '""')}"`, // Wrap in quotes and escape existing quotes
+    //         item.created_at
+    //             ? new Date(item.created_at).toLocaleDateString('en-AU') // Format as dd/mm/yyyy
+    //             : 'N/A',
+    //         item.updated_at
+    //             ? new Date(item.updated_at).toLocaleDateString('en-AU') // Format as dd/mm/yyyy
+    //             : 'N/A',
+    //     ]);
+
+    //     return [headers, ...data];
+    // };
+
+    // const prepareCSVData = () => {
+    //     const headers = [
+    //         'ID',
+    //         'Status',
+    //         'Products Allocated',
+    //         'Container Photo',
+    //         'Created Date',
+    //         'Last Updated Date',
+    //     ];
+
+    //     const data = filteredOutboundContainers.map((item) => {
+    //         // Format the products_allocated field
+    //         const productsAllocated = item.products_allocated
+    //             .map(
+    //                 (product) =>
+    //                     `${product.productName || 'Unknown'} (ID: ${
+    //                         product.product_id
+    //                     }, Quantity: ${product.quantity})`
+    //             )
+    //             .join('; ');
+
+    //         return [
+    //             item.id,
+    //             item.status.charAt(0).toUpperCase() + item.status.slice(1),
+    //             productsAllocated || 'N/A', // If no products, show "N/A"
+    //             item.container_photo || 'N/A',
+    //             item.created_at
+    //                 ? new Date(item.created_at).toLocaleDateString('en-AU') // Format as dd/mm/yyyy
+    //                 : 'N/A',
+    //             item.updated_at
+    //                 ? new Date(item.updated_at).toLocaleDateString('en-AU') // Format as dd/mm/yyyy
+    //                 : 'N/A',
+    //         ];
+    //     });
+
+    //     return [headers, ...data];
+    // };
+
     const prepareCSVData = () => {
         const headers = [
             'ID',
             'Status',
             'Products Allocated',
-            'Container Photo',
-            'Created At',
-            'Updated At',
+            'Created Date',
+            'Last Updated Date',
         ];
-        const data = filteredOutboundContainers.map((item) => [
-            item.id,
-            item.status.charAt(0).toUpperCase() + item.status.slice(1),
-            item.products_allocated,
-            item.container_photo,
-            item.created_at,
-            item.updated_at,
-        ]);
+
+        const data = filteredOutboundContainers.map((item) => {
+            const productsAllocated = item.products_allocated
+                .map(
+                    (product) =>
+                        `(ID: ${
+                            product.product_id
+                        }, Quantity: ${product.quantity})`
+                )
+                .join('; ');
+
+            return [
+                item.id,
+                item.status.charAt(0).toUpperCase() + item.status.slice(1),
+                productsAllocated || 'N/A',
+                item.created_at
+                    ? new Date(item.created_at).toLocaleDateString('en-AU')
+                    : 'N/A',
+                item.updated_at
+                    ? new Date(item.updated_at).toLocaleDateString('en-AU')
+                    : 'N/A',
+            ];
+        });
+
         return [headers, ...data];
     };
 
@@ -377,55 +545,70 @@ const ContainersTable = (): JSX.Element => {
                             />
                         </div>
                         <Button
-                            label="New Container"
-                            icon={<FaPlus />}
-                            // onClick={() => setIsAddModalOpen(true)}
-                            onClick={() =>
-                                // console.log('Cancel clicked')
-                                router.push('/add-container')
-                            }
+                            label="Add Container"
                             variant="primary"
+                            onClick={() => router.push('/add-container')}
+                            // icon={<FaPlus />}
+                            icon={
+                                <FaPlus style={{ strokeWidth: 2 }} size={18} />
+                            }
+                            className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
                         />
                         <Button
                             label="Import CSV"
-                            icon={
-                                <CiExport
-                                    style={{ strokeWidth: 2 }}
-                                    size={20}
-                                />
-                            }
-                            onClick={() => setIsImportModalOpen(true)}
-                            variant="primary"
-                        />
-                        <Button
-                            label="Export CSV"
                             icon={
                                 <CiImport
                                     style={{ strokeWidth: 2 }}
                                     size={20}
                                 />
                             }
+                            onClick={() => setIsImportModalOpen(true)}
+                            variant="primary"
+                            className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
+                        />
+                        <Button
+                            label="Export CSV"
+                            icon={
+                                <CiExport
+                                    style={{ strokeWidth: 2 }}
+                                    size={20}
+                                />
+                            }
                             onClick={() => {
                                 const csvContent = prepareCSVData()
-                                    .map((row) => row.join(','))
-                                    .join('\n');
-                                const csvLink = document.createElement('a');
-                                csvLink.href = URL.createObjectURL(
-                                    new Blob([csvContent], { type: 'text/csv' })
-                                );
-                                csvLink.setAttribute(
+                                    .map((row) =>
+                                        row
+                                            .map((cell) =>
+                                                typeof cell === 'string' &&
+                                                cell.includes(',')
+                                                    ? `"${cell}"` // Wrap cells with commas in quotes
+                                                    : cell
+                                            )
+                                            .join(',')
+                                    )
+                                    .join('\n'); // Combine rows with newlines
+
+                                const blob = new Blob([csvContent], {
+                                    type: 'text/csv;charset=utf-8;',
+                                });
+                                const csvUrl = URL.createObjectURL(blob);
+
+                                const link = document.createElement('a');
+                                link.href = csvUrl;
+                                link.setAttribute(
                                     'download',
-                                    'oubound-containers.csv'
+                                    'outbound-containers.csv'
                                 );
-                                document.body.appendChild(csvLink);
-                                csvLink.click();
-                                document.body.removeChild(csvLink);
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
                             }}
                             variant="primary"
+                            className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px]"
                         />
                     </div>
                     <FaSort
-                        className="text-gray-500 cursor-pointer hover:text-green-500 ml-4"
+                        className="text-gray-500 cursor-pointer hover:text-green-600 ml-4"
                         size={24}
                         onClick={() => setIsSortModalOpen(true)}
                     />
@@ -501,8 +684,11 @@ const ContainersTable = (): JSX.Element => {
                                                 className="text-gray-500 cursor-pointer hover:text-green-500"
                                                 size={18}
                                                 onClick={() => {
-                                                    setItemToEdit(item);
-                                                    setIsEditModalOpen(true);
+                                                    // setItemToEdit(item);
+                                                    // setIsEditModalOpen(true);
+                                                    router.push(
+                                                        `/edit-container/${item.id}`
+                                                    );
                                                 }}
                                             />
                                             <FaCheckSquare
@@ -612,6 +798,10 @@ const ContainersTable = (): JSX.Element => {
                 isOpen={isSortModalOpen}
                 onClose={() => setIsSortModalOpen(false)}
                 onSortChange={handleSortChange}
+                sortOptions={[
+                    { value: 'created_at', label: 'Created Date' },
+                    { value: 'updated_at', label: 'Last Updated Date' },
+                ]}
             />
             {isViewModalOpen && selectedOutboundContainerItem && (
                 <OutboundContainersViewModal
