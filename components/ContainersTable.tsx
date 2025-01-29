@@ -105,14 +105,17 @@ const ContainersTable = (): JSX.Element => {
         if (error) {
             console.error('Error fetching inventory: ', error.message);
         } else {
-            const product_ids = data.flatMap(
-                (item) =>
-                    Array.isArray(item.products_allocated)
-                        ? item.products_allocated.map(
-                              (product: ProductAllocation) => product.product_id
-                          )
-                        : [] // Return an empty array if products_allocated is not an array
-            );
+            const product_ids = data
+                .flatMap(
+                    (item) =>
+                        Array.isArray(item.products_allocated)
+                            ? item.products_allocated.map(
+                                  (product: ProductAllocation) =>
+                                      product.product_id
+                              )
+                            : [] // Return an empty array if products_allocated is not an array
+                )
+                .filter((id) => typeof id === 'string' && id.trim() !== '');
             const { data: productsData, error: productsError } = await supabase
                 .from('products')
                 .select('id, product_name')

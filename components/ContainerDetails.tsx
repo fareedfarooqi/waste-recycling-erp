@@ -306,6 +306,42 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                                 <summary className="text-sm font-medium text-gray-500 cursor-pointer focus:outline-none">
                                     Allocated Products
                                 </summary>
+                                <div className="flex justify-between items-center mt-4">
+                                    <p className="text-sm font-semibold text-gray-700">
+                                        Total Products:{' '}
+                                        {containerInfo.products_allocated
+                                            ?.length || 0}
+                                    </p>
+                                    <button
+                                        onClick={async () => {
+                                            const { error } = await supabase
+                                                .from('containers')
+                                                .update({
+                                                    products_allocated: [],
+                                                })
+                                                .eq('id', containerInfo.id);
+
+                                            if (error) {
+                                                console.error(
+                                                    'Error deleting all products:',
+                                                    error.message
+                                                );
+                                            } else {
+                                                setContainerInfo({
+                                                    ...containerInfo,
+                                                    products_allocated: [],
+                                                });
+                                                setShowSuccess(true);
+                                                setTimeout(() => {
+                                                    setShowSuccess(false);
+                                                }, 700);
+                                            }
+                                        }}
+                                        className="text-red-500 hover:text-red-700 text-sm"
+                                    >
+                                        Remove All
+                                    </button>
+                                </div>
                                 <div className="mt-4">
                                     {Array.isArray(
                                         containerInfo.products_allocated
