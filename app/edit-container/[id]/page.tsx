@@ -91,13 +91,24 @@ export default function EditContainerPage() {
                 }))
             );
 
+            // const productsAllocated = container.products_allocated.map(
+            //     (product: ProductAllocation) => ({
+            //         productId: product.productId,
+            //         quantity: product.quantity,
+            //         productName:
+            //             products.find((p) => p.id === product.productId)
+            //                 ?.product_name || '',
+            //     })
+            // );
+
+            // Use product_id instead of productId to match database schema
             const productsAllocated = container.products_allocated.map(
-                (product: ProductAllocation) => ({
-                    productId: product.productId,
+                (product: { product_id: string; quantity: number }) => ({
+                    productId: product.product_id, // Map to product_id
                     quantity: product.quantity,
                     productName:
-                        products.find((p) => p.id === product.productId)
-                            ?.product_name || '',
+                        products.find((p) => p.id === product.product_id)
+                            ?.product_name || '', // Find product name by product_id
                 })
             );
 
