@@ -1,0 +1,23 @@
+// NEW CODE FOR THE PAGE FOR PICKUP
+'use client';
+
+import React from 'react';
+
+import SidebarSmall from '@/components/SidebarSmall';
+import Sidebar from '@/components/Sidebar';
+import { useSidebar } from '@/context/SidebarContext';
+import PickupScheduleTable from '@/components/PickupScheduleTable';
+
+const Page: React.FC = () => {
+    const { isSidebarOpen } = useSidebar();
+    return (
+        <div className="flex">
+            {isSidebarOpen ? <Sidebar /> : <SidebarSmall />}
+            <div className="flex-1">
+                <PickupScheduleTable />
+            </div>
+        </div>
+    );
+};
+
+export default Page;
