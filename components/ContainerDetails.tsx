@@ -55,6 +55,27 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
         string | null
     >(null);
 
+    const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+    const handleNextPhoto = () => {
+        if (containerInfo?.container_photo) {
+            setCurrentPhotoIndex(
+                (prevIndex) =>
+                    (prevIndex + 1) % containerInfo.container_photo.length
+            );
+        }
+    };
+
+    const handlePrevPhoto = () => {
+        if (containerInfo?.container_photo) {
+            setCurrentPhotoIndex(
+                (prevIndex) =>
+                    (prevIndex - 1 + containerInfo.container_photo.length) %
+                    containerInfo.container_photo.length
+            );
+        }
+    };
+
     const fetchContainer = async (idParam: string) => {
         try {
             setLoadingContainer(true);
@@ -245,7 +266,7 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                             containerInfo.status.slice(1)}
                     </span>
                 </div>
-                {containerInfo.container_photo && (
+                {/* {containerInfo.container_photo && (
                     <div className="px-4 py-5 sm:px-6">
                         <img
                             src={
@@ -257,7 +278,34 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                             onClick={() => setIsImageModalOpen(true)}
                         />
                     </div>
-                )}
+                )} */}
+                {containerInfo.container_photo &&
+                    containerInfo.container_photo.length > 0 && (
+                        <div className="relative">
+                            <img
+                                src={
+                                    containerInfo.container_photo[
+                                        currentPhotoIndex
+                                    ]
+                                }
+                                alt={`Photo ${currentPhotoIndex + 1}`}
+                                className="w-full h-64 object-cover rounded-lg shadow-md"
+                            />
+                            <button
+                                onClick={handlePrevPhoto}
+                                className="absolute top-1/2 left-4 transform -translate-y-1/2"
+                            >
+                                &lt;
+                            </button>
+                            <button
+                                onClick={handleNextPhoto}
+                                className="absolute top-1/2 right-4 transform -translate-y-1/2"
+                            >
+                                &gt;
+                            </button>
+                        </div>
+                    )}
+
                 <div className="border-t border-gray-200 px-4 py-5 sm:p-0">
                     <dl className="sm:divide-y sm:divide-gray-200">
                         <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
@@ -483,6 +531,7 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                     </div>
                 </div>
             )}
+
             {isEditModalOpen &&
                 productToEdit &&
                 productQuantity &&

@@ -212,25 +212,50 @@ export default function AddContainerPage() {
         await saveContainer();
     };
 
+    // WORKS FOR CONTAINER_PHOTO BEING A TEXT FIELD
     // const saveContainer = async () => {
     //     const supabase = createClient();
     //     const { status, productsAllocated, photos } = formValues;
 
     //     const photoUrls: string[] = [];
     //     for (const photo of photos) {
-    //         const { data: uploadData, error: uploadError } =
-    //             await supabase.storage
-    //                 .from('container_photos')
-    //                 .upload(photo.name, photo);
+    //         const { error: uploadError } = await supabase.storage
+    //             .from('container_photos')
+    //             .upload(photo.name, photo, { upsert: false }); // Prevent overwriting existing files
 
     //         if (uploadError) {
-    //             console.error('Error uploading photo:', uploadError.message);
-    //             return;
+    //             // Check if the error is due to the photo already existing
+    //             if (
+    //                 uploadError.message.includes('The resource already exists')
+    //             ) {
+    //                 // console.error('Error: Photo already exists in the bucket.');
+    //                 alert(
+    //                     `The photo "${photo.name}" has already been uploaded.`
+    //                 );
+    //             } else {
+    //                 // console.error('Error uploading photo:', uploadError.message);
+    //                 alert(
+    //                     `Error uploading photo "${photo.name}": ${uploadError.message}`
+    //                 );
+    //             }
+    //             return; // Stop the function execution
     //         }
 
-    //         const { data: signedUrlData } = await supabase.storage
-    //             .from('container_photos')
-    //             .createSignedUrl(photo.name, 365 * 24 * 60 * 60);
+    //         const { data: signedUrlData, error: signedUrlError } =
+    //             await supabase.storage
+    //                 .from('container_photos')
+    //                 .createSignedUrl(photo.name, 365 * 24 * 60 * 60);
+
+    //         if (signedUrlError) {
+    //             console.error(
+    //                 'Error creating signed URL:',
+    //                 signedUrlError.message
+    //             );
+    //             alert(
+    //                 `Error creating signed URL for "${photo.name}": ${signedUrlError.message}`
+    //             );
+    //             return; // Stop the function execution
+    //         }
 
     //         if (signedUrlData) {
     //             photoUrls.push(signedUrlData.signedUrl);
@@ -254,6 +279,7 @@ export default function AddContainerPage() {
 
     //     if (insertError) {
     //         console.error('Error saving container:', insertError.message);
+    //         alert(`Error saving container: ${insertError.message}`);
     //     } else {
     //         setShowSuccessAnimation(true);
     //         setTimeout(() => {
@@ -264,47 +290,42 @@ export default function AddContainerPage() {
     // };
 
     const saveContainer = async () => {
-        const supabase = createClient();
         const { status, productsAllocated, photos } = formValues;
 
         const photoUrls: string[] = [];
         for (const photo of photos) {
             const { error: uploadError } = await supabase.storage
                 .from('container_photos')
-                .upload(photo.name, photo, { upsert: false }); // Prevent overwriting existing files
+                .upload(`containers/${photo.name}`, photo, { upsert: false });
 
             if (uploadError) {
-                // Check if the error is due to the photo already existing
                 if (
                     uploadError.message.includes('The resource already exists')
                 ) {
-                    // console.error('Error: Photo already exists in the bucket.');
                     alert(
                         `The photo "${photo.name}" has already been uploaded.`
                     );
                 } else {
-                    // console.error('Error uploading photo:', uploadError.message);
                     alert(
                         `Error uploading photo "${photo.name}": ${uploadError.message}`
                     );
                 }
-                return; // Stop the function execution
+                return;
             }
 
             const { data: signedUrlData, error: signedUrlError } =
                 await supabase.storage
                     .from('container_photos')
-                    .createSignedUrl(photo.name, 365 * 24 * 60 * 60);
+                    .createSignedUrl(
+                        `containers/${photo.name}`,
+                        365 * 24 * 60 * 60
+                    );
 
             if (signedUrlError) {
-                console.error(
-                    'Error creating signed URL:',
-                    signedUrlError.message
-                );
                 alert(
                     `Error creating signed URL for "${photo.name}": ${signedUrlError.message}`
                 );
-                return; // Stop the function execution
+                return;
             }
 
             if (signedUrlData) {
@@ -318,7 +339,7 @@ export default function AddContainerPage() {
                 product_id: product.productId,
                 quantity: product.quantity,
             })),
-            container_photo: photoUrls.join(','),
+            container_photo: photoUrls, // Save as a JSON array
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
         };
@@ -328,7 +349,6 @@ export default function AddContainerPage() {
             .insert(newContainer);
 
         if (insertError) {
-            console.error('Error saving container:', insertError.message);
             alert(`Error saving container: ${insertError.message}`);
         } else {
             setShowSuccessAnimation(true);

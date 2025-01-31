@@ -56,6 +56,85 @@ export default function EditContainerPage() {
     const [enlargedPhoto, setEnlargedPhoto] = useState<string | null>(null); // Enlarged photo state
     const [isModalVisible, setIsModalVisible] = useState(false);
 
+    // WORKS FOR CONTAINER_PHOTO AS A TEXT FIELD
+    // useEffect(() => {
+    //     const fetchData = async () => {
+    //         const { data: container, error: containerError } = await supabase
+    //             .from('containers')
+    //             .select('*')
+    //             .eq('id', containerId)
+    //             .single();
+
+    //         if (containerError) {
+    //             console.error(
+    //                 'Error fetching container:',
+    //                 containerError.message
+    //             );
+    //             return;
+    //         }
+
+    //         const { data: products, error: productsError } = await supabase
+    //             .from('products')
+    //             .select('id, product_name');
+
+    //         if (productsError) {
+    //             console.error(
+    //                 'Error fetching products:',
+    //                 productsError.message
+    //             );
+    //             return;
+    //         }
+
+    //         setProductOptions(
+    //             products.map((product) => ({
+    //                 value: product.id,
+    //                 label: product.product_name,
+    //             }))
+    //         );
+
+    //         // const productsAllocated = container.products_allocated.map(
+    //         //     (product: ProductAllocation) => ({
+    //         //         productId: product.productId,
+    //         //         quantity: product.quantity,
+    //         //         productName:
+    //         //             products.find((p) => p.id === product.productId)
+    //         //                 ?.product_name || '',
+    //         //     })
+    //         // );
+
+    //         // Use product_id instead of productId to match database schema
+    //         const productsAllocated = container.products_allocated.map(
+    //             (product: { product_id: string; quantity: number }) => ({
+    //                 productId: product.product_id, // Map to product_id
+    //                 quantity: product.quantity,
+    //                 productName:
+    //                     products.find((p) => p.id === product.product_id)
+    //                         ?.product_name || '', // Find product name by product_id
+    //             })
+    //         );
+
+    //         setFormValues({
+    //             status: container.status,
+    //             productsAllocated,
+    //             photos: container.container_photo
+    //                 ? container.container_photo.split(',')
+    //                 : [],
+    //             newPhotos: [],
+    //         });
+
+    //         setInitialValues({
+    //             status: container.status,
+    //             productsAllocated,
+    //             photos: container.container_photo
+    //                 ? container.container_photo.split(',')
+    //                 : [],
+    //             newPhotos: [],
+    //         });
+    //     };
+
+    //     if (containerId) fetchData();
+    // }, [containerId, supabase]);
+
     useEffect(() => {
         const fetchData = async () => {
             const { data: container, error: containerError } = await supabase
@@ -84,23 +163,6 @@ export default function EditContainerPage() {
                 return;
             }
 
-            setProductOptions(
-                products.map((product) => ({
-                    value: product.id,
-                    label: product.product_name,
-                }))
-            );
-
-            // const productsAllocated = container.products_allocated.map(
-            //     (product: ProductAllocation) => ({
-            //         productId: product.productId,
-            //         quantity: product.quantity,
-            //         productName:
-            //             products.find((p) => p.id === product.productId)
-            //                 ?.product_name || '',
-            //     })
-            // );
-
             // Use product_id instead of productId to match database schema
             const productsAllocated = container.products_allocated.map(
                 (product: { product_id: string; quantity: number }) => ({
@@ -112,21 +174,26 @@ export default function EditContainerPage() {
                 })
             );
 
+            setProductOptions(
+                products.map((product) => ({
+                    value: product.id,
+                    label: product.product_name,
+                }))
+            );
+
             setFormValues({
                 status: container.status,
+                // productsAllocated: container.products_allocated || [],
                 productsAllocated,
-                photos: container.container_photo
-                    ? container.container_photo.split(',')
-                    : [],
+                photos: container.container_photo || [], // Ensure this is an array
                 newPhotos: [],
             });
 
             setInitialValues({
                 status: container.status,
+                // productsAllocated: container.products_allocated || [],
                 productsAllocated,
-                photos: container.container_photo
-                    ? container.container_photo.split(',')
-                    : [],
+                photos: container.container_photo || [],
                 newPhotos: [],
             });
         };
@@ -278,62 +345,129 @@ export default function EditContainerPage() {
         await saveContainer();
     };
 
+    // THIS WORKS FOR CONTAINER_PHOTO BEING A TEXT FIELD
+    // const saveContainer = async () => {
+    //     const { status, productsAllocated, photos, newPhotos } = formValues;
+
+    //     // Consolidate productsAllocated into the correct format for the database
+    //     const updatedProductsAllocated = productsAllocated.map((product) => ({
+    //         product_id: product.productId,
+    //         quantity: product.quantity,
+    //     }));
+
+    //     // Handle photo uploads for new photos
+    //     const uploadedPhotoUrls: string[] = [];
+    //     for (const photo of newPhotos) {
+    //         const { error: uploadError } = await supabase.storage
+    //             .from('container_photos')
+    //             .upload(`containers/${photo.name}`, photo, {
+    //                 cacheControl: '3600',
+    //                 upsert: false,
+    //             });
+
+    //         if (uploadError) {
+    //             // console.error('Error uploading photo:', uploadError.message);
+    //             // return; // Exit early if there's an upload error
+    //             if (
+    //                 uploadError.message.includes('The resource already exists')
+    //             ) {
+    //                 console.error('Error: Photo already exists in the bucket.');
+    //                 alert(
+    //                     `The photo "${photo.name}" already exists in the bucket.`
+    //                 );
+    //             } else {
+    //                 console.error(
+    //                     'Error uploading photo:',
+    //                     uploadError.message
+    //                 );
+    //                 alert(
+    //                     `Error uploading photo "${photo.name}": ${uploadError.message}`
+    //                 );
+    //             }
+    //             return; // Stop the function execution
+    //         }
+
+    //         // Generate a signed URL for the uploaded photo
+    //         const { data: signedUrlData, error: signedUrlError } =
+    //             await supabase.storage
+    //                 .from('container_photos')
+    //                 .createSignedUrl(
+    //                     `containers/${photo.name}`,
+    //                     365 * 24 * 60 * 60
+    //                 ); // 1-year expiration
+
+    //         if (signedUrlError) {
+    //             console.error(
+    //                 'Error generating signed URL:',
+    //                 signedUrlError.message
+    //             );
+    //             return; // Exit early if there's an error generating the signed URL
+    //         }
+
+    //         if (signedUrlData) {
+    //             uploadedPhotoUrls.push(signedUrlData.signedUrl);
+    //         }
+    //     }
+
+    //     // Combine existing photos and newly uploaded photo URLs
+    //     const allPhotos = [...photos, ...uploadedPhotoUrls];
+
+    //     // Prepare the updated container data
+    //     const updatedContainer = {
+    //         status,
+    //         products_allocated: updatedProductsAllocated,
+    //         container_photo: allPhotos.join(','), // Save photos as a comma-separated string
+    //         updated_at: new Date().toISOString(),
+    //     };
+
+    //     // Update the container in the database
+    //     const { error } = await supabase
+    //         .from('containers')
+    //         .update(updatedContainer)
+    //         .eq('id', containerId);
+
+    //     if (error) {
+    //         console.error('Error updating container:', error.message);
+    //         return; // Exit early if there's a database update error
+    //     }
+
+    //     // Show success animation and redirect
+    //     setShowSuccessAnimation(true);
+    //     setTimeout(() => {
+    //         setShowSuccessAnimation(false);
+    //         router.push('/outbound-container-management');
+    //     }, 700);
+    // };
+
     const saveContainer = async () => {
         const { status, productsAllocated, photos, newPhotos } = formValues;
 
-        // Consolidate productsAllocated into the correct format for the database
-        const updatedProductsAllocated = productsAllocated.map((product) => ({
-            product_id: product.productId,
-            quantity: product.quantity,
-        }));
-
-        // Handle photo uploads for new photos
         const uploadedPhotoUrls: string[] = [];
         for (const photo of newPhotos) {
             const { error: uploadError } = await supabase.storage
                 .from('container_photos')
-                .upload(`containers/${photo.name}`, photo, {
-                    cacheControl: '3600',
-                    upsert: false,
-                });
+                .upload(`containers/${photo.name}`, photo, { upsert: false });
 
             if (uploadError) {
-                // console.error('Error uploading photo:', uploadError.message);
-                // return; // Exit early if there's an upload error
-                if (
-                    uploadError.message.includes('The resource already exists')
-                ) {
-                    console.error('Error: Photo already exists in the bucket.');
-                    alert(
-                        `The photo "${photo.name}" already exists in the bucket.`
-                    );
-                } else {
-                    console.error(
-                        'Error uploading photo:',
-                        uploadError.message
-                    );
-                    alert(
-                        `Error uploading photo "${photo.name}": ${uploadError.message}`
-                    );
-                }
-                return; // Stop the function execution
+                alert(
+                    `Error uploading photo "${photo.name}": ${uploadError.message}`
+                );
+                return;
             }
 
-            // Generate a signed URL for the uploaded photo
             const { data: signedUrlData, error: signedUrlError } =
                 await supabase.storage
                     .from('container_photos')
                     .createSignedUrl(
                         `containers/${photo.name}`,
                         365 * 24 * 60 * 60
-                    ); // 1-year expiration
+                    );
 
             if (signedUrlError) {
-                console.error(
-                    'Error generating signed URL:',
-                    signedUrlError.message
+                alert(
+                    `Error creating signed URL for "${photo.name}": ${signedUrlError.message}`
                 );
-                return; // Exit early if there's an error generating the signed URL
+                return;
             }
 
             if (signedUrlData) {
@@ -341,29 +475,28 @@ export default function EditContainerPage() {
             }
         }
 
-        // Combine existing photos and newly uploaded photo URLs
         const allPhotos = [...photos, ...uploadedPhotoUrls];
 
-        // Prepare the updated container data
         const updatedContainer = {
             status,
-            products_allocated: updatedProductsAllocated,
-            container_photo: allPhotos.join(','), // Save photos as a comma-separated string
+            products_allocated: productsAllocated.map((product) => ({
+                product_id: product.productId,
+                quantity: product.quantity,
+            })),
+            container_photo: allPhotos, // Save as a JSON array
             updated_at: new Date().toISOString(),
         };
 
-        // Update the container in the database
         const { error } = await supabase
             .from('containers')
             .update(updatedContainer)
             .eq('id', containerId);
 
         if (error) {
-            console.error('Error updating container:', error.message);
-            return; // Exit early if there's a database update error
+            alert(`Error updating container: ${error.message}`);
+            return;
         }
 
-        // Show success animation and redirect
         setShowSuccessAnimation(true);
         setTimeout(() => {
             setShowSuccessAnimation(false);
