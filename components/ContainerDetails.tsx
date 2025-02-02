@@ -7,7 +7,15 @@ import { supabase } from '@/config/supabaseClient';
 import ImageModal from '@/components/ImageModal';
 import DateFormatter from './DateFormatter';
 import Button from '@/components/Button';
-import { FaPlus, FaEdit, FaTrashAlt, FaClipboard } from 'react-icons/fa';
+import {
+    FaPlus,
+    FaEdit,
+    FaTrashAlt,
+    FaClipboard,
+    FaArrowLeft,
+    FaArrowRight,
+    FaTimes,
+} from 'react-icons/fa';
 import AddOutboundContainer from './AddProductToContainer';
 import EditProductModal from './EditProductModal';
 import SuccessAnimation from './SuccessAnimation';
@@ -19,11 +27,20 @@ interface ProductAllocation {
     productName: string;
 }
 
+// type OutboundContainerItem = {
+//     id: string;
+//     status: 'new' | 'packing' | 'sent' | 'invoiced';
+//     products_allocated: ProductAllocation[] | null;
+//     container_photo: string;
+//     created_at: string;
+//     updated_at: string;
+// };
+
 type OutboundContainerItem = {
     id: string;
     status: 'new' | 'packing' | 'sent' | 'invoiced';
     products_allocated: ProductAllocation[] | null;
-    container_photo: string;
+    container_photo: string[]; // Array of URLs
     created_at: string;
     updated_at: string;
 };
@@ -56,7 +73,18 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
     >(null);
 
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+    const [isEnlargedViewOpen, setIsEnlargedViewOpen] = useState(false);
 
+    // const handleNextPhoto = () => {
+    //     if (containerInfo?.container_photo) {
+    //         setCurrentPhotoIndex(
+    //             (prevIndex) =>
+    //                 (prevIndex + 1) % containerInfo.container_photo.length
+    //         );
+    //     }
+    // };
+
+    // Handle image navigation
     const handleNextPhoto = () => {
         if (containerInfo?.container_photo) {
             setCurrentPhotoIndex(
@@ -65,6 +93,16 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
             );
         }
     };
+
+    // const handlePrevPhoto = () => {
+    //     if (containerInfo?.container_photo) {
+    //         setCurrentPhotoIndex(
+    //             (prevIndex) =>
+    //                 (prevIndex - 1 + containerInfo.container_photo.length) %
+    //                 containerInfo.container_photo.length
+    //         );
+    //     }
+    // };
 
     const handlePrevPhoto = () => {
         if (containerInfo?.container_photo) {
@@ -88,6 +126,12 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
             if (error) throw error;
 
             const containerData = data as OutboundContainerItem;
+
+            containerData.container_photo = Array.isArray(
+                containerData.container_photo
+            )
+                ? containerData.container_photo
+                : JSON.parse(containerData.container_photo || '[]');
 
             // Fetch product names for allocated products
             if (containerData.products_allocated) {
@@ -172,24 +216,40 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
         setIsDeleteModalOpen(false);
     };
 
+    // useEffect(() => {
+    //     const handleClickOutside = (event: MouseEvent) => {
+    //         if (
+    //             modalRef.current &&
+    //             !modalRef.current.contains(event.target as Node)
+    //         ) {
+    //             setIsAddModalOpenContainer(false);
+    //         }
+    //     };
+
+    //     if (isAddModalOpenContainer) {
+    //         document.addEventListener('mousedown', handleClickOutside);
+    //     }
+
+    //     return () => {
+    //         document.removeEventListener('mousedown', handleClickOutside);
+    //     };
+    // }, [isAddModalOpenContainer]);
+
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                modalRef.current &&
-                !modalRef.current.contains(event.target as Node)
-            ) {
-                setIsAddModalOpenContainer(false);
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (isEnlargedViewOpen) {
+                if (event.key === 'ArrowRight') handleNextPhoto();
+                if (event.key === 'ArrowLeft') handlePrevPhoto();
+                if (event.key === 'Escape') setIsEnlargedViewOpen(false);
             }
         };
 
-        if (isAddModalOpenContainer) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
+        window.addEventListener('keydown', handleKeyDown);
 
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [isAddModalOpenContainer]);
+    }, [isEnlargedViewOpen]);
 
     useEffect(() => {
         fetchContainer(id);
@@ -279,7 +339,7 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                         />
                     </div>
                 )} */}
-                {containerInfo.container_photo &&
+                {/* {containerInfo.container_photo &&
                     containerInfo.container_photo.length > 0 && (
                         <div className="relative">
                             <img
@@ -304,7 +364,111 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                                 &gt;
                             </button>
                         </div>
-                    )}
+                    )} */}
+
+                {/* Image Section */}
+                {containerInfo.container_photo.length > 0 ? (
+                    <div className="relative mt-6">
+                        <img
+                            src={
+                                containerInfo.container_photo[currentPhotoIndex]
+                            }
+                            alt={`Photo ${currentPhotoIndex + 1}`}
+                            className="w-full h-64 object-cover rounded-lg shadow-md cursor-pointer"
+                            onClick={() => setIsEnlargedViewOpen(true)}
+                        />
+                        {containerInfo.container_photo.length > 1 && (
+                            <>
+                                <button
+                                    onClick={handlePrevPhoto}
+                                    // className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full"
+                                    // className="w-10 h-10 rounded-full bg-white border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white flex items-center justify-center transition duration-200"
+                                    className="absolute top-1/2 left-4 transform -translate-y-1/2 p-2 rounded-full bg-white border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white flex items-center justify-center transition duration-200"
+                                >
+                                    <FaArrowLeft />
+                                </button>
+                                <button
+                                    onClick={handleNextPhoto}
+                                    // className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full"
+                                    className="absolute top-1/2 right-4 transform -translate-y-1/2 p-2 rounded-full bg-white border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white flex items-center justify-center transition duration-200"
+                                >
+                                    <FaArrowRight />
+                                </button>
+                            </>
+                        )}
+                    </div>
+                ) : null}
+
+                {/* Enlarged View */}
+                {/* {isEnlargedViewOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center">
+                    
+                    <button
+                        onClick={() => setIsEnlargedViewOpen(false)}
+                        className="absolute top-4 right-4 text-white text-2xl"
+                    >
+                        <FaTimes />
+                    </button>
+                    <button
+                        onClick={handlePrevPhoto}
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white text-2xl"
+                    >
+                        <FaArrowLeft />
+                    </button>
+                    <img
+                        src={containerInfo.container_photo[currentPhotoIndex]}
+                        alt={`Photo ${currentPhotoIndex + 1}`}
+                        className="max-w-full max-h-full rounded shadow-lg"
+                    />
+                    <button
+                        onClick={handleNextPhoto}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-2xl"
+                    >
+                        <FaArrowRight />
+                    </button>
+                </div>
+            )} */}
+
+                {isEnlargedViewOpen && (
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center"
+                        onClick={() => setIsEnlargedViewOpen(false)} // Close modal on click outside
+                    >
+                        <div
+                            className="relative"
+                            onClick={(e) => e.stopPropagation()} // Prevent click from propagating to parent
+                        >
+                            {/* Left Button */}
+                            <button
+                                className="absolute left-[-3rem] top-1/2 transform -translate-y-1/2 bg-gray-700 text-white p-2 rounded-full hover:bg-gray-800"
+                                style={{ fontSize: '1.5rem' }}
+                                onClick={handlePrevPhoto}
+                            >
+                                <FaArrowLeft />
+                            </button>
+
+                            {/* Enlarged Image */}
+                            <img
+                                src={
+                                    containerInfo.container_photo[
+                                        currentPhotoIndex
+                                    ]
+                                }
+                                alt={`Photo ${currentPhotoIndex + 1}`}
+                                className="max-w-full max-h-[90vh] rounded shadow-lg"
+                            />
+
+                            {/* Right Button */}
+                            <button
+                                className="absolute right-[-3rem] top-1/2 transform -translate-y-1/2 bg-gray-700 text-white p-2 rounded-full hover:bg-gray-800"
+                                style={{ fontSize: '1.5rem' }}
+                                onClick={handleNextPhoto}
+                            >
+                                <FaArrowRight />
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 <div className="border-t border-gray-200 px-4 py-5 sm:p-0">
                     <dl className="sm:divide-y sm:divide-gray-200">
@@ -509,13 +673,13 @@ const ContainerDetails: React.FC<Props> = ({ id }) => {
                     className="flex items-center justify-center px-4 py-2 text-sm font-bold bg-green-600 text-white rounded hover:bg-green-500 transition whitespace-nowrap min-w-[120px] min-h-[50px]"
                 />
             </div>
-            {isImageModalOpen && containerInfo.container_photo && (
+            {/* {isImageModalOpen && containerInfo.container_photo && (
                 <ImageModal
                     imageUrl={containerInfo.container_photo}
                     alt="Container"
                     onClose={() => setIsImageModalOpen(false)}
                 />
-            )}
+            )} */}
             {isAddModalOpenContainer && (
                 <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
                     <div

@@ -56,6 +56,10 @@ export default function EditContainerPage() {
     const [enlargedPhoto, setEnlargedPhoto] = useState<string | null>(null); // Enlarged photo state
     const [isModalVisible, setIsModalVisible] = useState(false);
 
+    const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number | null>(
+        null
+    );
+
     // WORKS FOR CONTAINER_PHOTO AS A TEXT FIELD
     // useEffect(() => {
     //     const fetchData = async () => {
@@ -135,6 +139,72 @@ export default function EditContainerPage() {
     //     if (containerId) fetchData();
     // }, [containerId, supabase]);
 
+    // useEffect(() => {
+    //     const fetchData = async () => {
+    //         const { data: container, error: containerError } = await supabase
+    //             .from('containers')
+    //             .select('*')
+    //             .eq('id', containerId)
+    //             .single();
+
+    //         if (containerError) {
+    //             console.error(
+    //                 'Error fetching container:',
+    //                 containerError.message
+    //             );
+    //             return;
+    //         }
+
+    //         const { data: products, error: productsError } = await supabase
+    //             .from('products')
+    //             .select('id, product_name');
+
+    //         if (productsError) {
+    //             console.error(
+    //                 'Error fetching products:',
+    //                 productsError.message
+    //             );
+    //             return;
+    //         }
+
+    //         // Use product_id instead of productId to match database schema
+    //         const productsAllocated = container.products_allocated.map(
+    //             (product: { product_id: string; quantity: number }) => ({
+    //                 productId: product.product_id, // Map to product_id
+    //                 quantity: product.quantity,
+    //                 productName:
+    //                     products.find((p) => p.id === product.product_id)
+    //                         ?.product_name || '', // Find product name by product_id
+    //             })
+    //         );
+
+    //         setProductOptions(
+    //             products.map((product) => ({
+    //                 value: product.id,
+    //                 label: product.product_name,
+    //             }))
+    //         );
+
+    //         setFormValues({
+    //             status: container.status,
+    //             // productsAllocated: container.products_allocated || [],
+    //             productsAllocated,
+    //             photos: container.container_photo || [], // Ensure this is an array
+    //             newPhotos: [],
+    //         });
+
+    //         setInitialValues({
+    //             status: container.status,
+    //             // productsAllocated: container.products_allocated || [],
+    //             productsAllocated,
+    //             photos: container.container_photo || [],
+    //             newPhotos: [],
+    //         });
+    //     };
+
+    //     if (containerId) fetchData();
+    // }, [containerId, supabase]);
+
     useEffect(() => {
         const fetchData = async () => {
             const { data: container, error: containerError } = await supabase
@@ -163,14 +233,20 @@ export default function EditContainerPage() {
                 return;
             }
 
-            // Use product_id instead of productId to match database schema
+            // Ensure `container.container_photo` is an array
+            const containerPhotos = Array.isArray(container.container_photo)
+                ? container.container_photo
+                : container.container_photo
+                  ? JSON.parse(container.container_photo)
+                  : [];
+
             const productsAllocated = container.products_allocated.map(
                 (product: { product_id: string; quantity: number }) => ({
-                    productId: product.product_id, // Map to product_id
+                    productId: product.product_id,
                     quantity: product.quantity,
                     productName:
                         products.find((p) => p.id === product.product_id)
-                            ?.product_name || '', // Find product name by product_id
+                            ?.product_name || '',
                 })
             );
 
@@ -183,23 +259,39 @@ export default function EditContainerPage() {
 
             setFormValues({
                 status: container.status,
-                // productsAllocated: container.products_allocated || [],
                 productsAllocated,
-                photos: container.container_photo || [], // Ensure this is an array
+                photos: containerPhotos, // Ensure this is an array
                 newPhotos: [],
             });
 
             setInitialValues({
                 status: container.status,
-                // productsAllocated: container.products_allocated || [],
                 productsAllocated,
-                photos: container.container_photo || [],
+                photos: containerPhotos,
                 newPhotos: [],
             });
         };
 
         if (containerId) fetchData();
     }, [containerId, supabase]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (enlargedPhoto) {
+                if (e.key === 'ArrowLeft') {
+                    handleNavigatePhoto('prev');
+                } else if (e.key === 'ArrowRight') {
+                    handleNavigatePhoto('next');
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [enlargedPhoto, currentPhotoIndex, formValues.photos]);
 
     const handleAddProduct = () => {
         setFormValues((prev) => ({
@@ -302,12 +394,29 @@ export default function EditContainerPage() {
         }
     };
 
-    const handleThumbnailClick = (photoUrl: string) => {
+    // const handleThumbnailClick = (photoUrl: string) => {
+    //     setEnlargedPhoto(photoUrl);
+    // };
+
+    const handleThumbnailClick = (photoUrl: string, index: number) => {
         setEnlargedPhoto(photoUrl);
+        setCurrentPhotoIndex(index);
     };
 
     const handleCloseEnlargedPhoto = () => {
         setEnlargedPhoto(null);
+    };
+
+    const handleNavigatePhoto = (direction: 'prev' | 'next') => {
+        if (currentPhotoIndex !== null && formValues.photos.length > 0) {
+            const nextIndex =
+                direction === 'next'
+                    ? (currentPhotoIndex + 1) % formValues.photos.length
+                    : (currentPhotoIndex - 1 + formValues.photos.length) %
+                      formValues.photos.length;
+            setEnlargedPhoto(formValues.photos[nextIndex]);
+            setCurrentPhotoIndex(nextIndex);
+        }
     };
 
     const handleRemovePhoto = (index: number, type: 'existing' | 'new') => {
@@ -795,7 +904,7 @@ export default function EditContainerPage() {
 
                                 {/* Display uploaded photos in a horizontal line */}
                                 <div className="flex overflow-x-auto gap-4 mt-4">
-                                    {formValues.photos.map((photo, index) => (
+                                    {/* {formValues.photos.map((photo, index) => (
                                         <div
                                             key={index}
                                             className="relative group flex-shrink-0"
@@ -825,9 +934,43 @@ export default function EditContainerPage() {
                                                 <FaTimes size={12} />
                                             </button>
                                         </div>
+                                    ))} */}
+                                    {formValues.photos.map((photo, index) => (
+                                        <div
+                                            key={index}
+                                            className="relative group flex-shrink-0"
+                                            style={{
+                                                width: '80px',
+                                                height: '80px',
+                                            }}
+                                        >
+                                            <img
+                                                src={photo}
+                                                alt={`Photo ${index + 1}`}
+                                                className="w-full h-full object-cover rounded-lg cursor-pointer"
+                                                onClick={() =>
+                                                    handleThumbnailClick(
+                                                        photo,
+                                                        index
+                                                    )
+                                                }
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleRemovePhoto(
+                                                        index,
+                                                        'existing'
+                                                    )
+                                                }
+                                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 group-hover:opacity-100 opacity-75 transition"
+                                            >
+                                                <FaTimes size={12} />
+                                            </button>
+                                        </div>
                                     ))}
 
-                                    {formValues.newPhotos.map((file, index) => (
+                                    {/* {formValues.newPhotos.map((file, index) => (
                                         <div
                                             key={`new-${index}`}
                                             className="relative group flex-shrink-0"
@@ -861,6 +1004,45 @@ export default function EditContainerPage() {
                                                 <FaTimes size={12} />
                                             </button>
                                         </div>
+                                    ))} */}
+
+                                    {formValues.newPhotos.map((file, index) => (
+                                        <div
+                                            key={`new-${index}`}
+                                            className="relative group flex-shrink-0"
+                                            style={{
+                                                width: '80px',
+                                                height: '80px',
+                                            }}
+                                        >
+                                            <img
+                                                src={URL.createObjectURL(file)}
+                                                alt={`New Photo ${index + 1}`}
+                                                className="w-full h-full object-cover rounded-lg cursor-pointer"
+                                                onClick={() =>
+                                                    handleThumbnailClick(
+                                                        URL.createObjectURL(
+                                                            file
+                                                        ), // photoUrl
+                                                        index +
+                                                            formValues.photos
+                                                                .length // Adjust index for new photos
+                                                    )
+                                                }
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleRemovePhoto(
+                                                        index,
+                                                        'new'
+                                                    )
+                                                }
+                                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 group-hover:opacity-100 opacity-75 transition"
+                                            >
+                                                <FaTimes size={12} />
+                                            </button>
+                                        </div>
                                     ))}
                                 </div>
 
@@ -873,22 +1055,59 @@ export default function EditContainerPage() {
 
                             {/* Enlarged Photo Modal */}
                             {enlargedPhoto && (
-                                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                                    <div className="relative bg-white rounded-lg p-4 shadow-lg">
-                                        <button
+                                <div
+                                    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+                                    onClick={() => setEnlargedPhoto(null)}
+                                >
+                                    {/* <div className="relative bg-white rounded-lg p-4 shadow-lg"> */}
+                                    {/* <button
                                             onClick={handleCloseEnlargedPhoto}
                                             className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2"
                                         >
                                             <FaTimes size={20} />
-                                        </button>
-                                        <img
-                                            src={enlargedPhoto}
-                                            alt="Enlarged Photo"
-                                            className="max-w-full max-h-[90vh] rounded"
-                                        />
-                                    </div>
+                                        </button> */}
+                                    <img
+                                        src={enlargedPhoto}
+                                        alt="Enlarged Photo"
+                                        className="max-w-full max-h-[90vh] rounded"
+                                    />
+                                    {/* </div> */}
                                 </div>
                             )}
+                            {/* Enlarged Photo Modal */}
+                            {/* {enlargedPhoto && (
+    <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75"
+        onClick={() => setEnlargedPhoto(null)} // Close modal on click outside
+    >
+        <div
+            className="relative"
+            onClick={(e) => e.stopPropagation()} // Prevent click from propagating to parent
+        >
+            <button
+                className="absolute left-[-3rem] top-1/2 transform -translate-y-1/2 bg-gray-700 text-white p-4 rounded-full hover:bg-gray-800"
+                style={{ fontSize: '1.5rem' }}
+                onClick={() => handleNavigatePhoto('prev')}
+            >
+                &lt;
+            </button>
+
+            <img
+                src={enlargedPhoto}
+                alt="Enlarged Photo"
+                className="max-w-full max-h-[90vh] rounded shadow-lg"
+            />
+
+            <button
+                className="absolute right-[-3rem] top-1/2 transform -translate-y-1/2 bg-gray-700 text-white p-4 rounded-full hover:bg-gray-800"
+                style={{ fontSize: '1.5rem' }}
+                onClick={() => handleNavigatePhoto('next')}
+            >
+                &gt;
+            </button>
+        </div>
+    </div>
+)} */}
 
                             <div className="flex justify-between mt-8">
                                 <Button
