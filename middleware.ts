@@ -12,6 +12,7 @@ export async function middleware(req: NextRequest) {
         pathname.startsWith('/sign-in') ||
         pathname.startsWith('/forgot-password') ||
         pathname.startsWith('/_next') ||
+        pathname.startsWith('/staff') ||
         pathname === '/favicon.ico' ||
         /\.(svg|png|jpg|jpeg|gif|webp)$/.test(pathname)
     ) {
