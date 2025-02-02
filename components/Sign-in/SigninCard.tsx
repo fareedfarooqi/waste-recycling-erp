@@ -1,12 +1,13 @@
+// components/Sign-in/SigninCard.tsx
 'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/config/supabaseClient';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export default function SigninCard() {
-    const router = useRouter();
-
+    const router = useRouter(); // Use router at the top level
+    const supabase = createClientComponentClient();
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
@@ -16,33 +17,55 @@ export default function SigninCard() {
         navigator.clipboard.writeText('info@wasteerp.com');
     };
 
-    const handleSubmissionSuccess = async (authUserId: string) => {
-        const { data, error } = await supabase
-            .from('company_users')
-            .select('id')
-            .eq('user_id', authUserId);
+    // Use maybeSingle() so that if no company_user row exists (i.e. the CEO hasn’t completed signup),
+    // we simply redirect the user to the Setup Company page.
+    const handleSubmissionSuccess = async (
+        authUserId: string
+    ): Promise<void> => {
+        try {
+            const { data, error } = await supabase
+                .from('company_users')
+                .select('profile_complete')
+                .eq('user_id', authUserId)
+                .maybeSingle();
 
-        if (!data || data.length === 0) {
+            if (error) {
+                console.error('Error fetching user profile:', error.message);
+                // If there's an error (or no row is found), redirect to the setup company page.
+                router.push('/setup-company');
+                return;
+            }
+
+            // If data is returned and profile_complete is true, redirect to /customers.
+            // Otherwise, redirect to /setup-company.
+            if (data && data.profile_complete) {
+                router.push('/customers');
+            } else {
+                router.push('/setup-company');
+            }
+        } catch (err) {
+            console.error('Unexpected error during profile check:', err);
             router.push('/setup-company');
-        } else {
-            router.push('/customers');
         }
     };
 
-    const handleSignin = async (e: React.FormEvent<HTMLFormElement>) => {
+    async function handleSignin(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setLoading(true);
+        setError(null);
 
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
+            // signInWithPassword => on success, tokens are placed in HTTP-only cookies
+            const { data, error: signInError } =
+                await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
 
-            console.log({ data, error });
+            console.log({ data, signInError });
 
-            if (error) {
-                switch (error.code) {
+            if (signInError) {
+                switch (signInError.code) {
                     case 'invalid_credentials':
                         setError('Invalid email or password.');
                         break;
@@ -52,9 +75,7 @@ export default function SigninCard() {
                         );
                         break;
                     case 'over_request_rate_limit':
-                        setError(
-                            'Too many login attempts. Please try again in a few minutes.'
-                        );
+                        setError('Too many login attempts. Please try again.');
                         break;
                     case 'user_not_found':
                         setError('No account found with this email.');
@@ -67,7 +88,10 @@ export default function SigninCard() {
                 return;
             }
 
-            handleSubmissionSuccess(data?.user?.id);
+            // If sign-in was successful => user is in cookies
+            if (data?.user?.id) {
+                await handleSubmissionSuccess(data.user.id);
+            }
         } catch (err) {
             setError(
                 'Failed to connect to the server. Please try again later.'
@@ -75,7 +99,7 @@ export default function SigninCard() {
         } finally {
             setLoading(false);
         }
-    };
+    }
 
     return (
         <div className="relative z-10 w-full max-w-md bg-white shadow-lg rounded-lg p-8 md:p-12">
@@ -128,6 +152,12 @@ export default function SigninCard() {
                         className="mt-2 block w-full px-4 py-3 text-gray-900 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-green-400 focus:outline-none"
                         required
                     />
+                    <button
+                        onClick={() => router.push('/forgot-password')}
+                        className="text-green-600 hover:text-green-500 underline font-medium text-xs mt-3"
+                    >
+                        Forgot your password?
+                    </button>
                 </div>
 
                 {error && (

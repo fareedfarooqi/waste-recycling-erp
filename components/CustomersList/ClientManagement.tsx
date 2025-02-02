@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import ClientsTable from './ClientsTable';
-import { supabase } from '@/config/supabaseClient';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 type ProductType = {
     product_name: string;
@@ -33,6 +33,7 @@ type Client = {
 };
 
 const ClientManagement = () => {
+    const supabase = createClientComponentClient();
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(false);
 

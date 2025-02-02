@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/config/supabaseClient';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { IoIosRemoveCircleOutline } from 'react-icons/io';
 
 interface CustomerFormProps {
@@ -10,6 +10,7 @@ interface CustomerFormProps {
 }
 
 const CustomerForm: React.FC<CustomerFormProps> = ({ onAdditionSuccess }) => {
+    const supabase = createClientComponentClient();
     const router = useRouter();
     const [companyName, setCompanyName] = useState('');
     const [contactDetails, setContactDetails] = useState({

@@ -7,7 +7,7 @@ import React, {
     useCallback,
     MouseEvent,
 } from 'react';
-import { supabase } from '@/config/supabaseClient';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Papa from 'papaparse';
 import { IoMdClose } from 'react-icons/io';
 
@@ -60,6 +60,7 @@ const ImportCSVModal: React.FC<ImportCSVModalProps> = ({
     onClose,
     onImportSuccess,
 }) => {
+    const supabase = createClientComponentClient();
     const [files, setFiles] = useState<File[]>([]);
     const [importing, setImporting] = useState(false);
     const [error, setError] = useState<string | null>(null);

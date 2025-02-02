@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLoadScript, Autocomplete, Libraries } from '@react-google-maps/api';
-import { supabase } from '@/config/supabaseClient';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 type Company = {
     id: string;
@@ -19,6 +19,8 @@ type Company = {
 const libraries: Libraries = ['places'];
 
 export default function CompanyDetailsForm(): JSX.Element {
+    const supabase = createClientComponentClient();
+
     const { isLoaded } = useLoadScript({
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
         libraries,
@@ -72,6 +74,7 @@ export default function CompanyDetailsForm(): JSX.Element {
             } else {
                 const companyId = (data as Company).id;
                 localStorage.setItem('company_id', companyId);
+                localStorage.setItem('company_name', companyName);
                 router.push('/staff/complete-profile');
             }
         } catch (err) {

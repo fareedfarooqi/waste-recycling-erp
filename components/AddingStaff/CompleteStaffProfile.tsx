@@ -2,39 +2,38 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { FiInfo, FiUpload, FiX } from 'react-icons/fi';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { FiUpload, FiX, FiInfo } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 
-export default function CompleteProfile(): JSX.Element {
+export default function CompleteStaffProfile(): JSX.Element {
     const supabase = createClientComponentClient();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
+    const [companyId, setCompanyId] = useState<string | null>(null);
     const [role, setRole] = useState('');
-    const [email, setEmail] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [profilePic, setProfilePic] = useState<File | null>(null);
     const [preview, setPreview] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
-    const [companyId, setCompanyId] = useState<string | null>(null);
 
     const router = useRouter();
 
     useEffect(() => {
-        (async () => {
-            const { data, error } = await supabase.auth.getUser();
-            if (error) {
-                console.error('Error fetching user:', error.message);
-                return;
-            }
-            if (!data?.user) {
-                router.push('/sign-in');
-                return;
-            }
-            setEmail(data.user.email ?? '');
-        })();
-    }, [router]);
+        const storedRole = localStorage.getItem('staff_role');
+        if (storedRole) {
+            setRole(storedRole);
+        }
+    }, []);
+
+    const [inviteToken, setInviteToken] = useState<string | null>(null);
+    useEffect(() => {
+        const token = localStorage.getItem('invitation_token');
+        if (token) {
+            setInviteToken(token);
+        }
+    }, []);
 
     useEffect(() => {
         const storedCompanyId = localStorage.getItem('company_id');
@@ -47,6 +46,7 @@ export default function CompleteProfile(): JSX.Element {
         if (acceptedFiles && acceptedFiles.length > 0) {
             const file = acceptedFiles[0];
             setProfilePic(file);
+
             const reader = new FileReader();
             reader.onload = () => {
                 setPreview(reader.result as string);
@@ -83,45 +83,60 @@ export default function CompleteProfile(): JSX.Element {
 
         let profilePicturePath: string | null = null;
         if (profilePic) {
-            const { data: uploadData, error: uploadError } =
-                await supabase.storage
-                    .from('profile-pictures')
-                    .upload(`${user.id}/${profilePic.name}`, profilePic, {
-                        upsert: true,
-                    });
-            if (uploadError) {
+            const { data, error } = await supabase.storage
+                .from('profile-pictures')
+                .upload(`${user.id}/${profilePic.name}`, profilePic, {
+                    upsert: true,
+                });
+
+            if (error) {
                 console.error(
                     'Error uploading profile picture:',
-                    uploadError.message
+                    error.message
                 );
                 setIsLoading(false);
                 return;
             }
-            profilePicturePath = uploadData?.path || null;
+            profilePicturePath = data?.path || null;
         }
 
-        const { error: dbError } = await supabase.from('company_users').insert({
+        const { error: dbError } = await supabase.from('company_users').upsert({
             user_id: user.id,
+            company_id: companyId,
             first_name: firstName,
             last_name: lastName,
-            email: email,
-            phone_number: phoneNumber,
+            email: user.email,
             role,
+            phone_number: phoneNumber,
             profile_picture: profilePicturePath,
             profile_complete: !!profilePic,
-            company_id: companyId,
         });
 
         if (dbError) {
-            console.error(
-                'Error inserting company_users record:',
-                dbError.message
-            );
+            console.error('Error saving staff profile:', dbError.message);
             setIsLoading(false);
             return;
         }
 
-        router.push('/staff/invite');
+        if (inviteToken) {
+            const { error: deleteError } = await supabase
+                .from('invitation_tokens')
+                .delete()
+                .eq('token', inviteToken);
+
+            if (deleteError) {
+                console.error(
+                    'Error deleting invitation token:',
+                    deleteError.message
+                );
+            } else {
+                localStorage.removeItem('invitation_token');
+            }
+        }
+
+        localStorage.removeItem('staff_role');
+
+        router.push('/customers');
         setIsLoading(false);
     }
 
@@ -131,11 +146,12 @@ export default function CompleteProfile(): JSX.Element {
                 Complete Your Profile
             </h1>
             <p className="mb-8 text-center text-xl text-gray-600 md:mb-10">
-                Fill in your details to get started.
+                Just a few more steps to get fully set up.
             </p>
+
             <form
-                className="grid grid-cols-1 gap-y-6 gap-x-8 md:grid-cols-2"
                 onSubmit={handleSubmit}
+                className="grid grid-cols-1 gap-y-6 gap-x-8 md:grid-cols-2"
             >
                 <div className="md:col-span-2 flex flex-col items-center">
                     <label
@@ -152,7 +168,7 @@ export default function CompleteProfile(): JSX.Element {
                                 isDragActive
                                     ? 'border-green-500 bg-green-50'
                                     : 'border-gray-300 bg-gray-100'
-                            } cursor-pointer transition-all duration-300 hover:shadow-lg`}
+                            } cursor-pointer hover:shadow-lg transition-all duration-300`}
                         >
                             <input {...getInputProps()} id="profilePicture" />
                             {preview ? (
@@ -176,7 +192,7 @@ export default function CompleteProfile(): JSX.Element {
                         )}
                     </div>
                     <p className="mt-3 text-center text-sm text-gray-500">
-                        Upload a profile picture to personalise your account.
+                        Upload a picture to personalize your account.
                     </p>
                 </div>
 
@@ -218,30 +234,10 @@ export default function CompleteProfile(): JSX.Element {
 
                 <div className="flex flex-col">
                     <label
-                        htmlFor="email"
-                        className="mb-2 text-lg font-semibold text-gray-700"
-                    >
-                        Email Address <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                        id="email"
-                        type="email"
-                        value={email}
-                        disabled
-                        className="w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 px-5 py-4 text-lg leading-relaxed text-gray-900 placeholder-gray-400 shadow-sm focus:outline-none"
-                    />
-                    <p className="mt-1 text-sm text-gray-500">
-                        This email was used to create your account.
-                    </p>
-                </div>
-
-                <div className="flex flex-col">
-                    <label
                         htmlFor="phoneNumber"
                         className="mb-2 text-lg font-semibold text-gray-700"
                     >
-                        Phone Number{' '}
-                        <span className="text-gray-400">(Optional)</span>
+                        Phone Number (Optional)
                     </label>
                     <input
                         id="phoneNumber"
@@ -253,55 +249,50 @@ export default function CompleteProfile(): JSX.Element {
                     />
                 </div>
 
-                <div className="flex flex-col md:col-span-2">
+                <div className="md:col-span-2 flex flex-col">
                     <label
                         htmlFor="role"
                         className="mb-2 text-lg font-semibold text-gray-700"
                     >
-                        Role <span className="text-red-500">*</span>
+                        Your Role
                     </label>
-                    <div className="flex items-center">
+                    <div className="relative flex items-center">
                         <select
                             id="role"
                             value={role}
-                            onChange={(e) => setRole(e.target.value)}
-                            required
-                            className="flex-1 rounded-lg border border-gray-300 bg-white px-5 py-4 text-lg text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                            disabled
+                            className="flex-1 cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 px-5 py-4 text-lg text-gray-900 shadow-sm focus:outline-none"
                         >
-                            <option value="">Select a role</option>
-                            <option value="admin">Admin</option>
-                            <option value="manager">Manager</option>
-                            <option value="driver">Driver</option>
-                            <option value="warehouse-staff">
-                                Warehouse Staff
-                            </option>
+                            <option value="">{role || 'No role found'}</option>
                         </select>
                         <div
-                            className="relative ml-3 cursor-pointer"
+                            className="ml-2 text-green-600 relative"
                             onMouseEnter={() => setShowTooltip(true)}
                             onMouseLeave={() => setShowTooltip(false)}
                         >
-                            <FiInfo className="h-6 w-6 text-green-600" />
+                            <FiInfo className="h-6 w-6 cursor-pointer" />
                             {showTooltip && (
-                                <div className="absolute right-full top-1/2 mr-2 w-64 -translate-y-1/2 rounded-md bg-green-700 p-2 text-xs text-white shadow-lg">
+                                <div className="absolute right-full top-1/2 mr-2 w-64 -translate-y-1/2 rounded-md bg-green-700 p-3 text-xs text-white shadow-lg">
                                     <p className="mb-1 font-bold">
                                         Role Descriptions:
                                     </p>
                                     <ul className="list-disc pl-4">
                                         <li>
-                                            <strong>Admin:</strong> Full control
+                                            <strong>Admin:</strong> Can add,
+                                            delete, and manage everything.
                                         </li>
                                         <li>
-                                            <strong>Manager:</strong> Limited
-                                            control
+                                            <strong>Manager:</strong> Can manage
+                                            most aspects with some limitations.
                                         </li>
                                         <li>
-                                            <strong>Driver:</strong> Driver
-                                            interface only
+                                            <strong>Driver:</strong> Can access
+                                            only the driver interface.
                                         </li>
                                         <li>
                                             <strong>Warehouse Staff:</strong>{' '}
-                                            Warehouse interface only
+                                            Has access to warehouse-specific
+                                            functions.
                                         </li>
                                     </ul>
                                 </div>
@@ -316,7 +307,7 @@ export default function CompleteProfile(): JSX.Element {
                         disabled={isLoading}
                         className="mt-1 w-full rounded-lg bg-green-600 px-6 py-4 text-lg font-semibold text-white shadow hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 disabled:opacity-50"
                     >
-                        {isLoading ? 'Submitting...' : 'Submit Details'}
+                        {isLoading ? 'Submitting...' : 'Complete Profile'}
                     </button>
                 </div>
             </form>

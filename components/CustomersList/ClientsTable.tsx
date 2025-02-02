@@ -11,16 +11,17 @@ import {
     FaAngleRight,
     FaAngleDoubleRight,
     FaSort,
+    FaPlus,
 } from 'react-icons/fa';
 import { GoSearch } from 'react-icons/go';
-import ClientEditModal from './ClientEditModal';
-import ClientDeleteModal from './ClientDeleteModal';
+import { CiImport, CiExport } from 'react-icons/ci';
+import Papa from 'papaparse';
 import ImportCSVModal from './ImportCSVModal';
 import SortModal from './SortModal';
 import SuccessAnimation from '../SuccessAnimation';
-import { FaPlus } from 'react-icons/fa';
-import { CiImport, CiExport } from 'react-icons/ci';
-import Papa from 'papaparse';
+import ClientEditModal from './ClientEditModal';
+import ClientDeleteModal from './ClientDeleteModal';
+import { useUserRole } from '@/hooks/useUserRole';
 
 type ProductType = {
     product_name: string;
@@ -40,7 +41,7 @@ type ContactDetails = {
     address: string;
 };
 
-type Client = {
+export type Client = {
     id: string;
     company_name: string;
     slug: string;
@@ -50,7 +51,7 @@ type Client = {
     created_at: string;
 };
 
-type ClientsTableProps = {
+export type ClientsTableProps = {
     clients: Client[];
     loading: boolean;
     fetchClients: (searchQuery: string) => Promise<void>;
@@ -65,70 +66,76 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     handleDelete,
     handleSave,
 }) => {
+    const router = useRouter();
+    const { userRole, loading: roleLoading } = useUserRole();
+
     const [isEditingClientDetails, setIsEditingClientDetails] = useState(false);
     const [customerToEditClientDetails, setCustomerToEditClientDetails] =
         useState<Partial<Client>>({});
-
     const [isDeletingClientDetails, setIsDeletingClientDetails] =
         useState(false);
     const [customerToDelete, setCustomerToDelete] = useState<Partial<Client>>(
         {}
     );
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [isSortModalOpen, setIsSortModalOpen] = useState(false);
     const [sortField, setSortField] = useState<string>('company_name');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
     const [sortedClients, setSortedClients] = useState<Client[]>(clients);
     const [showSuccess, setShowSuccess] = useState<boolean>(false);
-    const [isSortModalOpen, setIsSortModalOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
 
-    const itemsPerPage = 7;
-    const router = useRouter();
+    const canAddCustomer = userRole?.permissions.add_customer;
+    const canEditCustomer = userRole?.permissions.edit_customer;
+    const canRemoveCustomer = userRole?.permissions.remove_customer;
+    const canImportCSV = userRole?.permissions.import_csv;
+    const canExportCSV = userRole?.permissions.export_csv;
 
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const query = new URLSearchParams(window.location.search);
-            if (query.get('success') === '1') {
-                setShowSuccess(true);
+    const handleExportCSV = () => {
+        const flatData = clients.flatMap((client) =>
+            client.locations.map((location) => ({
+                'Company Name': client.company_name || 'Unknown Company',
+                Email: client.contact_details?.email || 'No Email Provided',
+                Phone: client.contact_details?.phone || 'No Phone Provided',
+                'Location Name': location.location_name || 'No Location Name',
+                Address: location.address || 'No Address Provided',
+                'Initial Empty Bins': location.initial_empty_bins || '0',
+                'Default Product Types': location.default_product_types?.length
+                    ? location.default_product_types
+                          .map((p) => p.product_name)
+                          .join(', ')
+                    : 'No Products',
+                'Last Updated': client.updated_at || 'Not Available',
+                'Created At': client.created_at || 'Not Available',
+            }))
+        );
 
-                query.delete('success');
-                const newUrl =
-                    window.location.pathname + '?' + query.toString();
-                router.replace(newUrl);
+        const csv = Papa.unparse(flatData, { header: true });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'clients.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
-                setTimeout(() => {
-                    setShowSuccess(false);
-                }, 700);
-            }
-        }
-    }, [router]);
-
-    const totalPages = Math.max(
-        1,
-        Math.ceil(sortedClients.length / itemsPerPage)
-    );
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(sortedClients.length / 7));
+    const indexOfLastItem = currentPage * 7;
+    const indexOfFirstItem = indexOfLastItem - 7;
     const currentClients = sortedClients.slice(
         indexOfFirstItem,
         indexOfLastItem
     );
 
     const toFirstPage = () => setCurrentPage(1);
-    const toLastPage = () => {
-        if (currentPage < totalPages) {
-            setCurrentPage(totalPages);
-        }
-    };
+    const toLastPage = () => setCurrentPage(totalPages);
     const prevPage = () => {
-        if (currentPage > 1) {
-            setCurrentPage(currentPage - 1);
-        }
+        if (currentPage > 1) setCurrentPage(currentPage - 1);
     };
     const nextPage = () => {
-        if (currentPage < totalPages) {
-            setCurrentPage(currentPage + 1);
-        }
+        if (currentPage < totalPages) setCurrentPage(currentPage + 1);
     };
 
     useEffect(() => {
@@ -194,7 +201,9 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
     };
 
     const handleAddCustomerButtonClick = () => {
-        router.push('/customers/add');
+        if (canAddCustomer) {
+            router.push('/customers/add');
+        }
     };
 
     const handleCustomerViewButtonClick = (customer: Partial<Client>) => {
@@ -203,11 +212,12 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
 
     const openEditModal = (clientId: string) => {
         const client = clients.find((c) => c.id === clientId);
-        if (client) {
+        if (client && canEditCustomer) {
             setIsEditingClientDetails(true);
             setCustomerToEditClientDetails(client);
         }
     };
+
     const closeEditModal = () => {
         setIsEditingClientDetails(false);
         setCustomerToEditClientDetails({});
@@ -217,18 +227,17 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
         setIsImportModalOpen(false);
         fetchClients('');
         setShowSuccess(true);
-        setTimeout(() => {
-            setShowSuccess(false);
-        }, 700);
+        setTimeout(() => setShowSuccess(false), 700);
     };
 
     const openDeleteModal = (clientId: string) => {
         const client = clients.find((c) => c.id === clientId);
-        if (client) {
+        if (client && canRemoveCustomer) {
             setIsDeletingClientDetails(true);
             setCustomerToDelete(client);
         }
     };
+
     const closeDeleteModal = () => {
         setIsDeletingClientDetails(false);
         setCustomerToDelete({});
@@ -256,38 +265,38 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
         }
     };
 
-    const exportCSV = () => {
-        const flatData = clients.flatMap((client) =>
-            client.locations.map((location) => ({
-                'Company Name': client.company_name || 'Unknown Company',
-                Email: client.contact_details?.email || 'No Email Provided',
-                Phone: client.contact_details?.phone || 'No Phone Provided',
-                'Location Name': location.location_name || 'No Location Name',
-                Address: location.address || 'No Address Provided',
-                'Initial Empty Bins': location.initial_empty_bins || '0',
-                'Default Product Types': location.default_product_types?.length
-                    ? location.default_product_types
-                          .map((p) => p.product_name)
-                          .join(', ')
-                    : 'No Products',
-                'Last Updated': client.updated_at || 'Not Available',
-                'Created At': client.created_at || 'Not Available',
-            }))
+    let content: JSX.Element;
+
+    if (roleLoading) {
+        content = (
+            <div className="flex justify-center items-center min-h-screen">
+                <svg
+                    className="animate-spin h-8 w-8 text-green-600 mr-2"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                >
+                    <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                    ></circle>
+                    <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                </svg>
+                <p className="text-lg font-medium text-gray-600">
+                    Loading customer details...
+                </p>
+            </div>
         );
-
-        const csv = Papa.unparse(flatData, { header: true });
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', 'clients.csv');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
-    return (
-        <div className="flex justify-center py-8 transition-all duration-100">
+    } else {
+        content = (
             <div className="w-11/12 border border-gray-300 rounded-lg shadow-lg mt-5">
                 <div className="flex items-center bg-white sticky top-0 z-10 border-b rounded-t-lg px-4 py-3 space-x-4">
                     <div className="relative flex-grow my-2">
@@ -305,12 +314,21 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                             }
                         />
                     </div>
+
                     <button
-                        className="flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg 
-        hover:bg-green-700 shadow-md transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 
-        focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                        onClick={
+                            canAddCustomer
+                                ? handleAddCustomerButtonClick
+                                : undefined
+                        }
+                        disabled={!canAddCustomer}
+                        className={`flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg 
+    hover:bg-green-700 shadow-md transition-all duration-200 ease-in-out ${
+        !canAddCustomer
+            ? 'opacity-50 cursor-not-allowed'
+            : 'hover:scale-105 active:scale-95'
+    } focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2`}
                         style={{ height: '3rem' }}
-                        onClick={handleAddCustomerButtonClick}
                     >
                         <span className="pr-2 text-lg">
                             <FaPlus />
@@ -319,11 +337,19 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                     </button>
 
                     <button
-                        className="flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg 
-        hover:bg-green-700 shadow-md transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 
-        focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                        onClick={
+                            canImportCSV
+                                ? () => setIsImportModalOpen(true)
+                                : undefined
+                        }
+                        disabled={!canImportCSV}
+                        className={`flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg 
+    hover:bg-green-700 shadow-md transition-all duration-200 ease-in-out ${
+        !canImportCSV
+            ? 'opacity-50 cursor-not-allowed'
+            : 'hover:scale-105 active:scale-95'
+    } focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2`}
                         style={{ height: '3rem' }}
-                        onClick={() => setIsImportModalOpen(true)}
                     >
                         <span className="pr-2 text-lg">
                             <CiImport style={{ strokeWidth: 2 }} size={20} />
@@ -332,11 +358,15 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                     </button>
 
                     <button
-                        className="flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg 
-        hover:bg-green-700 shadow-md transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 
-        focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                        onClick={canExportCSV ? handleExportCSV : undefined}
+                        disabled={!canExportCSV}
+                        className={`flex items-center justify-center px-6 bg-green-600 text-white font-bold text-lg rounded-lg 
+    hover:bg-green-700 shadow-md transition-all duration-200 ease-in-out ${
+        !canExportCSV
+            ? 'opacity-50 cursor-not-allowed'
+            : 'hover:scale-105 active:scale-95'
+    } focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2`}
                         style={{ height: '3rem' }}
-                        onClick={exportCSV}
                     >
                         <span className="pr-2 text-lg">
                             <CiExport style={{ strokeWidth: 2 }} size={20} />
@@ -403,11 +433,10 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                                     </td>
                                     <td className="px-6 py-8 border-b">
                                         {client.locations.reduce(
-                                            (total, location) =>
+                                            (total, loc) =>
                                                 total +
                                                 Number(
-                                                    location.initial_empty_bins ||
-                                                        0
+                                                    loc.initial_empty_bins || 0
                                                 ),
                                             0
                                         )}
@@ -416,26 +445,36 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                                         <div className="flex justify-center space-x-4">
                                             <FaEye
                                                 className="text-gray-500 cursor-pointer hover:text-green-500"
+                                                size={18}
                                                 onClick={() =>
                                                     handleCustomerViewButtonClick(
                                                         client
                                                     )
                                                 }
-                                                size={18}
                                             />
                                             <FaEdit
-                                                className="text-gray-500 cursor-pointer hover:text-green-500"
+                                                className={`${
+                                                    canEditCustomer
+                                                        ? 'text-gray-500 cursor-pointer hover:text-green-500'
+                                                        : 'text-gray-300 cursor-not-allowed'
+                                                }`}
+                                                size={18}
                                                 onClick={() =>
+                                                    canEditCustomer &&
                                                     openEditModal(client.id)
                                                 }
-                                                size={18}
                                             />
                                             <FaTrashAlt
-                                                className="text-gray-500 cursor-pointer hover:text-red-500"
+                                                className={`${
+                                                    canRemoveCustomer
+                                                        ? 'text-gray-500 cursor-pointer hover:text-red-500'
+                                                        : 'text-gray-300 cursor-not-allowed'
+                                                }`}
+                                                size={18}
                                                 onClick={() =>
+                                                    canRemoveCustomer &&
                                                     openDeleteModal(client.id)
                                                 }
-                                                size={18}
                                             />
                                         </div>
                                     </td>
@@ -447,20 +486,12 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
 
                 <div className="flex justify-center items-center p-4 border-t bg-white rounded-b-lg space-x-4">
                     <FaAngleDoubleLeft
-                        className={`cursor-pointer ${
-                            currentPage === 1
-                                ? 'text-gray-300'
-                                : 'hover:text-green-500'
-                        }`}
+                        className={`cursor-pointer ${currentPage === 1 ? 'text-gray-300' : 'hover:text-green-500'}`}
                         onClick={toFirstPage}
                         size={20}
                     />
                     <FaAngleLeft
-                        className={`cursor-pointer ${
-                            currentPage === 1
-                                ? 'text-gray-300'
-                                : 'hover:text-green-500'
-                        }`}
+                        className={`cursor-pointer ${currentPage === 1 ? 'text-gray-300' : 'hover:text-green-500'}`}
                         onClick={prevPage}
                         size={20}
                     />
@@ -468,25 +499,23 @@ const ClientsTable: React.FC<ClientsTableProps> = ({
                         Page {currentPage} of {totalPages}
                     </span>
                     <FaAngleRight
-                        className={`cursor-pointer ${
-                            currentPage === totalPages
-                                ? 'text-gray-300'
-                                : 'hover:text-green-500'
-                        }`}
+                        className={`cursor-pointer ${currentPage === totalPages ? 'text-gray-300' : 'hover:text-green-500'}`}
                         onClick={nextPage}
                         size={20}
                     />
                     <FaAngleDoubleRight
-                        className={`cursor-pointer ${
-                            currentPage === totalPages
-                                ? 'text-gray-300'
-                                : 'hover:text-green-500'
-                        }`}
+                        className={`cursor-pointer ${currentPage === totalPages ? 'text-gray-300' : 'hover:text-green-500'}`}
                         onClick={toLastPage}
                         size={20}
                     />
                 </div>
             </div>
+        );
+    }
+
+    return (
+        <div className="flex justify-center py-8 transition-all duration-100">
+            {content}
 
             {showSuccess && <SuccessAnimation />}
 
