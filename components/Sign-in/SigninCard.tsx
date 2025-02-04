@@ -1,4 +1,3 @@
-// components/Sign-in/SigninCard.tsx
 'use client';
 
 import React, { useState } from 'react';
@@ -6,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export default function SigninCard() {
-    const router = useRouter(); // Use router at the top level
+    const router = useRouter();
     const supabase = createClientComponentClient();
     const [email, setEmail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
@@ -17,8 +16,6 @@ export default function SigninCard() {
         navigator.clipboard.writeText('info@wasteerp.com');
     };
 
-    // Use maybeSingle() so that if no company_user row exists (i.e. the CEO hasn’t completed signup),
-    // we simply redirect the user to the Setup Company page.
     const handleSubmissionSuccess = async (
         authUserId: string
     ): Promise<void> => {
@@ -31,13 +28,10 @@ export default function SigninCard() {
 
             if (error) {
                 console.error('Error fetching user profile:', error.message);
-                // If there's an error (or no row is found), redirect to the setup company page.
                 router.push('/setup-company');
                 return;
             }
 
-            // If data is returned and profile_complete is true, redirect to /customers.
-            // Otherwise, redirect to /setup-company.
             if (data && data.profile_complete) {
                 router.push('/customers');
             } else {
@@ -55,7 +49,6 @@ export default function SigninCard() {
         setError(null);
 
         try {
-            // signInWithPassword => on success, tokens are placed in HTTP-only cookies
             const { data, error: signInError } =
                 await supabase.auth.signInWithPassword({
                     email,
@@ -88,7 +81,6 @@ export default function SigninCard() {
                 return;
             }
 
-            // If sign-in was successful => user is in cookies
             if (data?.user?.id) {
                 await handleSubmissionSuccess(data.user.id);
             }

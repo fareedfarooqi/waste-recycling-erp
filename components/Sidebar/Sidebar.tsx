@@ -62,7 +62,10 @@ const Sidebar = (): JSX.Element => {
             onMouseLeave={() => setSidebarOpen(false)}
         >
             <div className="mb-2 flex items-center justify-center h-20">
-                <CgProfile className="text-5xl cursor-pointer text-white hover:bg-green-600 p-1 rounded-full" />
+                <CgProfile
+                    className="text-5xl cursor-pointer text-white hover:bg-green-600 p-1 rounded-full"
+                    onClick={() => router.push('/profile')}
+                />
             </div>
 
             <div className="space-y-4">

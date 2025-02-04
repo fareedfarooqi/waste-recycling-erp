@@ -1,0 +1,156 @@
+'use client';
+
+import React, { useState, useCallback } from 'react';
+import { useSidebar } from '@/components/Sidebar/SidebarContext';
+import Sidebar from '@/components/Sidebar/Sidebar';
+import SidebarSmall from '@/components/Sidebar/SidebarSmall';
+import { useDropzone } from 'react-dropzone';
+import { FiUpload, FiX } from 'react-icons/fi';
+import { X } from 'lucide-react';
+
+function ProfilePage(): JSX.Element {
+    const { isSidebarOpen } = useSidebar();
+    const [profilePic, setProfilePic] = useState<File | null>(null);
+    const [preview, setPreview] = useState('');
+
+    // Handle file drop
+    const onDrop = useCallback((acceptedFiles: File[]) => {
+        if (acceptedFiles.length > 0) {
+            const file = acceptedFiles[0];
+            setProfilePic(file);
+            const reader = new FileReader();
+            reader.onload = () => setPreview(reader.result as string);
+            reader.readAsDataURL(file);
+        }
+    }, []);
+
+    // Remove profile picture
+    const handleRemoveImage = () => {
+        setProfilePic(null);
+        setPreview('');
+    };
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        onDrop,
+        accept: { 'image/*': [] },
+        multiple: false,
+    });
+
+    return (
+        <div className="flex bg-green-50 min-h-screen">
+            {/* Sidebar */}
+            {isSidebarOpen ? <Sidebar /> : <SidebarSmall />}
+
+            {/* Full-Page Input Section */}
+            <div className="flex-1 bg-white shadow-lg p-10 flex justify-center items-center">
+                <div className="w-full max-w-3xl">
+                    {/* Close Button */}
+                    <button className="absolute top-6 right-6 text-gray-500 hover:text-gray-800">
+                        <X size={24} />
+                    </button>
+
+                    <h1 className="text-3xl font-semibold text-gray-800 text-center mb-6">
+                        Edit Profile
+                    </h1>
+
+                    {/* Profile Picture Upload */}
+                    <div className="flex flex-col items-center mb-6">
+                        <label className="mb-2 text-lg font-semibold text-gray-700">
+                            Profile Picture
+                        </label>
+                        <div className="relative">
+                            <div
+                                {...getRootProps()}
+                                className={`relative flex h-28 w-28 items-center justify-center rounded-full border-2 ${
+                                    isDragActive
+                                        ? 'border-green-500 bg-green-50'
+                                        : 'border-gray-300 bg-gray-100'
+                                } cursor-pointer transition-all duration-300 hover:shadow-lg`}
+                            >
+                                <input {...getInputProps()} />
+                                {preview ? (
+                                    <img
+                                        src={preview}
+                                        alt="Profile preview"
+                                        className="h-full w-full rounded-full object-cover"
+                                    />
+                                ) : (
+                                    <FiUpload className="h-10 w-10 text-gray-400" />
+                                )}
+                            </div>
+                            {preview && (
+                                <button
+                                    type="button"
+                                    onClick={handleRemoveImage}
+                                    className="absolute top-1 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white shadow-md hover:bg-red-700 focus:outline-none"
+                                >
+                                    <FiX className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
+                        <p className="mt-2 text-sm text-gray-500 text-center">
+                            Upload a profile picture to personalize your
+                            account.
+                        </p>
+                    </div>
+
+                    {/* Input Fields */}
+                    <div className="grid grid-cols-1 gap-6">
+                        <div>
+                            <label className="text-gray-600 text-sm font-medium">
+                                Full Name
+                            </label>
+                            <input
+                                type="text"
+                                className="w-full p-3 mt-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                placeholder="Enter your full name"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-gray-600 text-sm font-medium">
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                className="w-full p-3 mt-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                placeholder="Enter your email"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-gray-600 text-sm font-medium">
+                                Phone Number
+                            </label>
+                            <input
+                                type="tel"
+                                className="w-full p-3 mt-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                placeholder="Enter your phone number"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-gray-600 text-sm font-medium">
+                                Role
+                            </label>
+                            <input
+                                type="text"
+                                className="w-full p-3 mt-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                placeholder="Enter your role"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Save Button */}
+                    <div className="mt-6">
+                        <button className="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition">
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default ProfilePage;

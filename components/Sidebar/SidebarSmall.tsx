@@ -70,31 +70,22 @@ const SidebarSmall = (): JSX.Element => {
         router.push(route);
     };
 
-    // **New: Handle Logout Function**
     const handleLogout = async () => {
         try {
-            // Call Supabase's signOut method
             const { error } = await supabase.auth.signOut();
 
             if (error) {
-                // Handle error (e.g., display a notification)
                 console.error('Error signing out:', error.message);
-                // Optionally, display a user-friendly message here
                 return;
             }
 
-            // Sign-out successful
             console.log('User signed out successfully.');
 
-            // Redirect to the sign-in page
             router.push('/sign-in');
 
-            // Close the sidebar
             setSidebarOpen(false);
         } catch (err) {
-            // Handle unexpected errors
             console.error('Unexpected error during sign out:', err);
-            // Optionally, display a user-friendly message here
         }
     };
 
@@ -139,7 +130,7 @@ const SidebarSmall = (): JSX.Element => {
 
             <div
                 className="flex items-center justify-center mb-8 relative group"
-                onClick={handleLogout} // **Updated onClick Handler**
+                onClick={handleLogout}
             >
                 <div className="p-2 hover:bg-green-600 rounded-full cursor-pointer flex items-center justify-center">
                     <ImExit className="text-3xl text-white" />
