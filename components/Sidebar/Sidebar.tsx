@@ -12,8 +12,10 @@ import {
 import { CgProfile } from 'react-icons/cg';
 import { ImExit } from 'react-icons/im';
 import { useSidebar } from '@/components/Sidebar/SidebarContext';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 const Sidebar = (): JSX.Element => {
+    const supabase = createClientComponentClient();
     const { setSidebarOpen } = useSidebar();
     const router = useRouter();
 
@@ -38,9 +40,25 @@ const Sidebar = (): JSX.Element => {
         router.push(route);
     };
 
+    const handleLogout = async () => {
+        try {
+            const { error } = await supabase.auth.signOut();
+
+            if (error) {
+                console.error('Error signing out:', error.message);
+                return;
+            }
+
+            router.push('/sign-in');
+            setSidebarOpen(false);
+        } catch (err) {
+            console.error('Unexpected error during sign out:', err);
+        }
+    };
+
     return (
         <div
-            className="w-64 h-screen bg-green-700 text-white p-6 flex flex-col transition-all duration-500 overflow-y-auto"
+            className="w-64 min-h-screen bg-green-700 text-white p-6 flex flex-col transition-all duration-500 overflow-y-auto"
             onMouseLeave={() => setSidebarOpen(false)}
         >
             <div className="mb-2 flex items-center justify-center h-20">
@@ -80,10 +98,7 @@ const Sidebar = (): JSX.Element => {
             <div className="space-y-3 mt-auto">
                 <div className="font-bold text-2xl">Session</div>
                 <div
-                    onClick={() => {
-                        router.push('/logout');
-                        setSidebarOpen(false);
-                    }}
+                    onClick={handleLogout}
                     className="flex items-center space-x-3 text-white hover:bg-green-600 p-2 rounded-lg cursor-pointer"
                 >
                     <ImExit className="text-2xl" />
