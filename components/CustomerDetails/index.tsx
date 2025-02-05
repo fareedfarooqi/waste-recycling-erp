@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/config/supabaseClient';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import ContactDetailsBox from './ContactDetailsBox';
 import PickupLocationsGrid from './PickupLocationsGrid';
 import InboundProductsTable from './InboundProductsTable';
@@ -76,6 +76,7 @@ interface Props {
 }
 
 const CustomerDetails: React.FC<Props> = ({ slug }) => {
+    const supabase = createClientComponentClient();
     const [customerInfo, setCustomerInfo] = useState<CustomerInfo | null>(null);
     const [pickups, setPickups] = useState<Pickup[]>([]);
     const [inboundProducts, setInboundProducts] = useState<InboundProduct[]>(

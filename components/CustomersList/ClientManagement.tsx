@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Navbar from './Navbar';
 import ClientsTable from './ClientsTable';
-import { supabase } from '@/config/supabaseClient';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 type ProductType = {
     product_name: string;
@@ -29,9 +28,12 @@ type Client = {
     slug: string;
     contact_details: ContactDetails;
     locations: Location[];
+    updated_at: string;
+    created_at: string;
 };
 
 const ClientManagement = () => {
+    const supabase = createClientComponentClient();
     const [clients, setClients] = useState<Client[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -57,8 +59,6 @@ const ClientManagement = () => {
             alert('An error occurred whilst updating your customer');
             throw error;
         } else {
-            alert('Successfully updated details of the client.');
-
             if (updatedRows && updatedRows.length > 0) {
                 const newRow = updatedRows[0];
 
@@ -102,8 +102,6 @@ const ClientManagement = () => {
                 'An ERROR occurred whilst attempting to delete the customer.'
             );
             throw error;
-        } else {
-            alert('Successfully deleted the customer.');
         }
 
         setClients((prevClients) =>
@@ -137,7 +135,6 @@ const ClientManagement = () => {
 
     return (
         <div>
-            <Navbar fetchClients={fetchClients} />
             <ClientsTable
                 clients={clients}
                 loading={loading}

@@ -12,8 +12,10 @@ import {
 import { CgProfile } from 'react-icons/cg';
 import { ImExit } from 'react-icons/im';
 import { useSidebar } from '@/components/Sidebar/SidebarContext';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 const SidebarSmall = (): JSX.Element => {
+    const supabase = createClientComponentClient();
     const { setSidebarOpen } = useSidebar();
     const [hoverTimeout, setHoverTimeout] = useState<ReturnType<
         typeof setTimeout
@@ -48,7 +50,6 @@ const SidebarSmall = (): JSX.Element => {
         },
     ];
 
-    // Start hover timer
     const handleMouseEnter = () => {
         const timeout = setTimeout(() => {
             setSidebarOpen(true);
@@ -56,13 +57,11 @@ const SidebarSmall = (): JSX.Element => {
         setHoverTimeout(timeout);
     };
 
-    // Clear hover timer and close sidebar on mouse leave
     const handleMouseLeave = () => {
         if (hoverTimeout) clearTimeout(hoverTimeout);
         setSidebarOpen(false);
     };
 
-    // On click, navigate + CLEAR any existing timeout
     const handleMenuClick = (route: string) => {
         if (hoverTimeout) {
             clearTimeout(hoverTimeout);
@@ -71,19 +70,45 @@ const SidebarSmall = (): JSX.Element => {
         router.push(route);
     };
 
+    // **New: Handle Logout Function**
+    const handleLogout = async () => {
+        try {
+            // Call Supabase's signOut method
+            const { error } = await supabase.auth.signOut();
+
+            if (error) {
+                // Handle error (e.g., display a notification)
+                console.error('Error signing out:', error.message);
+                // Optionally, display a user-friendly message here
+                return;
+            }
+
+            // Sign-out successful
+            console.log('User signed out successfully.');
+
+            // Redirect to the sign-in page
+            router.push('/sign-in');
+
+            // Close the sidebar
+            setSidebarOpen(false);
+        } catch (err) {
+            // Handle unexpected errors
+            console.error('Unexpected error during sign out:', err);
+            // Optionally, display a user-friendly message here
+        }
+    };
+
     return (
         <div
-            className="w-20 h-screen bg-green-700 text-white flex flex-col justify-between transition-all duration-600 relative"
+            className="w-20 min-h-screen bg-green-700 text-white flex flex-col justify-between transition-all duration-600 relative"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
         >
             <div className="space-y-6 mt-4">
-                {/* Top Profile Icon */}
                 <div className="relative flex items-center justify-center h-20 group">
                     <CgProfile
                         className="text-5xl cursor-pointer text-white hover:bg-green-600 p-1 rounded-full"
                         onClick={() => {
-                            // Also clear any timeouts here
                             if (hoverTimeout) clearTimeout(hoverTimeout);
                             setSidebarOpen(false);
                             router.push('/profile');
@@ -94,13 +119,12 @@ const SidebarSmall = (): JSX.Element => {
                     </span>
                 </div>
 
-                {/* Main Menu */}
                 <div className="space-y-6">
                     {menuItems.map((item, index) => (
                         <div
                             key={index}
                             className="flex items-center justify-center relative group"
-                            onClick={() => handleMenuClick(item.route)} // <-- updated
+                            onClick={() => handleMenuClick(item.route)}
                         >
                             <div className="p-2 hover:bg-green-600 rounded-full cursor-pointer flex items-center justify-center">
                                 {item.icon}
@@ -113,14 +137,9 @@ const SidebarSmall = (): JSX.Element => {
                 </div>
             </div>
 
-            {/* Exit at bottom */}
             <div
                 className="flex items-center justify-center mb-8 relative group"
-                onClick={() => {
-                    if (hoverTimeout) clearTimeout(hoverTimeout);
-                    setSidebarOpen(false);
-                    router.push('/logout');
-                }}
+                onClick={handleLogout} // **Updated onClick Handler**
             >
                 <div className="p-2 hover:bg-green-600 rounded-full cursor-pointer flex items-center justify-center">
                     <ImExit className="text-3xl text-white" />
