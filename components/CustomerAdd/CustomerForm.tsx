@@ -2,12 +2,16 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/config/supabaseClient';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { IoIosRemoveCircleOutline } from 'react-icons/io';
 
-const CustomerForm: React.FC = () => {
-    const router = useRouter();
+interface CustomerFormProps {
+    onAdditionSuccess?: () => void;
+}
 
+const CustomerForm: React.FC<CustomerFormProps> = ({ onAdditionSuccess }) => {
+    const supabase = createClientComponentClient();
+    const router = useRouter();
     const [companyName, setCompanyName] = useState('');
     const [contactDetails, setContactDetails] = useState({
         email: '',
@@ -24,8 +28,8 @@ const CustomerForm: React.FC = () => {
     ]);
 
     const handleAddLocation = () => {
-        setLocations((prevLocations) => [
-            ...prevLocations,
+        setLocations((prev) => [
+            ...prev,
             {
                 locationName: '',
                 address: '',
@@ -37,79 +41,83 @@ const CustomerForm: React.FC = () => {
 
     const handleRemoveLocation = (index: number) => {
         if (locations.length > 1) {
-            setLocations((prevLocations) =>
-                prevLocations.filter((_, i) => i !== index)
-            );
+            setLocations((prev) => prev.filter((_, i) => i !== index));
         }
     };
 
-    const handleAddProductType = (locationIndex: number) => {
-        setLocations((prevLocations) => {
-            const updatedLocations = [...prevLocations];
-            updatedLocations[locationIndex] = {
-                ...updatedLocations[locationIndex],
+    const handleAddProductType = (locIndex: number) => {
+        setLocations((prev) => {
+            const updated = [...prev];
+            updated[locIndex] = {
+                ...updated[locIndex],
                 defaultProductTypes: [
-                    ...updatedLocations[locationIndex].defaultProductTypes,
+                    ...updated[locIndex].defaultProductTypes,
                     { productName: '', description: '' },
                 ],
             };
-            return updatedLocations;
+            return updated;
         });
     };
 
     const handleRemoveProductType = (
-        locationIndex: number,
+        locIndex: number,
         productIndex: number
     ) => {
-        setLocations((prevLocations) => {
-            const updatedLocations = [...prevLocations];
-            if (
-                updatedLocations[locationIndex].defaultProductTypes.length > 1
-            ) {
-                updatedLocations[locationIndex].defaultProductTypes =
-                    updatedLocations[locationIndex].defaultProductTypes.filter(
-                        (_, i) => i !== productIndex
-                    );
+        setLocations((prev) => {
+            const updated = [...prev];
+            if (updated[locIndex].defaultProductTypes.length > 1) {
+                updated[locIndex].defaultProductTypes = updated[
+                    locIndex
+                ].defaultProductTypes.filter((_, i) => i !== productIndex);
             }
-            return updatedLocations;
+            return updated;
         });
+    };
+
+    const handleBinsChange = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        index: number
+    ) => {
+        let val = parseInt(e.target.value || '0', 10);
+        if (val < 0) val = 0;
+        setLocations((prev) =>
+            prev.map((loc, i) =>
+                i === index ? { ...loc, initialEmptyBins: val.toString() } : loc
+            )
+        );
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
         const customerData = {
             company_name: companyName,
             contact_details: contactDetails,
-            locations: locations.map((location) => ({
-                location_name: location.locationName,
-                address: location.address,
-                initial_empty_bins:
-                    parseInt(location.initialEmptyBins, 10) || 0,
-                default_product_types: location.defaultProductTypes.map(
-                    (product) => ({
-                        product_name: product.productName,
-                        description: product.description,
-                    })
+            locations: locations.map((loc) => ({
+                location_name: loc.locationName,
+                address: loc.address,
+                initial_empty_bins: Math.max(
+                    parseInt(loc.initialEmptyBins, 10) || 0,
+                    0
                 ),
+                default_product_types: loc.defaultProductTypes.map((p) => ({
+                    product_name: p.productName,
+                    description: p.description,
+                })),
             })),
         };
-
         try {
             const { error } = await supabase
                 .from('customers')
                 .insert([customerData]);
-
             if (error) {
-                console.error('Error inserting customer:', error.message);
+                console.error(error.message);
                 alert('Failed to add customer. Please try again.');
                 return;
             }
-
-            alert('Customer added successfully!');
-            router.push('/customers');
+            if (onAdditionSuccess) onAdditionSuccess();
+            router.push('/customers?success=1');
         } catch (err) {
-            console.error('Unexpected error:', err);
+            console.error(err);
             alert('An unexpected error occurred. Please try again.');
         }
     };
@@ -125,7 +133,6 @@ const CustomerForm: React.FC = () => {
                         Fill out the form to add a new customer
                     </p>
                 </div>
-
                 <form onSubmit={handleSubmit} className="space-y-8">
                     <div>
                         <h2 className="text-lg font-bold text-gray-700 mb-4">
@@ -146,7 +153,6 @@ const CustomerForm: React.FC = () => {
                             />
                         </div>
                     </div>
-
                     <div>
                         <h2 className="text-lg font-bold text-gray-700 mb-4">
                             Contact Details
@@ -211,7 +217,6 @@ const CustomerForm: React.FC = () => {
                             </div>
                         </div>
                     </div>
-
                     <div>
                         <h2 className="text-lg font-bold text-gray-700 mb-4">
                             Locations
@@ -270,21 +275,11 @@ const CustomerForm: React.FC = () => {
                                         />
                                         <input
                                             type="number"
+                                            min="0"
                                             placeholder="Empty Bins"
                                             value={location.initialEmptyBins}
                                             onChange={(e) =>
-                                                setLocations((prev) =>
-                                                    prev.map((loc, i) =>
-                                                        i === index
-                                                            ? {
-                                                                  ...loc,
-                                                                  initialEmptyBins:
-                                                                      e.target
-                                                                          .value,
-                                                              }
-                                                            : loc
-                                                    )
-                                                )
+                                                handleBinsChange(e, index)
                                             }
                                             className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
                                             required
@@ -301,128 +296,119 @@ const CustomerForm: React.FC = () => {
                                             </button>
                                         )}
                                     </div>
-                                    <div>
-                                        <h4 className="font-medium text-gray-600 mb-2">
-                                            Default Product Types
-                                        </h4>
-                                        {location.defaultProductTypes.map(
-                                            (product, productIndex) => (
-                                                <div
-                                                    key={productIndex}
-                                                    className="flex gap-4 items-center mb-2"
-                                                >
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Product Name"
-                                                        value={
-                                                            product.productName
-                                                        }
-                                                        onChange={(e) =>
-                                                            setLocations(
-                                                                (prev) =>
-                                                                    prev.map(
-                                                                        (
-                                                                            loc,
-                                                                            locIndex
-                                                                        ) =>
-                                                                            locIndex ===
-                                                                            index
-                                                                                ? {
-                                                                                      ...loc,
-                                                                                      defaultProductTypes:
-                                                                                          loc.defaultProductTypes.map(
-                                                                                              (
-                                                                                                  p,
-                                                                                                  i
-                                                                                              ) =>
-                                                                                                  i ===
-                                                                                                  productIndex
-                                                                                                      ? {
-                                                                                                            ...p,
-                                                                                                            productName:
-                                                                                                                e
-                                                                                                                    .target
-                                                                                                                    .value,
-                                                                                                        }
-                                                                                                      : p
-                                                                                          ),
-                                                                                  }
-                                                                                : loc
-                                                                    )
+                                    <h4 className="font-medium text-gray-600 mb-2">
+                                        Default Product Types
+                                    </h4>
+                                    {location.defaultProductTypes.map(
+                                        (product, productIndex) => (
+                                            <div
+                                                key={productIndex}
+                                                className="flex gap-4 items-center mb-2"
+                                            >
+                                                <input
+                                                    type="text"
+                                                    placeholder="Product Name"
+                                                    value={product.productName}
+                                                    onChange={(e) =>
+                                                        setLocations((prev) =>
+                                                            prev.map(
+                                                                (
+                                                                    loc,
+                                                                    locIndex
+                                                                ) =>
+                                                                    locIndex ===
+                                                                    index
+                                                                        ? {
+                                                                              ...loc,
+                                                                              defaultProductTypes:
+                                                                                  loc.defaultProductTypes.map(
+                                                                                      (
+                                                                                          p,
+                                                                                          i
+                                                                                      ) =>
+                                                                                          i ===
+                                                                                          productIndex
+                                                                                              ? {
+                                                                                                    ...p,
+                                                                                                    productName:
+                                                                                                        e
+                                                                                                            .target
+                                                                                                            .value,
+                                                                                                }
+                                                                                              : p
+                                                                                  ),
+                                                                          }
+                                                                        : loc
+                                                            )
+                                                        )
+                                                    }
+                                                    className="border border-gray-300 rounded-lg px-4 py-3 w-1/3 focus:outline-none focus:ring-2 focus:ring-green-400"
+                                                    required
+                                                />
+                                                <textarea
+                                                    placeholder="Description"
+                                                    value={product.description}
+                                                    onChange={(e) =>
+                                                        setLocations((prev) =>
+                                                            prev.map(
+                                                                (
+                                                                    loc,
+                                                                    locIndex
+                                                                ) =>
+                                                                    locIndex ===
+                                                                    index
+                                                                        ? {
+                                                                              ...loc,
+                                                                              defaultProductTypes:
+                                                                                  loc.defaultProductTypes.map(
+                                                                                      (
+                                                                                          p,
+                                                                                          i
+                                                                                      ) =>
+                                                                                          i ===
+                                                                                          productIndex
+                                                                                              ? {
+                                                                                                    ...p,
+                                                                                                    description:
+                                                                                                        e
+                                                                                                            .target
+                                                                                                            .value,
+                                                                                                }
+                                                                                              : p
+                                                                                  ),
+                                                                          }
+                                                                        : loc
+                                                            )
+                                                        )
+                                                    }
+                                                    className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-green-400"
+                                                    rows={1}
+                                                    required
+                                                />
+                                                {location.defaultProductTypes
+                                                    .length > 1 && (
+                                                    <IoIosRemoveCircleOutline
+                                                        className="text-red-500 text-4xl cursor-pointer hover:text-red-700 transition duration-200"
+                                                        onClick={() =>
+                                                            handleRemoveProductType(
+                                                                index,
+                                                                productIndex
                                                             )
                                                         }
-                                                        className="border border-gray-300 rounded-lg px-4 py-3 w-1/3 focus:outline-none focus:ring-2 focus:ring-green-400"
-                                                        required
                                                     />
-                                                    <textarea
-                                                        placeholder="Description"
-                                                        value={
-                                                            product.description
-                                                        }
-                                                        onChange={(e) =>
-                                                            setLocations(
-                                                                (prev) =>
-                                                                    prev.map(
-                                                                        (
-                                                                            loc,
-                                                                            locIndex
-                                                                        ) =>
-                                                                            locIndex ===
-                                                                            index
-                                                                                ? {
-                                                                                      ...loc,
-                                                                                      defaultProductTypes:
-                                                                                          loc.defaultProductTypes.map(
-                                                                                              (
-                                                                                                  p,
-                                                                                                  i
-                                                                                              ) =>
-                                                                                                  i ===
-                                                                                                  productIndex
-                                                                                                      ? {
-                                                                                                            ...p,
-                                                                                                            description:
-                                                                                                                e
-                                                                                                                    .target
-                                                                                                                    .value,
-                                                                                                        }
-                                                                                                      : p
-                                                                                          ),
-                                                                                  }
-                                                                                : loc
-                                                                    )
-                                                            )
-                                                        }
-                                                        className="border border-gray-300 rounded-lg px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-green-400"
-                                                        rows={1}
-                                                        required
-                                                    />
-                                                    {location
-                                                        .defaultProductTypes
-                                                        .length > 1 && (
-                                                        <IoIosRemoveCircleOutline
-                                                            className="text-red-500 text-4xl cursor-pointer hover:text-red-700 transition duration-200"
-                                                            onClick={() =>
-                                                                handleRemoveProductType(
-                                                                    index,
-                                                                    productIndex
-                                                                )
-                                                            }
-                                                        />
-                                                    )}
-                                                </div>
-                                            )
-                                        )}
-                                        <button
-                                            type="button"
-                                            className="bg-blue-500 text-white px-3 py-2 mt-2 rounded-lg transition hover:bg-blue-700"
-                                            onClick={() =>
-                                                handleAddProductType(index)
-                                            }
-                                        >
-                                            Add Product Type
-                                        </button>
-                                    </div>
+                                                )}
+                                            </div>
+                                        )
+                                    )}
+                                    <button
+                                        type="button"
+                                        className="bg-blue-500 text-white px-3 py-2 mt-2 rounded-lg transition hover:bg-blue-700"
+                                        onClick={() =>
+                                            handleAddProductType(index)
+                                        }
+                                    >
+                                        Add Product Type
+                                    </button>
                                 </div>
                             ))}
                             <button
@@ -434,11 +420,16 @@ const CustomerForm: React.FC = () => {
                             </button>
                         </div>
                     </div>
-
-                    <div className="flex justify-end">
+                    <div className="flex justify-between">
+                        <button
+                            className="bg-red-500 text-white px-6 py-3 rounded-lg transition hover:bg-red-700"
+                            onClick={() => router.push('/customers')}
+                        >
+                            Cancel
+                        </button>
                         <button
                             type="submit"
-                            className="bg-green-500 text-white px-6 py-3 rounded-lg transition hover:bg-green-700"
+                            className="bg-green-600 text-white px-6 py-3 rounded-lg transition hover:bg-green-700"
                         >
                             Submit
                         </button>

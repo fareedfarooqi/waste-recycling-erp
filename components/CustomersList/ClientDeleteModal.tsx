@@ -56,25 +56,25 @@ const ClientDeleteModal: React.FC<ClientModalProps> = ({
             onClick={onClose}
         >
             <div
-                className="bg-white w-[90%] max-w-sm rounded-md p-8 shadow-lg relative"
+                className="bg-white w-[92%] max-w-lg rounded-lg p-10 shadow-lg relative"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h2 className="text-2xl font-bold text-center mb-6">
-                    Confirm Deletion
+                <h2 className="text-3xl font-bold text-center mb-6">
+                    Delete Customer
                 </h2>
-                <p className="text-lg text-center mb-8">
+                <p className="text-xl text-center mb-8">
                     Are you sure you want to delete{' '}
                     <span className="font-bold">{client.company_name}</span>?
                 </p>
                 <div className="flex justify-between">
                     <button
-                        className="bg-gray-400 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-500"
+                        className="bg-gray-300 text-gray-800 px-8 py-3 rounded-lg text-base font-bold hover:bg-gray-400 focus:ring-gray-300"
                         onClick={onClose}
                     >
                         Cancel
                     </button>
                     <button
-                        className="bg-red-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-600"
+                        className="bg-red-500 text-white px-8 py-3 rounded-lg text-base font-bold hover:bg-red-600 focus:ring-red-300"
                         onClick={handleDelete}
                     >
                         Delete
