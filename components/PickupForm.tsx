@@ -1,3 +1,4 @@
+'use client';
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/config/supabaseClient';
 import { Input } from '@/components/ui/input';
@@ -179,12 +180,12 @@ export default function PickupForm({ pickup, onComplete }: PickupFormProps) {
 
             <div className="space-y-4">
                 <div>
-                    <Label htmlFor="product_name">Product Name</Label>
+                    {/* <Label htmlFor="product_name">Product Name</Label>
                     <Input
                         id="product_name"
                         type="text"
                         value={formData.products_collected.product_name}
-                    />
+                    /> */}
                     {/* <Label htmlFor="product_name">Product Name</Label> */}
                     {/* <select */}
                     {/* id="product_name"
@@ -204,6 +205,23 @@ export default function PickupForm({ pickup, onComplete }: PickupFormProps) {
                     {/* <option value="Organic Waste">Organic Waste</option> */}
                     {/* <option value="Food Waste">Food Waste</option>
             <option value="Green Waste">Green Waste</option> */}
+
+                    <Label htmlFor="product_name">Product Name</Label>
+                    <Input
+                        id="product_name"
+                        type="text"
+                        value={formData.products_collected.product_name}
+                        onChange={(e) => {
+                            setFormData((prev) => ({
+                                ...prev,
+                                products_collected: {
+                                    ...prev.products_collected,
+                                    product_name: e.target.value,
+                                },
+                            }));
+                        }}
+                        readOnly={true} // If you want to keep it non-editable
+                    />
                 </div>
 
                 <div>

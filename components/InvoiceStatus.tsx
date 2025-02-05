@@ -176,51 +176,127 @@
 //   Type '"success"' is not assignable to type '"default" | "destructive" | "outline" | "secondary" | null | undefined'.ts(2322)
 // badge.tsx(10, 13): The expected type comes from property 'variant' which is declared here on type 'IntrinsicAttributes & BadgeProps'
 
-// FINAL CODE - 2
+// 'use client';
+
+// import React, { useEffect, useState } from 'react';
+// import { Badge } from '@/components/ui/badge';
+
+// interface InvoiceStatusProps {
+//     pickupId: string;
+// }
+
+// const InvoiceStatus: React.FC<InvoiceStatusProps> = ({ pickupId }) => {
+//     const [fetchedStatus, setFetchedStatus] = useState<string | null>(null);
+
+//     useEffect(() => {
+//         const fetchInvoiceStatus = async () => {
+//             try {
+//                 const response = await fetch(`/api/invoices/status?pickupId=${pickupId}`);
+
+//                 if (!response.ok) {
+//                     throw new Error('Failed to fetch invoice status');
+//                 }
+
+//                 const data = await response.json();
+//                 setFetchedStatus(data.status);
+//             } catch (error) {
+//                 console.error('Error fetching invoice status:', error);
+//                 setFetchedStatus('Not Available');
+//             }
+//         };
+
+//         fetchInvoiceStatus();
+//     }, [pickupId]);
+
+//     return (
+//         <div className="mb-4">
+//             <h2 className="text-xl font-semibold">Invoice Status</h2>
+//             <Badge
+//                 className={`px-4 py-2 rounded-full ${
+//                     fetchedStatus === 'Paid' ? 'bg-green-100 text-green-800' :
+//                     fetchedStatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+//                     'bg-red-100 text-red-800'
+//                 }`}
+//             >
+//                 {fetchedStatus || 'Loading...'}
+//             </Badge>
+//         </div>
+//     );
+// };
+
+// export default InvoiceStatus;
+
+// final code - 1
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@/config/supabaseClient';
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 
 interface InvoiceStatusProps {
     pickupId: string;
 }
 
-const InvoiceStatus: React.FC<InvoiceStatusProps> = ({ pickupId }) => {
-    const [fetchedStatus, setFetchedStatus] = useState<string | null>(null);
+export default function InvoiceStatus({ pickupId }: InvoiceStatusProps) {
+    const [status, setStatus] = useState<string>('Loading...');
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const fetchInvoiceStatus = async () => {
-            const { data, error } = await supabase
-                .from('invoices')
-                .select('status')
-                .eq('pickup_id', pickupId)
-                .single();
-
-            if (data) {
-                setFetchedStatus(data.status);
-            } else {
-                console.error('Error fetching invoice status:', error);
+        const fetchStatus = async () => {
+            try {
+                const response = await fetch(
+                    `/api/invoices/status?id=${pickupId}`
+                );
+                if (!response.ok) throw new Error('Failed to fetch status');
+                const data = await response.json();
+                setStatus(data.status);
+            } catch (err) {
+                setError('Failed to load invoice status');
+                setStatus('Error');
             }
         };
 
-        fetchInvoiceStatus();
+        const interval = setInterval(fetchStatus, 30000); // Poll every 30 seconds
+        fetchStatus(); // Initial fetch
+
+        return () => clearInterval(interval);
     }, [pickupId]);
 
     return (
-        <div className="mb-4">
-            <h2 className="text-xl font-semibold">Invoice Status</h2>
-            <Badge
-                className={`px-4 py-2 rounded-full ${fetchedStatus === 'Paid' ? 'bg-green-100 text-green-800' : fetchedStatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}
-            >
-                {fetchedStatus || 'Loading...'}
-            </Badge>
-        </div>
+        <Badge
+            variant={
+                status === 'Paid'
+                    ? 'default' // Change 'success' to 'default'
+                    : status === 'Overdue'
+                      ? 'destructive'
+                      : status === 'Error'
+                        ? 'destructive'
+                        : 'secondary'
+            }
+            className={
+                status === 'Pending'
+                    ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                    : ''
+            }
+        >
+            {status}
+        </Badge>
     );
-};
+}
 
-export default InvoiceStatus;
+// 'use client';
 
-// draft
+// import React from 'react';
+// import { Badge } from '@/components/ui/badge';
+
+// const InvoiceStatus: React.FC<{ pickupId: string }> = ({ pickupId }) => {
+//     return (
+//         <div className="mb-4">
+//             {/* <h2 className="text-xl font-semibold">Invoice Status</h2> */}
+//             <Badge className="bg-green-100 text-green-800">
+//                     Pending Xero Integration
+//             </Badge>
+//         </div>
+//     );
+// };
+
+// export default InvoiceStatus;

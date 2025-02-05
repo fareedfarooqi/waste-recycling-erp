@@ -155,6 +155,13 @@ export default function PickupList({ driverId }: { driverId: string }) {
         }
     }, [driverId]);
 
+    // useEffect(() => {
+    //     if (driverId) {
+    //         console.log('Driver ID:', driverId); // Debug log
+    //         fetchPickups();
+    //     }
+    // }, [driverId]);
+
     if (loading) {
         return (
             <tr>

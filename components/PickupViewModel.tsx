@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'; // Import useRouter
 import { FaEye } from 'react-icons/fa'; // Import the eye icon
 import DateFormatter from './DateFormatter';
 import Link from 'next/link';
+import { IoMdClose } from 'react-icons/io';
 
 type ProductDetail = {
     id: string;
@@ -135,10 +136,12 @@ const PickupViewModal: React.FC<PickupModalProps> = ({
             onClick={onClose}
         >
             <div
-                className="bg-white w-[90%] max-w-xl rounded-md border-[0.35rem] border-gray-300 p-6 font-sans shadow-lg relative"
+                className="bg-white w-[90%] max-w-xl rounded-md p-6 font-sans shadow-lg relative"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h3 className="font-bold text-lg mb-4">Pickup Details</h3>
+                <h3 className="text-3xl font-bold text-center mb-4">
+                    Pickup Details
+                </h3>
                 <div>
                     {/* <p>
                         <strong>Pickup Date: </strong>
@@ -189,11 +192,11 @@ const PickupViewModal: React.FC<PickupModalProps> = ({
                         {productDetails.length > 0 ? (
                             <table className="w-full border-collapse">
                                 <thead>
-                                    <tr className="bg-gray-200">
-                                        <th className="border p-2 text-left">
+                                    <tr className="bg-green-600">
+                                        <th className="border p-2 text-left text-white">
                                             Product Name
                                         </th>
-                                        <th className="border p-2 text-right">
+                                        <th className="border p-2 text-right text-white">
                                             Quantity
                                         </th>
                                     </tr>
@@ -258,9 +261,9 @@ const PickupViewModal: React.FC<PickupModalProps> = ({
                 >
                     Close
                 </button> */}
-                <div className="flex justify-between mt-6">
+                <div className="flex justify-between mt-3 space-x-4">
                     <button
-                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                        className="mt-6 px-8 py-3  bg-red-500 text-white rounded font-bold hover:bg-red-600 focus:ring-red-300"
                         onClick={onClose}
                     >
                         Close
@@ -272,10 +275,18 @@ const PickupViewModal: React.FC<PickupModalProps> = ({
                         <FaEye className="mr-2" /> View Details
                     </button> */}
                     <Link href={`/pickup/details-screen?id=${pickup.id}`}>
-                        <button className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center">
+                        <button className="mt-6 px-8 py-3 bg-green-600 text-white rounded hover:bg-green-500 focus:ring-green-500 flex items-center">
                             <FaEye className="mr-2" /> View Details
                         </button>
                     </Link>
+
+                    <button
+                        onClick={onClose}
+                        className="absolute top-4 right-4 text-gray-500 hover:text-red-700"
+                        aria-label="Close"
+                    >
+                        <IoMdClose size={24} />
+                    </button>
                 </div>
             </div>
         </div>

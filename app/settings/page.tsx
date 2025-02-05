@@ -254,11 +254,11 @@ import { FeatureRequestForm } from '@/components/FeatureRequestForm';
 export default function SettingsPage() {
     return (
         <div className="container mx-auto py-10">
-            <h1 className="text-3xl font-bold mb-6">Settings</h1>
+            <h1 className="text-3xl font-bold mb-6 text-green-500">Settings</h1>
 
             <div className="space-y-6">
                 <div className="bg-white p-6 rounded-lg shadow">
-                    <h2 className="text-xl font-semibold mb-2">
+                    <h2 className="text-xl font-semibold mb-2 text-green-500">
                         Change Password
                     </h2>
                     <p className="text-gray-600 mb-4">
@@ -281,13 +281,18 @@ export default function SettingsPage() {
                             placeholder="Confirm New Password"
                             className="w-full p-2 border rounded"
                         />
-                        <Button type="submit">Update Password</Button>
+                        <Button
+                            type="submit"
+                            className="text-green-500 hover:text-green-700"
+                        >
+                            Update Password
+                        </Button>
                     </form>
                 </div>
 
                 <div className="bg-white p-6 rounded-lg shadow">
-                    <h2 className="text-xl font-semibold mb-2">
-                        Feature Request / Bug Report
+                    <h2 className="text-xl font-semibold mb-2 text-green-500">
+                        Report
                     </h2>
                     <p className="text-gray-600 mb-4">
                         Let us know about features you like to see or bugs you
@@ -301,11 +306,17 @@ export default function SettingsPage() {
                         About Our Platform
                     </h2>
                     <p className="text-gray-600">
-                        Our platform is designed to provide you with the best
-                        possible experience. We&apos;re constantly working to
-                        improve and add new features based on user feedback.
+                        At Recycling & Waste ERP System, we are committed to
+                        transforming waste management through innovation. Our
+                        platform streamlines recycling and waste operations,
+                        offering efficient tracking, optimized logistics, and
+                        real-time reporting. By leveraging technology, we
+                        empower businesses and organizations to reduce waste,
+                        enhance sustainability, and drive eco-friendly
+                        initiatives. Join us in creating a cleaner, greener
+                        future!
                     </p>
-                    <p className="text-gray-600 mt-2">Version: 1.0.0</p>
+                    {/* <p className="text-gray-600 mt-2">Version: 1.0.0</p> */}
                 </div>
             </div>
         </div>

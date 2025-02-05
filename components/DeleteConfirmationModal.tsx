@@ -76,20 +76,22 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
-            <h2 className="text-xl font-bold">Confirm Deletion of Pickup</h2>
-            <p className="mt-4">
+            <h2 className="text-3xl font-bold text-center mb-6">
+                Confirm Deletion of Pickup
+            </h2>
+            <p className="mb-6 text-center">
                 Are you sure you want to delete this pickup schedule?
             </p>
-            <div className="flex justify-end mt-4">
+            <div className="flex justify-between space-x-4">
                 <button
                     onClick={onClose}
-                    className="bg-gray-500 text-white px-4 py-2 mr-2"
+                    className="p-4 rounded-lg text-center w-36 transform transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-gray-300 text-gray-800 px-8 py-3 rounded-lg text-base font-bold hover:bg-gray-400 focus:ring-gray-300"
                 >
                     Cancel
                 </button>
                 <button
                     onClick={handleDelete}
-                    className="bg-red-500 text-white px-4 py-2"
+                    className="p-4 rounded-lg text-center w-36 transform transition-all duration-200 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-red-500 text-white px-8 py-3 rounded-lg text-base font-bold hover:bg-red-600 focus:ring-red-300"
                 >
                     Delete
                 </button>
