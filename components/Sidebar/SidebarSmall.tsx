@@ -13,6 +13,7 @@ import { CgProfile } from 'react-icons/cg';
 import { ImExit } from 'react-icons/im';
 import { useSidebar } from '@/components/Sidebar/SidebarContext';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useAuth } from '@/context/AuthContext';
 
 const SidebarSmall = (): JSX.Element => {
     const supabase = createClientComponentClient();
@@ -21,6 +22,8 @@ const SidebarSmall = (): JSX.Element => {
         typeof setTimeout
     > | null>(null);
     const router = useRouter();
+
+    const { profilePicUrl, profileLoading } = useAuth();
 
     const menuItems = [
         {
@@ -63,30 +66,19 @@ const SidebarSmall = (): JSX.Element => {
     };
 
     const handleMenuClick = (route: string) => {
-        if (hoverTimeout) {
-            clearTimeout(hoverTimeout);
-        }
+        if (hoverTimeout) clearTimeout(hoverTimeout);
         setSidebarOpen(false);
         router.push(route);
     };
 
     const handleLogout = async () => {
-        try {
-            const { error } = await supabase.auth.signOut();
-
-            if (error) {
-                console.error('Error signing out:', error.message);
-                return;
-            }
-
-            console.log('User signed out successfully.');
-
-            router.push('/sign-in');
-
-            setSidebarOpen(false);
-        } catch (err) {
-            console.error('Unexpected error during sign out:', err);
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error('Error signing out:', error.message);
+            return;
         }
+        router.push('/sign-in');
+        setSidebarOpen(false);
     };
 
     return (
@@ -97,14 +89,28 @@ const SidebarSmall = (): JSX.Element => {
         >
             <div className="space-y-6 mt-4">
                 <div className="relative flex items-center justify-center h-20 group">
-                    <CgProfile
-                        className="text-5xl cursor-pointer text-white hover:bg-green-600 p-1 rounded-full"
-                        onClick={() => {
-                            if (hoverTimeout) clearTimeout(hoverTimeout);
-                            setSidebarOpen(false);
-                            router.push('/profile');
-                        }}
-                    />
+                    {profileLoading ? null : profilePicUrl ? (
+                        <img
+                            src={profilePicUrl}
+                            alt="User Profile"
+                            className="w-14 h-14 rounded-full object-cover cursor-pointer hover:bg-green-600 p-1"
+                            onClick={() => {
+                                if (hoverTimeout) clearTimeout(hoverTimeout);
+                                setSidebarOpen(false);
+                                router.push('/profile');
+                            }}
+                        />
+                    ) : (
+                        <CgProfile
+                            className="text-5xl cursor-pointer text-white hover:bg-green-600 p-1 rounded-full"
+                            onClick={() => {
+                                if (hoverTimeout) clearTimeout(hoverTimeout);
+                                setSidebarOpen(false);
+                                router.push('/profile');
+                            }}
+                        />
+                    )}
+
                     <span className="absolute left-14 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 bg-white text-green-700 text-sm rounded-xl px-3 py-1 shadow-lg transition-all duration-500 transform group-hover:scale-105 border border-green-500">
                         Profile
                     </span>

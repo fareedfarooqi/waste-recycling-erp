@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 
 export default function CompleteProfile(): JSX.Element {
     const supabase = createClientComponentClient();
+    const router = useRouter();
+
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [role, setRole] = useState('');
@@ -18,8 +20,6 @@ export default function CompleteProfile(): JSX.Element {
     const [isLoading, setIsLoading] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
     const [companyId, setCompanyId] = useState<string | null>(null);
-
-    const router = useRouter();
 
     useEffect(() => {
         (async () => {
@@ -34,7 +34,7 @@ export default function CompleteProfile(): JSX.Element {
             }
             setEmail(data.user.email ?? '');
         })();
-    }, [router]);
+    }, [router, supabase]);
 
     useEffect(() => {
         const storedCompanyId = localStorage.getItem('company_id');
@@ -47,6 +47,7 @@ export default function CompleteProfile(): JSX.Element {
         if (acceptedFiles && acceptedFiles.length > 0) {
             const file = acceptedFiles[0];
             setProfilePic(file);
+
             const reader = new FileReader();
             reader.onload = () => {
                 setPreview(reader.result as string);
@@ -54,17 +55,16 @@ export default function CompleteProfile(): JSX.Element {
             reader.readAsDataURL(file);
         }
     }, []);
-
-    const handleRemoveImage = () => {
-        setProfilePic(null);
-        setPreview('');
-    };
-
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
         accept: { 'image/*': [] },
         multiple: false,
     });
+
+    const handleRemoveImage = () => {
+        setProfilePic(null);
+        setPreview('');
+    };
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -89,6 +89,7 @@ export default function CompleteProfile(): JSX.Element {
                     .upload(`${user.id}/${profilePic.name}`, profilePic, {
                         upsert: true,
                     });
+
             if (uploadError) {
                 console.error(
                     'Error uploading profile picture:',
@@ -133,10 +134,12 @@ export default function CompleteProfile(): JSX.Element {
             <p className="mb-8 text-center text-xl text-gray-600 md:mb-10">
                 Fill in your details to get started.
             </p>
+
             <form
                 className="grid grid-cols-1 gap-y-6 gap-x-8 md:grid-cols-2"
                 onSubmit={handleSubmit}
             >
+                {/* Profile picture uploader */}
                 <div className="md:col-span-2 flex flex-col items-center">
                     <label
                         htmlFor="profilePicture"
@@ -180,6 +183,7 @@ export default function CompleteProfile(): JSX.Element {
                     </p>
                 </div>
 
+                {/* First Name */}
                 <div className="flex flex-col">
                     <label
                         htmlFor="firstName"
@@ -198,6 +202,7 @@ export default function CompleteProfile(): JSX.Element {
                     />
                 </div>
 
+                {/* Last Name */}
                 <div className="flex flex-col">
                     <label
                         htmlFor="lastName"
@@ -216,6 +221,7 @@ export default function CompleteProfile(): JSX.Element {
                     />
                 </div>
 
+                {/* Email (read-only) */}
                 <div className="flex flex-col">
                     <label
                         htmlFor="email"
@@ -235,6 +241,7 @@ export default function CompleteProfile(): JSX.Element {
                     </p>
                 </div>
 
+                {/* Phone Number */}
                 <div className="flex flex-col">
                     <label
                         htmlFor="phoneNumber"
@@ -253,6 +260,7 @@ export default function CompleteProfile(): JSX.Element {
                     />
                 </div>
 
+                {/* Role selector */}
                 <div className="flex flex-col md:col-span-2">
                     <label
                         htmlFor="role"
@@ -310,6 +318,7 @@ export default function CompleteProfile(): JSX.Element {
                     </div>
                 </div>
 
+                {/* Submit button */}
                 <div className="md:col-span-2">
                     <button
                         type="submit"

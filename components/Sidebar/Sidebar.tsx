@@ -13,11 +13,14 @@ import { CgProfile } from 'react-icons/cg';
 import { ImExit } from 'react-icons/im';
 import { useSidebar } from '@/components/Sidebar/SidebarContext';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useAuth } from '@/context/AuthContext';
 
 const Sidebar = (): JSX.Element => {
     const supabase = createClientComponentClient();
     const { setSidebarOpen } = useSidebar();
     const router = useRouter();
+
+    const { profilePicUrl, profileLoading } = useAuth();
 
     const menuItems = [
         { icon: <FaUsers />, label: 'Customers', route: '/customers' },
@@ -35,26 +38,20 @@ const Sidebar = (): JSX.Element => {
         { icon: <FaCog />, label: 'Settings', route: '/settings' },
     ];
 
-    const handleMenuClick = (route: string) => {
+    function handleMenuClick(route: string) {
         setSidebarOpen(false);
         router.push(route);
-    };
+    }
 
-    const handleLogout = async () => {
-        try {
-            const { error } = await supabase.auth.signOut();
-
-            if (error) {
-                console.error('Error signing out:', error.message);
-                return;
-            }
-
-            router.push('/sign-in');
-            setSidebarOpen(false);
-        } catch (err) {
-            console.error('Unexpected error during sign out:', err);
+    async function handleLogout() {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error('Error signing out:', error.message);
+            return;
         }
-    };
+        router.push('/sign-in');
+        setSidebarOpen(false);
+    }
 
     return (
         <div
@@ -62,10 +59,19 @@ const Sidebar = (): JSX.Element => {
             onMouseLeave={() => setSidebarOpen(false)}
         >
             <div className="mb-2 flex items-center justify-center h-20">
-                <CgProfile
-                    className="text-5xl cursor-pointer text-white hover:bg-green-600 p-1 rounded-full"
-                    onClick={() => router.push('/profile')}
-                />
+                {profileLoading ? null : profilePicUrl ? (
+                    <img
+                        src={profilePicUrl}
+                        alt="User Profile"
+                        className="w-16 h-16 rounded-full object-cover cursor-pointer hover:bg-green-600 p-1"
+                        onClick={() => router.push('/profile')}
+                    />
+                ) : (
+                    <CgProfile
+                        className="text-5xl cursor-pointer text-white hover:bg-green-600 p-1 rounded-full"
+                        onClick={() => router.push('/profile')}
+                    />
+                )}
             </div>
 
             <div className="space-y-4">

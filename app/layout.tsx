@@ -3,6 +3,7 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import React from 'react';
 import { SidebarProvider } from '@/components/Sidebar/SidebarContext';
+import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata = {
     title: 'My ERP App',
@@ -18,7 +19,9 @@ export default async function RootLayout({
     return (
         <html lang="en">
             <body>
-                <SidebarProvider>{children}</SidebarProvider>
+                <AuthProvider>
+                    <SidebarProvider>{children}</SidebarProvider>
+                </AuthProvider>
             </body>
         </html>
     );
