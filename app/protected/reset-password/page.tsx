@@ -5,6 +5,8 @@ import { SubmitButton } from '@/components/submit-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+// This was the one provided to use by default.
+// I wanna use this for when we integrate AWS SES.
 export default async function ResetPassword(props: {
     searchParams: Promise<Message>;
 }) {

@@ -1,14 +1,11 @@
-// final code - 1
-
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/config/supabaseClient';
-// import { IoIosRemoveCircleOutline } from 'react-icons/io';
 import SuccessAnimation from '@/components/SuccessAnimation';
-import SidebarSmall from '@/components/SidebarSmall';
-import Sidebar from '@/components/Sidebar';
-import { useSidebar } from '@/context/SidebarContext';
+import SidebarSmall from '@/components/Sidebar/SidebarSmall';
+import Sidebar from '@/components/Sidebar/Sidebar';
+import { useSidebar } from '@/components/Sidebar/SidebarContext';
 import FormField from '@/components/FormField';
 import { FaPencilAlt } from 'react-icons/fa';
 import { IoMdClose } from 'react-icons/io';
@@ -49,6 +46,7 @@ type AddEditPickupModalProps = {
     item: PickupItems | null;
     onClose: () => void;
     onRefresh: () => void;
+    edit_pickup: boolean;
 };
 
 const AddEditPickupModal: React.FC<AddEditPickupModalProps> = ({
@@ -56,6 +54,7 @@ const AddEditPickupModal: React.FC<AddEditPickupModalProps> = ({
     item,
     onClose,
     onRefresh,
+    edit_pickup,
 }) => {
     const [customers, setCustomers] = useState<
         { id: string; company_name: string }[]

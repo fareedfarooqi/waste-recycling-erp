@@ -247,65 +247,113 @@
 //   )
 // }
 
+// 'use client';
+// import { Button } from '@/components/ui/button';
+// import { FeatureRequestForm } from '@/components/FeatureRequestForm';
+
+// export default function SettingsPage() {
+//     return (
+//         <div className="container mx-auto py-10">
+//             <h1 className="text-3xl font-bold mb-6 text-green-500">Settings</h1>
+
+//             <div className="space-y-6">
+//                 <div className="bg-white p-6 rounded-lg shadow">
+//                     <h2 className="text-xl font-semibold mb-2 text-green-500">
+//                         Change Password
+//                     </h2>
+//                     <p className="text-gray-600 mb-4">
+//                         Update your password here. We recommend using a strong,
+//                         unique password.
+//                     </p>
+//                     <form className="space-y-4">
+//                         <input
+//                             type="password"
+//                             placeholder="Current Password"
+//                             className="w-full p-2 border rounded"
+//                         />
+//                         <input
+//                             type="password"
+//                             placeholder="New Password"
+//                             className="w-full p-2 border rounded"
+//                         />
+//                         <input
+//                             type="password"
+//                             placeholder="Confirm New Password"
+//                             className="w-full p-2 border rounded"
+//                         />
+//                         <Button
+//                             type="submit"
+//                             className="text-green-500 hover:text-green-700"
+//                         >
+//                             Update Password
+//                         </Button>
+//                     </form>
+//                 </div>
+
+//                 <div className="bg-white p-6 rounded-lg shadow">
+//                     <h2 className="text-xl font-semibold mb-2 text-green-500">
+//                         Report
+//                     </h2>
+//                     <p className="text-gray-600 mb-4">
+//                         Let us know about features you like to see or bugs you
+//                         have encountered.
+//                     </p>
+//                     <FeatureRequestForm />
+//                 </div>
+
+//                 <div className="bg-white p-6 rounded-lg shadow">
+//                     <h2 className="text-xl font-semibold mb-2">
+//                         About Our Platform
+//                     </h2>
+//                     <p className="text-gray-600">
+//                         At Recycling & Waste ERP System, we are committed to
+//                         transforming waste management through innovation. Our
+//                         platform streamlines recycling and waste operations,
+//                         offering efficient tracking, optimized logistics, and
+//                         real-time reporting. By leveraging technology, we
+//                         empower businesses and organizations to reduce waste,
+//                         enhance sustainability, and drive eco-friendly
+//                         initiatives. Join us in creating a cleaner, greener
+//                         future!
+//                     </p>
+//                     {/* <p className="text-gray-600 mt-2">Version: 1.0.0</p> */}
+//                 </div>
+//             </div>
+//         </div>
+//     );
+// }
+
+// FINAL CODE
 'use client';
 import { Button } from '@/components/ui/button';
 import { FeatureRequestForm } from '@/components/FeatureRequestForm';
 
 export default function SettingsPage() {
     return (
-        <div className="container mx-auto py-10">
-            <h1 className="text-3xl font-bold mb-6 text-green-500">Settings</h1>
+        <div className="container mx-auto py-12 px-6 bg-gray-50">
+            <h1 className="text-4xl font-extrabold mb-8 text-green-600 text-center">
+                Settings
+            </h1>
 
-            <div className="space-y-6">
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <h2 className="text-xl font-semibold mb-2 text-green-500">
-                        Change Password
+            <div className="space-y-8">
+                {/* Feature Request Section */}
+                <div className="bg-white p-8 rounded-lg shadow-xl hover:shadow-2xl transition-shadow duration-300 ease-in-out">
+                    <h2 className="text-2xl font-semibold mb-4 text-green-600">
+                        Report an Issue or Request a Feature
                     </h2>
-                    <p className="text-gray-600 mb-4">
-                        Update your password here. We recommend using a strong,
-                        unique password.
-                    </p>
-                    <form className="space-y-4">
-                        <input
-                            type="password"
-                            placeholder="Current Password"
-                            className="w-full p-2 border rounded"
-                        />
-                        <input
-                            type="password"
-                            placeholder="New Password"
-                            className="w-full p-2 border rounded"
-                        />
-                        <input
-                            type="password"
-                            placeholder="Confirm New Password"
-                            className="w-full p-2 border rounded"
-                        />
-                        <Button
-                            type="submit"
-                            className="text-green-500 hover:text-green-700"
-                        >
-                            Update Password
-                        </Button>
-                    </form>
-                </div>
-
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <h2 className="text-xl font-semibold mb-2 text-green-500">
-                        Report
-                    </h2>
-                    <p className="text-gray-600 mb-4">
-                        Let us know about features you like to see or bugs you
-                        have encountered.
+                    <p className="text-gray-700 mb-6">
+                        We are continuously improving. Let us know if you found
+                        a bug or have a feature request!
                     </p>
                     <FeatureRequestForm />
                 </div>
 
-                <div className="bg-white p-6 rounded-lg shadow">
-                    <h2 className="text-xl font-semibold mb-2">
+                {/* About Platform Section */}
+                <div className="bg-white p-8 rounded-lg shadow-xl hover:shadow-2xl transition-shadow duration-300 ease-in-out">
+                    <h2 className="text-2xl font-semibold mb-4 text-green-600">
                         About Our Platform
                     </h2>
-                    <p className="text-gray-600">
+                    <p className="text-gray-700 mb-4">
                         At Recycling & Waste ERP System, we are committed to
                         transforming waste management through innovation. Our
                         platform streamlines recycling and waste operations,
@@ -316,7 +364,6 @@ export default function SettingsPage() {
                         initiatives. Join us in creating a cleaner, greener
                         future!
                     </p>
-                    {/* <p className="text-gray-600 mt-2">Version: 1.0.0</p> */}
                 </div>
             </div>
         </div>

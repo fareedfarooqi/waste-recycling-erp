@@ -143,19 +143,6 @@ const PickupViewModal: React.FC<PickupModalProps> = ({
                     Pickup Details
                 </h3>
                 <div>
-                    {/* <p>
-                        <strong>Pickup Date: </strong>
-                        {pickup.pickup_date
-                            ? new Intl.DateTimeFormat('en-US', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  hour12: true,
-                              }).format(new Date(pickup.pickup_date))
-                            : 'N/A'}
-                    </p> */}
                     <p>
                         <strong>Pickup Date:</strong>{' '}
                         {pickup.pickup_date ? (
@@ -171,7 +158,7 @@ const PickupViewModal: React.FC<PickupModalProps> = ({
 
                     {/* Driver Details Section */}
                     <div className="mt-4">
-                        <h4 className="font-bold mb-2">Driver Details</h4>
+                        {/* <h4 className="font-bold mb-2">Driver Details</h4> */}
                         <p>
                             <strong>Name: </strong>
                             {pickup.driver?.name || 'N/A'}
@@ -188,7 +175,7 @@ const PickupViewModal: React.FC<PickupModalProps> = ({
 
                     {/* Products Collected Section */}
                     <div className="mt-4 p-4 rounded-md">
-                        <h4 className="font-bold mb-2">Products Collected</h4>
+                        {/* <h4 className="font-bold mb-2">Products Collected</h4> */}
                         {productDetails.length > 0 ? (
                             <table className="w-full border-collapse">
                                 <thead>
@@ -224,7 +211,7 @@ const PickupViewModal: React.FC<PickupModalProps> = ({
 
                     {/* Locations Section */}
                     <div className="mt-4">
-                        <h4 className="font-bold mb-2">Pickup Locations</h4>
+                        {/* <h4 className="font-bold mb-2">Pickup Locations</h4> */}
                         {pickup.locations && pickup.locations.length > 0 ? (
                             <ul className="space-y-4">
                                 {pickup.locations.map((location, index) => (
@@ -239,13 +226,13 @@ const PickupViewModal: React.FC<PickupModalProps> = ({
                                         </p>
                                         {/* <p><strong>Scheduled Time:</strong> {location.scheduled_time || 'N/A'}</p> */}
                                         {/* <p>
-    <strong>Scheduled Time:</strong>{' '}
-    {location.scheduled_time ? (
-        <DateFormatter date={location.scheduled_time} />
-    ) : (
-        'N/A'
-    )}
-</p> */}
+                                        <strong>Scheduled Time:</strong>{' '}
+                                        {location.scheduled_time ? (
+                                            <DateFormatter date={location.scheduled_time} />
+                                        ) : (
+                                            'N/A'
+                                        )}
+                                    </p> */}
                                     </li>
                                 ))}
                             </ul>

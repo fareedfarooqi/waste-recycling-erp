@@ -1,14 +1,20 @@
-'use client';
-
-import React from 'react';
 import './globals.css';
-import { SidebarProvider } from '@/context/SidebarContext';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import React from 'react';
+import { SidebarProvider } from '@/components/Sidebar/SidebarContext';
 
-export default function RootLayout({
+export const metadata = {
+    title: 'My ERP App',
+};
+
+export default async function RootLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const supabase = createServerComponentClient({ cookies });
+
     return (
         <html lang="en">
             <body>

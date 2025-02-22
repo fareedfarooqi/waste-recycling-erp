@@ -6,26 +6,24 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import SignaturePad from 'react-signature-canvas';
 import { Pickup } from './PickupList';
-// import { Session } from '@supabase/supabase-js';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface PickupFormProps {
     pickup: Pickup;
     onComplete: () => Promise<void>;
+    viewOnly?: boolean;
 }
-
-// interface Pickup {
-//   id: string;
-//   products_collected: { quantity: number; product_name: string }[] | null;
-//   empty_bins_delivered: number;
-//   filled_bins_collected: number;
-// }
 
 interface ProductCollection {
     quantity: number;
     product_name: string;
 }
 
-export default function PickupForm({ pickup, onComplete }: PickupFormProps) {
+export default function PickupForm({
+    pickup,
+    onComplete,
+    viewOnly = false,
+}: PickupFormProps) {
     const [formData, setFormData] = useState({
         products_collected: Array.isArray(pickup.products_collected)
             ? pickup.products_collected[0] || {
@@ -38,15 +36,111 @@ export default function PickupForm({ pickup, onComplete }: PickupFormProps) {
     });
 
     const [signaturePad, setSignaturePad] = useState<SignaturePad | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [isLoading, setLoading] = useState(false);
+    const { userRole, loading: userRoleLoading } = useUserRole();
+    const [signatureUrl, setSignatureUrl] = useState<string | null>(
+        pickup.signature
+    );
+
+    useEffect(() => {
+        const fetchProductName = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('pickups')
+                    .select('products_collected')
+                    .eq('id', pickup.id)
+                    .single();
+
+                if (data && data.products_collected) {
+                    const productName =
+                        data.products_collected.product_name || 'Organic Waste';
+                    setFormData((prev) => ({
+                        ...prev,
+                        products_collected: {
+                            ...prev.products_collected,
+                            product_name: productName,
+                        },
+                    }));
+                }
+            } catch (err) {
+                console.error('Error fetching product name:', err); // More useful error logging
+            }
+        };
+
+        fetchProductName();
+    }, [pickup.id]);
+
+    // if (userRoleLoading) {
+    //     return <div>Loading user role...</div>;
+    // }
+
+    // View-only mode for admin/manager or completed pickups
+    if (viewOnly || pickup.status === 'completed') {
+        return (
+            <div className="space-y-4 bg-white p-4 rounded-lg shadow">
+                <h2 className="text-xl font-semibold mb-4">
+                    {pickup.customers?.company_name || 'Unknown Customer'}
+                </h2>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <Label>Product Name</Label>
+                        <div className="p-2 border rounded bg-gray-50">
+                            {formData.products_collected.product_name}
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label>Quantity (kg)</Label>
+                        <div className="p-2 border rounded bg-gray-50">
+                            {formData.products_collected.quantity}
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label>Empty Bins Delivered</Label>
+                        <div className="p-2 border rounded bg-gray-50">
+                            {formData.empty_bins_delivered}
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label>Filled Bins Collected</Label>
+                        <div className="p-2 border rounded bg-gray-50">
+                            {formData.filled_bins_collected}
+                        </div>
+                    </div>
+                </div>
+
+                {signatureUrl && (
+                    <div>
+                        <Label>Customer Signature</Label>
+                        <div className="border rounded p-2">
+                            <img
+                                src={signatureUrl}
+                                alt="Customer Signature"
+                                className="max-w-full h-auto"
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    // Check if user has permission to edit
+    // Restrict form submission to drivers only
+    if (userRole?.role !== 'driver') {
+        return <div>You do not have permission to complete this pickup.</div>;
+    }
 
     // Function to upload signature to Supabase Storage
+    // const uploadSignatureToBucket = async (signatureBlob: Blob) => {
     const uploadSignatureToBucket = async (signatureBlob: Blob) => {
         try {
             const timestamp = new Date().getTime();
-            const fileName = `signature-${timestamp}.png`; // Simplified file name
+            const fileName = `signature-${timestamp}.png`; // Fix the variable naming for template literal
 
-            // Upload the file
             const { data, error } = await supabase.storage
                 .from('signatures')
                 .upload(fileName, signatureBlob, {
@@ -56,35 +150,31 @@ export default function PickupForm({ pickup, onComplete }: PickupFormProps) {
                 });
 
             if (error) {
-                console.error('Storage upload error details:', {
-                    message: error.message,
-                    name: error.name,
-                });
+                console.error('Error uploading signature:', error.message);
                 throw new Error(`Failed to upload signature: ${error.message}`);
             }
 
-            // Get the public URL
+            // Fetch public URL
             const { data: publicUrlData } = supabase.storage
                 .from('signatures')
                 .getPublicUrl(fileName);
 
-            if (!publicUrlData.publicUrl) {
+            if (!publicUrlData?.publicUrl) {
                 throw new Error(
                     'Failed to get public URL for uploaded signature'
                 );
             }
 
             return publicUrlData.publicUrl;
-        } catch (err) {
-            console.error('Signature upload error details:', err);
+        } catch (error) {
+            console.error('Error during signature upload:', error);
             throw new Error(
-                err instanceof Error
-                    ? err.message
+                error instanceof Error
+                    ? error.message
                     : 'Failed to upload signature'
             );
         }
     };
-
     useEffect(() => {
         const fetchProductName = async () => {
             try {
@@ -115,7 +205,6 @@ export default function PickupForm({ pickup, onComplete }: PickupFormProps) {
         fetchProductName();
     }, [pickup.id]);
 
-    // Modified handleSubmit function
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -127,6 +216,7 @@ export default function PickupForm({ pickup, onComplete }: PickupFormProps) {
         setLoading(true);
 
         try {
+            // Get signature blob
             const signatureDataUrl = signaturePad.toDataURL('image/png');
             const response = await fetch(signatureDataUrl);
             const signatureBlob = await response.blob();
@@ -141,6 +231,7 @@ export default function PickupForm({ pickup, onComplete }: PickupFormProps) {
                 },
             ];
 
+            // Update the pickup record
             const { error: updateError } = await supabase
                 .from('pickups')
                 .update({
@@ -169,6 +260,7 @@ export default function PickupForm({ pickup, onComplete }: PickupFormProps) {
             setLoading(false);
         }
     };
+
     return (
         <form
             onSubmit={handleSubmit}
@@ -180,32 +272,6 @@ export default function PickupForm({ pickup, onComplete }: PickupFormProps) {
 
             <div className="space-y-4">
                 <div>
-                    {/* <Label htmlFor="product_name">Product Name</Label>
-                    <Input
-                        id="product_name"
-                        type="text"
-                        value={formData.products_collected.product_name}
-                    /> */}
-                    {/* <Label htmlFor="product_name">Product Name</Label> */}
-                    {/* <select */}
-                    {/* id="product_name"
-            className="w-full p-2 border rounded-md"
-            value={formData.products_collected.product_name}
-            onChange={(e) => {
-              setFormData((prev) => ({
-                ...prev,
-                products_collected: {
-                  ...prev.products_collected,
-                  product_name: e.target.value
-                }
-              }));
-            }}
-          > */}
-                    {/* </select> */}
-                    {/* <option value="Organic Waste">Organic Waste</option> */}
-                    {/* <option value="Food Waste">Food Waste</option>
-            <option value="Green Waste">Green Waste</option> */}
-
                     <Label htmlFor="product_name">Product Name</Label>
                     <Input
                         id="product_name"
@@ -220,7 +286,7 @@ export default function PickupForm({ pickup, onComplete }: PickupFormProps) {
                                 },
                             }));
                         }}
-                        readOnly={true} // If you want to keep it non-editable
+                        readOnly={true}
                     />
                 </div>
 
@@ -305,8 +371,8 @@ export default function PickupForm({ pickup, onComplete }: PickupFormProps) {
                 </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Submitting...' : 'Save and Submit'}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Submitting...' : 'Save and Submit'}
             </Button>
         </form>
     );

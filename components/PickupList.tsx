@@ -1,12 +1,11 @@
 'use client';
-
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/config/supabaseClient';
-import { Card } from '@/components/ui/card';
-import PickupForm from './PickupForm';
 import { Button } from '@/components/ui/button';
 import { Eye } from 'lucide-react';
-// Updated interfaces to match the actual data structure
+import { useUserRole } from '@/hooks/useUserRole';
+import PickupForm from './PickupForm';
+
 interface Product {
     quantity: number;
     product_name: string;
@@ -51,203 +50,119 @@ interface PickupCardProps {
     onSelect: () => void;
 }
 
-function formatProducts(products: number | Product[] | null): string {
-    if (products === null) return '0';
-    if (typeof products === 'number') return `${products} kg`;
-    if (Array.isArray(products)) {
-        return products
-            .map((p) => `${p.product_name}: ${p.quantity}`)
-            .join(', ');
-    }
-    return '0';
-}
-
-function formatLocation(location: string | Location | null): string {
-    if (!location) return 'Unknown Location';
-    if (typeof location === 'string') return location;
-    return location.location_name || 'Unknown Location';
-}
-
-function PickupCard({ pickup, onSelect }: PickupCardProps) {
-    const locationDisplay = formatLocation(pickup.pickup_location);
-    const productsDisplay = formatProducts(pickup.products_collected);
-
-    const formattedDate = pickup.pickup_date
-        ? new Date(pickup.pickup_date).toLocaleDateString()
-        : 'No date';
-
-    return (
-        <Card
-            className="p-4 cursor-pointer hover:bg-gray-50"
-            onClick={onSelect}
-        >
-            <div className="flex flex-col sm:flex-row justify-between">
-                <div>
-                    <h3 className="font-medium">
-                        {pickup.customers?.company_name || 'Unknown Company'}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                        Location: {locationDisplay}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                        Date: {formattedDate}
-                    </p>
-                </div>
-                <div className="mt-2 text-sm sm:mt-0 sm:text-right">
-                    <p>Products: {productsDisplay}</p>
-                    <p>
-                        Empty Bins Delivered: {pickup.empty_bins_delivered || 0}
-                    </p>
-                    <p>
-                        Filled Bins Collected:{' '}
-                        {pickup.filled_bins_collected || 0}
-                    </p>
-                </div>
-            </div>
-        </Card>
-    );
-}
-
 export default function PickupList({ driverId }: { driverId: string }) {
     const [pickups, setPickups] = useState<Pickup[]>([]);
     const [selectedPickup, setSelectedPickup] = useState<Pickup | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const { userRole } = useUserRole();
 
     const fetchPickups = async () => {
         try {
             setLoading(true);
-            setError(null);
 
-            const { data, error } = await supabase
+            let query = supabase
                 .from('pickups')
                 .select(
                     `
-          *,
-          customers (
-            id,
-            company_name
-          ),
-          drivers (
-            id,
-            name
-          )
-        `
+                *,
+                customers (id, company_name),
+                drivers (id, name)
+            `
                 )
-                .eq('status', 'scheduled')
-                .eq('driver_id', driverId)
                 .order('pickup_date', { ascending: true });
 
-            if (error) throw error;
+            if (userRole?.role === 'driver') {
+                query = query
+                    .eq('driver_id', driverId)
+                    .eq('status', 'scheduled');
+            } else if (['admin', 'manager'].includes(userRole?.role || '')) {
+                query = query.eq('status', 'scheduled');
+            }
 
+            const { data, error } = await query;
+
+            if (error) throw error;
             setPickups(data || []);
         } catch (err) {
-            console.error('Error fetching pickups:', err);
-            setError(`Failed to fetch pickups: ${(err as Error).message}`);
+            const errorMessage =
+                err instanceof Error ? err.message : 'Unknown error';
+            setError(`Failed to fetch pickups: ${errorMessage}`);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        if (driverId) {
+        if (userRole && (userRole.role !== 'driver' || driverId)) {
             fetchPickups();
         }
-    }, [driverId]);
+    }, [driverId, userRole]);
 
-    // useEffect(() => {
-    //     if (driverId) {
-    //         console.log('Driver ID:', driverId); // Debug log
-    //         fetchPickups();
-    //     }
-    // }, [driverId]);
-
-    if (loading) {
+    // if (loading) return <tr><td colSpan={6}>Loading pickups...</td></tr>;
+    if (error)
         return (
             <tr>
-                <td colSpan={7} className="px-4 py-3 text-center">
-                    Loading pickups...
+                <td colSpan={6} className="text-red-500">
+                    {error}
                 </td>
             </tr>
         );
-    }
-
-    if (error) {
+    if (pickups.length === 0)
         return (
             <tr>
-                <td colSpan={7} className="px-4 py-3 text-center text-red-600">
-                    Error: {error}
-                    <Button
-                        onClick={fetchPickups}
-                        className="ml-2 text-blue-600 underline"
-                    >
-                        Retry
-                    </Button>
-                </td>
+                <td colSpan={6}>No pickups found</td>
             </tr>
         );
-    }
-
-    if (pickups.length === 0) {
-        return (
-            <tr>
-                <td colSpan={7} className="px-4 py-3 text-center">
-                    No pending pickups found
-                </td>
-            </tr>
-        );
-    }
 
     return (
         <>
             {pickups.map((pickup) => (
-                <tr
-                    key={pickup.id}
-                    className="border-b border-gray-200 hover:bg-gray-50"
-                >
-                    <td className="px-4 py-3 text-sm">{pickup.id}</td>
-                    <td className="px-4 py-3">
-                        {pickup.customers?.company_name || 'Unknown Company'}
-                    </td>
-                    <td className="px-4 py-3">
-                        {formatLocation(pickup.pickup_location)}
-                    </td>
-                    <td className="px-4 py-3">
-                        {new Date(pickup.pickup_date).toLocaleString()}
-                    </td>
-
-                    <td className="px-4 py-3">
-                        {pickup.drivers?.name || 'Unassigned'}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                        {pickup.empty_bins_delivered}
-                    </td>
-                    <td className="px-4 py-3">
-                        <div className="flex justify-center gap-2">
+                <React.Fragment key={pickup.id}>
+                    <tr className="border-b border-gray-200 hover:bg-gray-50">
+                        <td className="px-4 py-3">{pickup.id}</td>
+                        <td className="px-4 py-3">
+                            {pickup.customers?.company_name ||
+                                'Unknown Company'}
+                        </td>
+                        <td className="px-4 py-3">
+                            {typeof pickup.pickup_location === 'string'
+                                ? pickup.pickup_location
+                                : pickup.pickup_location.address}
+                        </td>
+                        <td className="px-4 py-3">
+                            {new Date(pickup.pickup_date).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                            {pickup.empty_bins_delivered}
+                        </td>
+                        <td className="px-4 py-3 text-center">
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setSelectedPickup(pickup)}
+                                className="mx-auto"
                             >
                                 <Eye className="h-7 w-7" />
                             </Button>
-                        </div>
-                    </td>
-                </tr>
+                        </td>
+                    </tr>
+                    {selectedPickup?.id === pickup.id && (
+                        <tr>
+                            <td colSpan={6} className="p-4">
+                                <PickupForm
+                                    pickup={selectedPickup}
+                                    onComplete={async () => {
+                                        await fetchPickups();
+                                        setSelectedPickup(null);
+                                    }}
+                                    viewOnly={userRole?.role !== 'driver'}
+                                />
+                            </td>
+                        </tr>
+                    )}
+                </React.Fragment>
             ))}
-            {selectedPickup && (
-                <tr>
-                    <td colSpan={7} className="px-4 py-3">
-                        <PickupForm
-                            pickup={selectedPickup}
-                            onComplete={async () => {
-                                await fetchPickups();
-                                setSelectedPickup(null);
-                            }}
-                        />
-                    </td>
-                </tr>
-            )}
         </>
     );
 }
