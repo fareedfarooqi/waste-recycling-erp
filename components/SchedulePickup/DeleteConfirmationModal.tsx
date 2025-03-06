@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import Modal from './Modal';
+import Modal from '../Modal';
 import { supabase } from '@/config/supabaseClient';
 
 type DeleteConfirmationModalProps = {

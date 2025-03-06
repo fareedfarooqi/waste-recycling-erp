@@ -6,7 +6,7 @@ import React from 'react';
 import SidebarSmall from '@/components/Sidebar/SidebarSmall';
 import Sidebar from '@/components/Sidebar/Sidebar';
 import { useSidebar } from '@/components/Sidebar/SidebarContext';
-import PickupScheduleTable from '@/components/PickupScheduleTable';
+import PickupScheduleTable from '@/components/SchedulePickup/PickupScheduleTable';
 
 const Page: React.FC = () => {
     const { isSidebarOpen } = useSidebar();

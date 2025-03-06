@@ -15,12 +15,12 @@ import {
 import Button from './Button';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import PickupViewModal from './PickupViewModel';
-import PickupImportCSVModal from './PickupImportCSVModal';
+import PickupImportCSVModal from '../PickupImport/PickupImportCSVModal';
 import { CiImport, CiExport } from 'react-icons/ci';
 import SortModal from './SortModal';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import SuccessAnimation from './SuccessAnimation';
+import SuccessAnimation from '../SuccessAnimation';
 import { useUserRole } from '@/hooks/useUserRole';
 
 type Bin = {

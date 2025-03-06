@@ -1,9 +1,9 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/config/supabaseClient';
-import Button from './Button';
+import Button from '@/components/SchedulePickup/Button';
 import { IoMdClose } from 'react-icons/io';
-import SuccessAnimation from './SuccessAnimation';
+import SuccessAnimation from '@/components/SuccessAnimation';
 
 interface PickupImportCSVModalProps {
     isOpen: boolean;

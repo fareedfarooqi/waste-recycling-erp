@@ -6,7 +6,7 @@ import SuccessAnimation from '@/components/SuccessAnimation';
 import SidebarSmall from '@/components/Sidebar/SidebarSmall';
 import Sidebar from '@/components/Sidebar/Sidebar';
 import { useSidebar } from '@/components/Sidebar/SidebarContext';
-import FormField from '@/components/FormField';
+import FormField from '@/components/AddEditScreen/FormField';
 import { FaPencilAlt } from 'react-icons/fa';
 import { IoMdClose } from 'react-icons/io';
 

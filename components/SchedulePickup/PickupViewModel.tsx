@@ -4,7 +4,7 @@ import { supabase } from '@/config/supabaseClient';
 
 import { useRouter } from 'next/navigation'; // Import useRouter
 import { FaEye } from 'react-icons/fa'; // Import the eye icon
-import DateFormatter from './DateFormatter';
+import DateFormatter from '../DateFormatter';
 import Link from 'next/link';
 import { IoMdClose } from 'react-icons/io';
 

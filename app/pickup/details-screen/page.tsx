@@ -1,6 +1,6 @@
 'use client';
 import { supabase } from '@/config/supabaseClient';
-import BinInfo from '@/components/BinInfo';
+import BinInfo from '@/components/PickupDetailScreen/BinInfo';
 import CustomerSignature from '@/components/CustomerSignature';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
