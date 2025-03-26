@@ -36,7 +36,7 @@ const SidebarSmall = (): JSX.Element => {
         {
             icon: <FaCalendarAlt className="text-3xl text-white" />,
             label: 'Schedule Pickup',
-            route: '/schedule',
+            route: '/pickup',
         },
         {
             icon: <FaQuestion className="text-3xl text-white" />,

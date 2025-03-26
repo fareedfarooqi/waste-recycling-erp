@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/config/supabaseClient'; // Import Supabase client
-import AddEditPickupModal from '@/components/EditPickupModal';
+import AddEditPickupModal from '@/components/AddEditScreen/EditPickupModal';
 import { useUserRole } from '@/hooks/useUserRole';
 
 type Bin = {
