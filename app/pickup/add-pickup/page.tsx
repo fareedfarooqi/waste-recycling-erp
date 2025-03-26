@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import AddEditPickupModal from '@/components/AddEditPickupModal';
+import AddEditPickupModal from '@/components/AddEditScreen/AddEditPickupModal';
 import { useUserRole } from '@/hooks/useUserRole';
 
 const AddPickupPage = () => {

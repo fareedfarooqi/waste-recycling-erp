@@ -326,7 +326,7 @@
 // FINAL CODE
 'use client';
 import { Button } from '@/components/ui/button';
-import { FeatureRequestForm } from '@/components/FeatureRequestForm';
+import { FeatureRequestForm } from '@/components/Settings/FeatureRequestForm';
 
 export default function SettingsPage() {
     return (
