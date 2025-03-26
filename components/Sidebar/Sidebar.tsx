@@ -25,7 +25,7 @@ const Sidebar = (): JSX.Element => {
         {
             icon: <FaCalendarAlt />,
             label: 'Schedule Pickup',
-            route: '/schedule',
+            route: '/pickup',
         },
         { icon: <FaQuestion />, label: 'Requests', route: '/requests' },
         { icon: <FaBox />, label: 'Containers', route: '/containers' },
