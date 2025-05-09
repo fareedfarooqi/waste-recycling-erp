@@ -176,7 +176,7 @@
 
 // CODE - 1
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
 export function FeatureRequestForm() {
@@ -184,6 +184,14 @@ export function FeatureRequestForm() {
     const [type, setType] = useState('Feature Request');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (successMessage) {
+            const timer = setTimeout(() => setSuccessMessage(null), 4000);
+            return () => clearTimeout(timer); // cleanup
+        }
+    }, [successMessage]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -203,7 +211,10 @@ export function FeatureRequestForm() {
             }
 
             setMessage('');
-            alert('Feedback sent successfully!');
+            // alert('Feedback sent successfully!');
+            setSuccessMessage(
+                'The Feedback has been sent successfully!. Thank you for your support'
+            );
         } catch (error: unknown) {
             const message =
                 error instanceof Error
@@ -217,6 +228,18 @@ export function FeatureRequestForm() {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
+            {successMessage && (
+                <div className="flex justify-between items-center p-4 bg-green-100 border border-green-400 text-green-700 rounded relative transition-opacity duration-500">
+                    <span>{successMessage}</span>
+                    <button
+                        type="button"
+                        onClick={() => setSuccessMessage(null)}
+                        className="text-green-700 hover:text-green-900 font-bold ml-4"
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
             {error && (
                 <div className="p-3 bg-red-100 text-red-700 rounded">
                     Error: {error}
